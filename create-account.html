@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📝 Create Account — AuDHD HQ</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#120f24">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="pages/create-account.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-icon">📝</div>
+    <h1 class="header-title">Create Account</h1>
+    <p class="header-subtitle">Join AuDHD HQ with your invite code</p>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="error-message" id="errorMessage"></div>
+  <div class="success-message" id="successMessage"></div>
+
+  <!-- Step 1: Invite Code -->
+  <div class="form-section" id="step-code">
+    <span class="section-title">Step 1: Verify Invite Code</span>
+
+    <form id="codeForm">
+      <div class="form-group">
+        <label class="form-label" for="code">Invite Code</label>
+        <input
+          class="form-input"
+          type="text"
+          id="code"
+          name="code"
+          placeholder="e.g., ABC123"
+          required
+          autocomplete="off"
+          maxlength="20"
+        >
+        <div class="code-status" id="codeStatus">
+          <span class="status-indicator"></span>
+          <span id="codeStatusText">Validating...</span>
+        </div>
+        <div class="form-hint">Enter the 6-character code you received</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="codeBtn">
+          <span class="loading-spinner"></span>
+          Continue
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Step 2: Email & Password -->
+  <div class="form-section" id="step-account" style="display: none;">
+    <span class="section-title">Step 2: Your Account</span>
+
+    <form id="accountForm">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input
+          class="form-input"
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          required
+          autocomplete="email"
+        >
+        <div class="form-hint">You'll use this to log in</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input
+          class="form-input"
+          type="password"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          required
+          autocomplete="new-password"
+        >
+        <div class="password-strength" id="passwordStrength">
+          <div class="strength-bar"></div>
+          <div class="strength-bar"></div>
+          <div class="strength-bar"></div>
+        </div>
+        <span class="strength-text" id="strengthText">Weak</span>
+        <div class="form-hint">Minimum 8 characters. Mix of uppercase, lowercase, numbers, and symbols recommended.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm">Confirm Password</label>
+        <input
+          class="form-input"
+          type="password"
+          id="confirm"
+          name="confirm"
+          placeholder="••••••••"
+          required
+          autocomplete="new-password"
+        >
+        <div class="form-hint">Must match password above</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-primary" id="backBtn" style="background: transparent; border: 1.5px solid #2a2435; color: #9b6dff;">
+          Back
+        </button>
+        <button type="submit" class="btn-primary" id="createBtn">
+          <span class="loading-spinner"></span>
+          Create Account
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="divider">or</div>
+
+  <div class="footer">
+    <p class="footer-text">Already have an account?</p>
+    <a href="login.html" class="login-link">Sign In</a>
+  </div>
+</div>
+
+<script src="core/hq-keys.js"></script><!-- WARN-01 fix: load HQKeys before module so UID key is referenced via constant -->
+<script type="module">
+  import { auth, db } from './core/firebase-config.js';
+  import { createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+  import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+
+  // DOM elements
+  const codeForm = document.getElementById('codeForm');
+  const accountForm = document.getElementById('accountForm');
+  const codeInput = document.getElementById('code');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const confirmInput = document.getElementById('confirm');
+  const codeBtn = document.getElementById('codeBtn');
+  const createBtn = document.getElementById('createBtn');
+  const backBtn = document.getElementById('backBtn');
+  const codeStatus = document.getElementById('codeStatus');
+  const codeStatusText = document.getElementById('codeStatusText');
+  const errorMessage = document.getElementById('errorMessage');
+  const successMessage = document.getElementById('successMessage');
+  const passwordStrength = document.getElementById('passwordStrength');
+  const strengthText = document.getElementById('strengthText');
+  const progressFill = document.getElementById('progressFill');
+
+  let validatedCode = null;
+
+  // Pre-fill invite code from URL param (passed by invite.html)
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefilledCode = urlParams.get('code');
+  if (prefilledCode) {
+    codeInput.value = prefilledCode.toUpperCase();
+    // Trigger real-time validation so status indicator updates immediately
+    codeInput.dispatchEvent(new Event('input'));
+  }
+
+  // Check if already logged in
+  function checkAuthState() {
+    const uid = localStorage.getItem(HQKeys.USER_UID);
+    if (uid) {
+      window.location.href = 'index.html';
+    }
+  }
+
+  // Show error
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+    successMessage.classList.remove('show');
+  }
+
+  // Show success
+  function showSuccess(message) {
+    successMessage.textContent = message;
+    successMessage.classList.add('show');
+    errorMessage.classList.remove('show');
+  }
+
+  // Clear messages
+  function clearMessages() {
+    errorMessage.classList.remove('show');
+    successMessage.classList.remove('show');
+  }
+
+  // Translate Firebase error
+  function translateError(error) {
+    const code = error.code;
+
+    if (code === 'auth/invalid-email') {
+      return 'Please enter a valid email address.';
+    }
+    if (code === 'auth/weak-password') {
+      return 'Password must be at least 8 characters.';
+    }
+    if (code === 'auth/email-already-in-use') {
+      return 'This email is already registered. Try logging in instead.';
+    }
+    if (code === 'auth/operation-not-allowed') {
+      return 'Account creation is not currently available.';
+    }
+    if (code === 'permission-denied') {
+      return 'Code validation failed. Please check your code and try again.';
+    }
+
+    return error.message || 'Something went wrong. Please try again.';
+  }
+
+  // Validate invite code via Firestore
+  async function validateCode(code) {
+    if (!code || code.length === 0) {
+      return false;
+    }
+
+    try {
+      const docRef = doc(db, 'invite-codes', code.toUpperCase());
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        showCodeStatus(false, 'Code not found');
+        return false;
+      }
+
+      const data = docSnap.data();
+      if (data.used) {
+        showCodeStatus(false, 'Code already used');
+        return false;
+      }
+
+      showCodeStatus(true, 'Code valid');
+      return true;
+    } catch (error) {
+      console.error('Code validation error:', error);
+      showCodeStatus(false, 'Unable to validate code');
+      return false;
+    }
+  }
+
+  // Show code status
+  function showCodeStatus(isValid, message) {
+    codeStatus.classList.add('show');
+    codeStatusText.textContent = message;
+
+    if (isValid) {
+      codeStatus.classList.add('valid');
+      codeStatus.classList.remove('invalid');
+    } else {
+      codeStatus.classList.add('invalid');
+      codeStatus.classList.remove('valid');
+    }
+  }
+
+  // Real-time code validation
+  let codeValidationTimeout;
+  codeInput.addEventListener('input', async () => {
+    clearTimeout(codeValidationTimeout);
+    const code = codeInput.value.trim().toUpperCase();
+
+    if (!code) {
+      codeStatus.classList.remove('show');
+      return;
+    }
+
+    codeStatus.classList.add('show');
+    codeStatusText.textContent = 'Validating...';
+
+    codeValidationTimeout = setTimeout(async () => {
+      await validateCode(code);
+    }, 500);
+  });
+
+  // Handle code step submission
+  codeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const code = codeInput.value.trim().toUpperCase();
+
+    if (!code) {
+      showError('Please enter your invite code.');
+      return;
+    }
+
+    codeBtn.disabled = true;
+    codeBtn.classList.add('loading');
+
+    const isValid = await validateCode(code);
+
+    if (isValid) {
+      validatedCode = code;
+      // Show step 2
+      document.getElementById('step-code').style.display = 'none';
+      document.getElementById('step-account').style.display = 'block';
+      progressFill.style.width = '66%';
+      emailInput.focus();
+    } else {
+      showError('Invalid or already used code. Please check and try again.');
+    }
+
+    codeBtn.disabled = false;
+    codeBtn.classList.remove('loading');
+  });
+
+  // Password strength calculator
+  function calculatePasswordStrength(password) {
+    if (!password) return 0;
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+    return Math.min(strength, 3);
+  }
+
+  // Update password strength display
+  passwordInput.addEventListener('input', () => {
+    const strength = calculatePasswordStrength(passwordInput.value);
+    const bars = passwordStrength.querySelectorAll('.strength-bar');
+
+    bars.forEach((bar, index) => {
+      bar.classList.remove('weak', 'fair', 'good');
+      if (index < strength) {
+        if (strength === 1) {
+          bar.classList.add('weak');
+        } else if (strength === 2) {
+          bar.classList.add('fair');
+        } else {
+          bar.classList.add('good');
+        }
+      }
+    });
+
+    if (strength === 1) {
+      strengthText.textContent = 'Weak';
+      strengthText.className = 'strength-text weak';
+    } else if (strength === 2) {
+      strengthText.textContent = 'Fair';
+      strengthText.className = 'strength-text fair';
+    } else if (strength >= 3) {
+      strengthText.textContent = 'Good';
+      strengthText.className = 'strength-text good';
+    } else {
+      strengthText.textContent = 'Weak';
+      strengthText.className = 'strength-text weak';
+    }
+  });
+
+  // Back button
+  backBtn.addEventListener('click', () => {
+    document.getElementById('step-account').style.display = 'none';
+    document.getElementById('step-code').style.display = 'block';
+    progressFill.style.width = '33%';
+    validatedCode = null;
+    clearMessages();
+    codeInput.focus();
+  });
+
+  // Handle account creation
+  accountForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const confirm = confirmInput.value;
+
+    // Validate
+    if (!email || !password || !confirm) {
+      showError('Please fill in all fields.');
+      return;
+    }
+
+    if (password.length < 8) {
+      showError('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (password !== confirm) {
+      showError('Passwords do not match.');
+      return;
+    }
+
+    if (!validatedCode) {
+      showError('Please go back and validate your invite code.');
+      return;
+    }
+
+    createBtn.disabled = true;
+    createBtn.classList.add('loading');
+    createBtn.textContent = '';
+
+    try {
+      // 1. Create Firebase Auth account
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      // 2. Mark code as used
+      const codeRef = doc(db, 'invite-codes', validatedCode);
+      await updateDoc(codeRef, {
+        used: true,
+        usedBy: uid
+      });
+
+      // 3. Store UID locally
+      localStorage.setItem(HQKeys.USER_UID, uid);
+
+      // 4. Clear wizard state (force first-run) — keys match HQKeys.WIZARD_DONE / WIZARD_STEP
+      try { localStorage.removeItem('audhd-hq-wizard-done'); localStorage.removeItem('audhd-hq-wizard-step'); } catch(e) {}
+
+      showSuccess('✓ Account created! Redirecting to setup...');
+      progressFill.style.width = '100%';
+
+      // 5. Redirect to wizard
+      setTimeout(() => {
+        window.location.href = 'setup-wizard.html';
+      }, 1000);
+    } catch (error) {
+      showError(translateError(error));
+      createBtn.disabled = false;
+      createBtn.classList.remove('loading');
+      createBtn.textContent = 'Create Account';
+    }
+  });
+
+  // Focus handlers
+  emailInput.addEventListener('focus', clearMessages);
+  passwordInput.addEventListener('focus', clearMessages);
+  confirmInput.addEventListener('focus', clearMessages);
+
+  // Check auth on page load
+  checkAuthState();
+</script>
+
+</body>
+</html>

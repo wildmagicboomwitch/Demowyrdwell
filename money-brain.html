@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- ── Early theme init: prevents flash before hq-core.js DOMContentLoaded ── -->
+
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<title>💰 Money Brain — AuDHD HQ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="pages/money-brain.css">
+</head>
+<body>
+<!-- Bottom nav injected by hq-core.js -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- Topbar injected by hq-core.js -->
+
+<div id="toast-el" class="toast"></div>
+
+<!-- IE MODAL -->
+
+<!-- CSV IMPORT MODAL -->
+<div id="csv-import-modal" class="modal-bg" onclick="if(event.target===this)closeCsvImport()">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hd">
+      <div class="modal-title">💳 Import Bank / Spending CSV</div>
+      <button class="modal-x" onclick="closeCsvImport()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+        Upload a CSV export from your bank or budgeting app. Supported: <strong>Chase, Amex, Capital One, Mint, YNAB,</strong> or any generic CSV with Date / Description / Amount columns.<br>
+        <span style="color:var(--muted);font-size:11px">🔒 All processing is local — nothing leaves your device.</span>
+      </div>
+      <label style="display:block;background:var(--surface);border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px">
+        <input type="file" id="csv-import-input" accept=".csv,.txt" style="display:none" onchange="parseCsvImportFile(this)" aria-label="Import CSV transactions">
+        <span style="font-size:24px">📂</span><br>
+        <span style="font-weight:700;font-size:13px">Choose CSV file</span><br>
+        <span style="font-size:11px;color:var(--muted)">.csv from Chase, Amex, CapOne, Mint, YNAB, or generic</span>
+      </label>
+      <div id="csv-format-detect" style="font-size:11px;color:var(--text2);margin-bottom:8px;min-height:16px"></div>
+      <div id="csv-preview-wrap" style="display:none;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px">
+        <button id="csv-confirm-btn" class="btn-p" style="display:none;flex:1;padding:13px;font-size:13px;font-weight:800" onclick="confirmCsvImport()" aria-label="Complete">✅ IMPORT TRANSACTIONS</button>
+        <button class="btn-sm" style="padding:10px 16px" onclick="closeCsvImport()" aria-label="Cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ie-modal" class="modal-bg" onclick="if(event.target===this)closeModal('ie-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">💰 Import / Export Finance Data</div><button class="modal-x" onclick="closeModal('ie-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:11px;line-height:1.55">Export all finance data — bills, expenses, transactions, savings goals, and brain dump notes.</div>
+      <button class="ie-action exp" onclick="exportData()" aria-label="Import"><span style="font-size:17px">⬇️</span><span>Download backup<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">finance-tracker-[date].json</span></span></button>
+      <div class="ie-div"></div>
+      <input type="file" id="ie-f-m" accept=".json" style="display:none" onchange="importData(this,'merge')" aria-label="Import JSON — merge">
+      <input type="file" id="ie-f-r" accept=".json" style="display:none" onchange="importData(this,'replace')" aria-label="Import JSON — replace">
+      <button class="ie-action imp" onclick="document.getElementById('ie-f-m').click()" aria-label="Merge — add to existing data"><span style="font-size:17px">🔀</span><span>Merge<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">Adds new items, keeps existing</span></span></button>
+      <button class="ie-action" style="border-color:rgba(var(--red-rgb),.3);color:var(--red)" onclick="document.getElementById('ie-f-r').click()" aria-label="Replace all — overwrites data"><span style="font-size:17px">⚠️</span><span>Replace all<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">Overwrites everything</span></span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL (bills, expenses, income) -->
+<div id="item-modal" class="modal-bg" onclick="if(event.target===this)closeModal('item-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="im-title">➕ Add Item</div><button class="modal-x" onclick="closeModal('item-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Name *</label><input id="im-name" class="fin" placeholder="e.g. Rent, Netflix, Salary..."></div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Amount $</label><input id="im-amount" class="fin" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="fg"><label class="fl">Type</label>
+          <select id="im-type" class="fin" aria-label="Type">
+            <option value="bill">📋 Fixed Bill</option>
+            <option value="expense">🔁 Recurring Expense</option>
+            <option value="income">💵 Income</option>
+            <option value="tx">💳 Transaction (one-time)</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Frequency</label>
+          <select id="im-freq" class="fin" aria-label="Frequency">
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Biweekly</option>
+            <option value="annual">Annual</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="one-time">One-time</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">📅 Due / Date</label><input id="im-date" class="fin" type="date" aria-label="Im Date"></div>
+      </div>
+      <!-- Category from Tag Engine -->
+      <div class="fg"><label class="fl">Category</label><select id="im-cat" class="fin" aria-label="Category"></select></div>
+      <!-- Custom flags from Tag Engine -->
+      <div class="fg" id="im-flags-wrap" style="display:none">
+        <label class="fl">Custom Flags</label>
+        <div class="tag-chips" id="im-flags"></div>
+      </div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Emoji (optional)</label><input id="im-emoji" class="fin" placeholder="💸" maxlength="4" style="font-size:18px;text-align:center"></div>
+        <div class="fg" style="justify-content:flex-end;padding-top:14px">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="checkbox" id="im-autopay" style="width:15px;height:15px;cursor:pointer">
+            <span>Auto-pay ♻️</span>
+          </label>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><input id="im-notes" class="fin" placeholder="Account number, reminder, context..."></div>
+      <input type="hidden" id="im-edit-id">
+      <input type="hidden" id="im-section">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('item-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveItem()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVINGS GOAL MODAL -->
+<div id="goal-modal" class="modal-bg" onclick="if(event.target===this)closeModal('goal-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="gm-title">🎯 Add Savings Goal</div><button class="modal-x" onclick="closeModal('goal-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="modal-body">
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Goal Name *</label><input id="gm-name" class="fin" placeholder="e.g. Emergency Fund"></div>
+        <div class="fg"><label class="fl">Emoji</label><input id="gm-emoji" class="fin" placeholder="🎯" maxlength="4" style="font-size:18px;text-align:center"></div>
+      </div>
+      <div class="frow-3">
+        <div class="fg"><label class="fl">Target $</label><input id="gm-target" class="fin" type="number" min="0" step="1" placeholder="1000"></div>
+        <div class="fg"><label class="fl">Saved so far $</label><input id="gm-saved" class="fin" type="number" min="0" step="1" placeholder="0"></div>
+        <div class="fg"><label class="fl">Monthly $ toward</label><input id="gm-monthly" class="fin" type="number" min="0" step="1" placeholder="100"></div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><input id="gm-notes" class="fin" placeholder="Why this goal matters..."></div>
+      <input type="hidden" id="gm-edit-id">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('goal-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveGoal()" aria-label="Save">💾 Save Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  
+  <div class="hdr-title">💰 Money Brain</div>
+  <div class="hdr-pills">
+    <div class="pill" id="hp-income">💵 Income: <strong>—</strong></div>
+    <div class="pill" id="hp-bills">📋 Bills: <strong>—</strong></div>
+    <div class="pill" id="hp-surplus">Balance: <strong id="hp-surplus-val">—</strong></div>
+  </div>
+  <button class="ie-btn" onclick="openModal('ie-modal')" aria-label="Export">📤 Backup</button>
+  <button class="ie-btn" onclick="openCsvImport()" title="Import bank/spending CSV">💳 CSV Import</button>
+  
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="ntab on" onclick="sw('overview',this)" aria-label="Overview tab">📊 Overview</button>
+  <button class="ntab"    onclick="sw('bills',this)" aria-label="Copy">📋 Bills</button>
+  <button class="ntab"    onclick="sw('expenses',this)" aria-label="Expenses tab">🔁 Expenses</button>
+  <button class="ntab"    onclick="sw('income',this)" aria-label="Income tab">💵 Income</button>
+  <button class="ntab"    onclick="sw('savings',this)" aria-label="Savings tab">🎯 Savings</button>
+  <button class="ntab"    onclick="sw('transactions',this)" aria-label="Transactions tab">💳 Transactions</button>
+  <button class="ntab"    onclick="sw('subs',this)" aria-label="Subscriptions tab">📺 Subscriptions</button>
+  <button class="ntab"    onclick="sw('debt',this)" aria-label="Debt tab">💳 Debt</button>
+  <button class="ntab"    onclick="sw('income-smooth',this)" aria-label="Income Smoothing tab">📈 Income Smoothing</button>
+  <button class="ntab setup-tab-btn" onclick="sw('setup',this)" aria-label="Finance Setup tab">🏦 Finance Setup</button>
+</div>
+
+<div class="main">
+
+<!-- ======== OVERVIEW ======== -->
+<div id="tab-overview" class="tab on">
+
+  <div class="hint">💰 <strong>AUDHD money reality:</strong> Recurring expenses you forgot about are usually the problem. Autopay everything you can. Keep a chaos buffer. Check this once a week — same day, same time.</div>
+
+  <!-- Snapshot -->
+  
+  <!-- SAFE-TO-SPEND CARD -->
+  <div class="safe-spend-card" id="safe-spend-card">
+    <div style="font-size:9px;font-weight:900;color:var(--green);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">✅ Safe to Spend</div>
+    <div class="safe-num" id="safe-spend-num">$—</div>
+    <div class="safe-formula" id="safe-spend-formula"></div>
+    <button class="safe-toggle" id="safe-toggle-btn" onclick="toggleSafeView()">🙈 Hide balance</button>
+  </div>
+
+  <!-- ADHD TAX STRIP -->
+  <div class="adhd-tax-strip" id="adhd-tax-strip">
+    <span style="font-size:22px">🧠</span>
+    <div>
+      <div style="font-size:9px;font-weight:900;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">ADHD Tax This Month</div>
+      <div class="adhd-tax-val" id="adhd-tax-val">$—</div>
+      <div class="adhd-tax-lbl" id="adhd-tax-total"></div>
+      <div class="adhd-tax-note">Late fees, forgotten subs, impulse buys. Tag transactions "ADHD Tax" to track.</div>
+    </div>
+  </div>
+
+  <div class="snapshot">
+    <div class="snap-row">
+      <div class="snap-item">
+        <div class="snap-label">Monthly Income</div>
+        <div class="snap-val income" id="ov-income">$—</div>
+      </div>
+      <div class="snap-item">
+        <div class="snap-label">Monthly Out</div>
+        <div class="snap-val expenses" id="ov-out">$—</div>
+      </div>
+      <div class="snap-item">
+        <div class="snap-label">Surplus / Deficit</div>
+        <div class="snap-val" id="ov-balance">$—</div>
+      </div>
+    </div>
+    <div class="rb-track md"><div class="rb-fill" id="ov-bar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+      <span id="ov-bar-lbl-l">Spent</span>
+      <span id="ov-bar-lbl-r">of income</span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="sc"><div class="sn" id="ov-bills-n" style="color:var(--red)">0</div><div class="sl">Bills</div></div>
+    <div class="sc"><div class="sn" id="ov-exp-n" style="color:var(--orange)">0</div><div class="sl">Recurring</div></div>
+    <div class="sc"><div class="sn" id="ov-goals-n" style="color:var(--teal)">0</div><div class="sl">Savings Goals</div></div>
+    <div class="sc"><div class="sn" id="ov-tx-n" style="color:var(--muted)">0</div><div class="sl">Transactions</div></div>
+  </div>
+
+  <!-- Brain Dump notes -->
+  <div class="bd-notes" id="bd-notes-panel" style="display:none">
+    <div class="bdn-hd">💭 Finance Notes from Brain Dump <span style="font-size:9px;font-weight:400;color:var(--muted)">(click × to dismiss)</span></div>
+    <div id="bd-notes-list"></div>
+  </div>
+
+  <!-- Upcoming bills (next 7 days) -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">⚠️ Upcoming & Overdue</div></div>
+    <div id="ov-upcoming"></div>
+  </div>
+
+  <!-- NET WORTH SNAPSHOT -->
+  <div class="card nw-card" id="nw-card" style="display:none">
+    <div class="card-hd"><div class="card-title">💎 Net Worth</div></div>
+    <div class="nw-grid">
+      <div class="nw-item"><div class="nw-label">Assets</div><div class="nw-val green" id="nw-assets">$—</div></div>
+      <div class="nw-item"><div class="nw-label">Debts</div><div class="nw-val red" id="nw-debts">$—</div></div>
+      <div class="nw-item"><div class="nw-label">Net Worth</div><div class="nw-num" id="nw-net">$—</div></div>
+    </div>
+    <div class="nw-bar-track" style="margin-top:10px"><div class="nw-bar-fill" id="nw-bar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:3px"><span>Assets portion</span><span>of total</span></div>
+  </div>
+
+  <!-- CASH FLOW CALENDAR -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📅 Cash Flow</div>
+      <div style="display:flex;gap:4px">
+        <button class="cf-tab on" onclick="swCashFlow('forward',this)" aria-label="Next">Next 30d</button>
+        <button class="cf-tab" onclick="swCashFlow('current',this)">This Month</button>
+        <button class="cf-tab" onclick="swCashFlow('historical',this)">History</button>
+      </div>
+    </div>
+    <div id="cf-empty-msg" style="display:none;text-align:center;padding:12px;font-size:11px;color:var(--muted);font-style:italic">Add recurring items with start dates in 🏦 Finance Setup to see projections.</div>
+    <div class="ch-wrap" style="height:200px"><canvas id="cf-chart"></canvas></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🍕 Spending by Category</div></div>
+      <div class="ch-wrap"><canvas id="ch-cats"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">💰 Income vs Outgoings</div></div>
+      <div class="ch-wrap"><canvas id="ch-balance"></canvas></div>
+    </div>
+  </div>
+
+  <!-- AUDHD rules -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🛡️ AUDHD Finance Rules</div></div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;gap:9px;font-size:12px;color:var(--text2)"><span>🔄</span><span><strong>Auto-pay everything you can</strong> — removes decision fatigue entirely</span></div>
+      <div style="display:flex;gap:9px;font-size:12px;color:var(--text2)"><span>🛡️</span><span><strong>Keep a $50–100 chaos buffer</strong> — overdrafts spiral fast</span></div>
+      <div style="display:flex;gap:9px;font-size:12px;color:var(--text2)"><span>📱</span><span><strong>Bank notifications ON</strong> for every transaction — no surprise spending</span></div>
+      <div style="display:flex;gap:9px;font-size:12px;color:var(--text2)"><span>📅</span><span><strong>Sunday 15-min money check</strong> — same time every week</span></div>
+      <div style="display:flex;gap:9px;font-size:12px;color:var(--text2)"><span>🚫</span><span><strong>Subscriptions you forgot = silent budget killers</strong> — audit quarterly</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======== BILLS ======== -->
+<div id="tab-bills" class="tab">
+  <div class="hint red">📋 Fixed recurring bills — rent, insurance, utilities. Mark as paid each month. Auto-pay badge shows what's on autopilot.</div>
+  <div id="bills-list"></div>
+  <button class="add-trigger" onclick="openAddItem('bill')">+ Add Bill</button>
+</div>
+
+<!-- ======== EXPENSES ======== -->
+<div id="tab-expenses" class="tab">
+  <div class="hint">🔁 Subscriptions, habits, regular spending. These are the invisible budget killers — list every one honestly.</div>
+  <div id="expenses-list"></div>
+  <button class="add-trigger" onclick="openAddItem('expense')">+ Add Recurring Expense</button>
+</div>
+
+<!-- ======== INCOME ======== -->
+<div id="tab-income" class="tab">
+  <div class="hint green">💵 All income sources — salary, freelance, side income. Monthly take-home (after tax) is what goes into the budget calculation.</div>
+  <div id="income-list"></div>
+  <button class="add-trigger" onclick="openAddItem('income')">+ Add Income Source</button>
+</div>
+
+<!-- ======== SAVINGS ======== -->
+<div id="tab-savings" class="tab">
+  <div class="hint" style="border-left-color:var(--teal);background:rgba(var(--teal-rgb),.07);border-color:rgba(var(--teal-rgb),.2)">🎯 Name the goal, set a target, log what you've saved, and see the timeline. Small consistent amounts matter more than big irregular ones.</div>
+  <div id="savings-list"></div>
+  <button class="add-trigger" onclick="openAddGoal()">+ Add Savings Goal</button>
+</div>
+
+<!-- ======== TRANSACTIONS ======== -->
+<div id="tab-transactions" class="tab">
+  <div class="filter-row">
+    <button class="fchip on" onclick="setTxFilter('all',this)">All</button>
+    <button class="fchip" onclick="setTxFilter('in',this)">💵 In</button>
+    <button class="fchip" onclick="setTxFilter('out',this)">💸 Out</button>
+  </div>
+  <div id="tx-list"></div>
+  <button class="add-trigger" onclick="openAddItem('tx')">+ Log Transaction</button>
+</div>
+
+<!-- ======== SUBSCRIPTIONS AUDIT ======== -->
+<div id="tab-subs" class="tab">
+  <div class="hint" style="background:rgba(var(--primary-rgb),.07);border-color:rgba(var(--primary-rgb),.25);color:var(--text2)">
+    📺 Mark each subscription as Still Using, Not Sure, or Cancel. See exactly what canceling saves you monthly.
+  </div>
+  <div class="sub-savings-banner" id="sub-savings-banner" style="display:none">
+    <span style="font-size:28px">💰</span>
+    <div>
+      <div style="font-size:9px;font-weight:900;color:var(--green);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Canceling marked items saves</div>
+      <div class="smooth-result-num" id="sub-cancel-savings">$—</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px" id="sub-cancel-count"></div>
+    </div>
+  </div>
+  <div id="sub-list"></div>
+  <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--muted)">
+    Subscriptions are expenses tagged <strong>subscription</strong> or with recurring frequency. Add them in the Expenses tab.
+  </div>
+
+  <!-- Spending spike alerts -->
+  <div style="margin-top:16px">
+    <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:7px">
+      📊 Spending Spike Alerts <span style="flex:1;height:1px;background:var(--border);display:inline-block"></span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Categories where this month is 20%+ over your average. Based on transaction history.</div>
+    <div id="spike-alerts-list"></div>
+  </div>
+</div>
+
+<!-- ======== DEBT PAYOFF ======== -->
+<div id="tab-debt" class="tab">
+  <div class="hint" style="background:rgba(249,65,68,.07);border-color:rgba(249,65,68,.25);color:var(--text2)">
+    💳 Enter debts with interest rates. See how long to pay off at minimum vs. with extra payments. Makes abstract debt feel concrete.
+  </div>
+  <div id="debt-list"></div>
+  <button onclick="openAddDebt()" style="width:100%;padding:10px;background:rgba(249,65,68,.08);border:1.5px dashed rgba(249,65,68,.3);color:var(--red);border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px">+ Add Debt</button>
+
+  <!-- Add/Edit debt modal -->
+  <!-- H-06 -->
+<div id="debt-modal" class="hq-modal-bg">
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto">
+      <div style="font-size:15px;font-weight:900;margin-bottom:16px" id="debt-modal-title">💳 Add Debt</div>
+      <input type="hidden" id="debt-edit-id">
+      <div style="margin-bottom:10px"><label class="fl">Name *</label><input id="debt-name" class="fin" placeholder="e.g. Visa credit card"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">
+        <div><label class="fl">Balance Owed ($)</label><input id="debt-balance" class="fin" type="number" min="0" step="1" placeholder="e.g. 4200"></div>
+        <div><label class="fl">Interest Rate (%)</label><input id="debt-rate" class="fin" type="number" min="0" step="0.1" placeholder="e.g. 22.9"></div>
+      </div>
+      <div style="margin-bottom:10px"><label class="fl">Minimum Payment ($/month)</label><input id="debt-min" class="fin" type="number" min="0" step="1" placeholder="e.g. 95"></div>
+      <div style="margin-bottom:10px"><label class="fl">Extra Payment ($/month, optional)</label><input id="debt-extra" class="fin" type="number" min="0" step="1" placeholder="e.g. 100"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button onclick="closeDebtModal()" style="background:var(--surface);border:1.5px solid var(--border);color:var(--muted);border-radius:9px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Cancel">Cancel</button>
+        <button onclick="saveDebt()" style="background:var(--red);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Save Debt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== INCOME SMOOTHING ======== -->
+<div id="tab-income-smooth" class="tab">
+  <div class="hint" style="background:rgba(var(--green-rgb),.07);border-color:rgba(var(--green-rgb),.25);color:var(--text2)">
+    📈 Irregular income? Enter your last 6 months. Get a smoothed monthly budget number that accounts for variance — no more panicking in low months.
+  </div>
+
+  <div class="income-smooth-card">
+    <div style="font-size:9px;font-weight:900;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Safe Monthly Budget</div>
+    <div class="smooth-result-num" id="smooth-result">$—</div>
+    <div class="smooth-result-sub" id="smooth-result-sub">Enter your last 6 months below</div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="smooth-breakdown">
+      <div style="text-align:center"><div style="font-size:16px;font-weight:900;color:var(--green)" id="smooth-avg">$—</div><div style="font-size:9px;color:var(--muted)">Avg/month</div></div>
+      <div style="text-align:center"><div style="font-size:16px;font-weight:900;color:var(--orange)" id="smooth-low">$—</div><div style="font-size:9px;color:var(--muted)">Lowest month</div></div>
+      <div style="text-align:center"><div style="font-size:16px;font-weight:900;color:var(--gold)" id="smooth-variance">—</div><div style="font-size:9px;color:var(--muted)">Variance</div></div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:10px">Enter income for last 6 months</div>
+  <div id="smooth-inputs"></div>
+  <button onclick="calcSmoothing()" style="width:100%;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px">Calculate Safe Budget</button>
+
+  <div style="margin-top:16px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+    <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:6px">How this works</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.6">
+      Safe budget = average of your 6 months, minus a 15% variance buffer. This gives you a number you can always hit, even in slow months. Budget to this number every month — the high months become your safety cushion.
+    </div>
+  </div>
+</div>
+
+
+<!-- ======== FINANCE SETUP ======== -->
+<div id="tab-setup" class="tab">
+  <div class="setup-intro">🏦 <strong>Finance Setup</strong> — your financial source of truth. <strong>Step 1:</strong> add accounts. <strong>Step 2:</strong> add recurring items. <strong>Step 3:</strong> set up envelopes. Everything here feeds the Overview, Cash Flow, and Debt tabs automatically.</div>
+
+  <div class="setup-subnav">
+    <button class="stab on" onclick="swSetup('accounts',this)">🏦 Accounts</button>
+    <button class="stab" onclick="swSetup('recurring',this)">🔁 Recurring</button>
+    <button class="stab" onclick="swSetup('envelopes',this)">📬 Envelopes</button>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div id="setup-sec-accounts" class="setup-section on">
+    <div id="accounts-list"></div>
+    <button class="add-trigger" onclick="openAddAccount()">+ Add Account</button>
+  </div>
+
+  <!-- RECURRING -->
+  <div id="setup-sec-recurring" class="setup-section">
+    <div class="rec-type-row">
+      <button class="rec-type-btn" onclick="openAddRecurring('income')">💵 + Income</button>
+      <button class="rec-type-btn" onclick="openAddRecurring('bill')" aria-label="Copy">📋 + Bill</button>
+      <button class="rec-type-btn" onclick="openAddRecurring('expense')">🔁 + Expense</button>
+      <button class="rec-type-btn" onclick="openAddRecurring('subscription')">📺 + Sub</button>
+    </div>
+    <div id="recurring-list"></div>
+    <button class="add-trigger" onclick="openAddRecurring('expense')">+ Add Recurring</button>
+  </div>
+
+  <!-- ENVELOPES -->
+  <div id="setup-sec-envelopes" class="setup-section">
+    <div class="hint" style="border-left-color:var(--purple);background:rgba(var(--primary-rgb),.06)">📬 <strong>Spending Envelopes</strong> — assign % of income to named buckets. Visual planning before money moves.</div>
+    <div class="env-summary-bar">
+      <div style="font-size:11px;color:var(--muted)">Income: <strong id="env-income-display">—</strong></div>
+      <div style="font-size:11px;color:var(--muted)" id="env-used-pct">0% allocated</div>
+    </div>
+    <div class="rb-track md" style="margin:8px 0 14px"><div class="rb-fill" id="env-used-bar" style="width:0%;background:var(--purple)"></div></div>
+    <div id="envelopes-list"></div>
+    <button class="add-trigger" onclick="openAddEnvelopePrompt()">+ Add Envelope</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+
+
+<!-- ACCOUNT MODAL -->
+<div id="account-modal" class="modal-bg" onclick="if(event.target===this)closeModal('account-modal')">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-hd">
+      <div class="modal-title" id="am-title">🏦 Add Account</div>
+      <button class="modal-x" onclick="closeModal('account-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Account Type *</label>
+          <select id="am-category" class="fin" onchange="onAccountCategoryChange(this.value)" aria-label="Account Type *">
+            <option value="checking">🏦 Checking</option>
+            <option value="savings">💰 Savings</option>
+            <option value="retirement">📈 Retirement/Investment</option>
+            <option value="credit">💳 Credit Card</option>
+            <option value="loan">📑 Loan</option>
+            <option value="bill">📋 Biller/Utility</option>
+          </select>
+        </div>
+        <div class="fg" style="justify-content:flex-end;padding-top:14px">
+          <span id="am-sub-badge" class="acct-sub-badge sub-liquid">💧 Liquid</span>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Account Name *</label><input id="am-name" class="fin" placeholder="e.g. Chase Checking, Visa Sapphire..."></div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Account # (last 4, optional)</label><input id="am-acct-num" class="fin" placeholder="Last 4 digits" maxlength="20"></div>
+        <div class="fg" id="am-balance-wrap">
+          <label class="fl" id="am-balance-label">Current Balance $</label>
+          <input id="am-balance" class="fin" type="number" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div id="am-interest-wrap" style="display:none">
+        <div class="fg"><label class="fl">Interest / Return Rate %</label><input id="am-interest-rate" class="fin" type="number" step="0.01" placeholder="e.g. 4.50"></div>
+      </div>
+      <div id="am-credit-wrap" style="display:none">
+        <div class="fg"><label class="fl">Credit Limit $</label><input id="am-credit-limit" class="fin" type="number" step="1" placeholder="e.g. 5000"></div>
+      </div>
+      <div id="am-fees-wrap" style="display:none">
+        <div class="fg"><label class="fl">Fees & Notes</label><input id="am-fees" class="fin" placeholder="e.g. $95 annual fee"></div>
+      </div>
+      <div id="am-minpmt-wrap" style="display:none">
+        <div class="fg"><label class="fl">Minimum Payment $</label><input id="am-min-payment" class="fin" type="number" step="0.01" placeholder="e.g. 35.00"></div>
+      </div>
+      <div id="am-borrowed-wrap" style="display:none">
+        <div class="fg"><label class="fl">Total Originally Borrowed $</label><input id="am-total-borrowed" class="fin" type="number" step="1" placeholder="e.g. 15000"></div>
+      </div>
+      <div id="am-contrib-wrap" style="display:none">
+        <div class="frow-2">
+          <div class="fg"><label class="fl">Contribution Amount $</label><input id="am-contrib-amount" class="fin" type="number" step="1" placeholder="e.g. 250"></div>
+          <div class="fg"><label class="fl">Frequency</label>
+            <select id="am-contrib-freq" class="fin" aria-label="Frequency">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly" selected>Biweekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="am-autopay-wrap" style="display:none" class="acct-autopay-block">
+        <div class="fl" style="margin-bottom:6px;font-weight:800;font-size:11px">♻️ Autopay / Due Date</div>
+        <div class="frow-3">
+          <div class="fg"><label class="fl" style="font-size:9px">Frequency</label>
+            <select id="am-autopay-freq" class="fin" aria-label="Frequency">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Biweekly</option>
+              <option value="monthly" selected>Monthly</option>
+              <option value="bimonthly">Bi-monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl" style="font-size:9px">Day of Month</label><input id="am-autopay-day" class="fin" type="number" min="1" max="31" placeholder="e.g. 15"></div>
+          <div class="fg"><label class="fl" style="font-size:9px">Starting</label><input id="am-autopay-start" class="fin" type="date" aria-label="Am Autopay Start"></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><input id="am-description" class="fin" placeholder="Any additional notes..."></div>
+      <input type="hidden" id="am-edit-id">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('account-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveAccount()" aria-label="Save">💾 Save Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECURRING MODAL -->
+<div id="recurring-modal" class="modal-bg" onclick="if(event.target===this)closeModal('recurring-modal')">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-hd">
+      <div class="modal-title" id="rm-title">🔁 Add Recurring</div>
+      <button class="modal-x" onclick="closeModal('recurring-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Type *</label>
+          <select id="rm-type" class="fin" onchange="onRecurringTypeChange(this.value)" aria-label="Type *">
+            <option value="expense">🔁 Expense</option>
+            <option value="bill">📋 Bill</option>
+            <option value="subscription">📺 Subscription</option>
+            <option value="income">💵 Income</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Linked Account</label>
+          <select id="rm-account" class="fin" aria-label="Linked Account"><option value="">— No account —</option></select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Name *</label><input id="rm-name" class="fin" placeholder="e.g. Netflix, Rent, Paycheck..."></div>
+      <div class="frow-3">
+        <div class="fg"><label class="fl">Frequency</label>
+          <select id="rm-freq" class="fin" aria-label="Frequency">
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Biweekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="bimonthly">Bi-monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Starting</label><input id="rm-start" class="fin" type="date" aria-label="Rm Start"></div>
+        <div class="fg"><label class="fl">End Date (opt)</label><input id="rm-end" class="fin" type="date" aria-label="Rm End"></div>
+      </div>
+      <div class="frow-2" style="margin-bottom:6px">
+        <div class="fg"><label class="fl">Amount Type</label>
+          <select id="rm-amt-type" class="fin" onchange="onAmtTypeChange(this.value)" aria-label="Amount Type">
+            <option value="fixed">Fixed amount</option>
+            <option value="range">Flexible range</option>
+          </select>
+        </div>
+      </div>
+      <div id="rm-fixed-wrap">
+        <div class="fg"><label class="fl">Amount $</label><input id="rm-amount" class="fin" type="number" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div id="rm-range-wrap" style="display:none">
+        <div class="frow-2">
+          <div class="fg"><label class="fl">Min $</label><input id="rm-amt-min" class="fin" type="number" step="0.01" placeholder="0.00"></div>
+          <div class="fg"><label class="fl">Max $</label><input id="rm-amt-max" class="fin" type="number" step="0.01" placeholder="0.00"></div>
+        </div>
+      </div>
+      <div id="rec-expense-fields">
+        <div class="frow-2">
+          <div class="fg"><label class="fl">Category</label>
+            <select id="rm-category" class="fin" onchange="onRecurringCatChange(this.value)" aria-label="Category">
+              <option value="">— Category —</option>
+              <option value="personal">🧍 Personal</option>
+              <option value="entertainment">🎭 Entertainment</option>
+              <option value="food">🍽️ Food</option>
+              <option value="household">🏠 Household</option>
+              <option value="tools">🔧 Tools &amp; Services</option>
+              <option value="transportation">🚌 Transportation</option>
+              <option value="laundry">🧺 Laundry</option>
+              <option value="credit_payment">💳 Credit Card Payments</option>
+            </select>
+          </div>
+          <div class="fg" id="rm-subcat-wrap" style="display:none"><label class="fl">Subcategory</label>
+            <select id="rm-subcategory" class="fin" onchange="onRecurringSubChange(this.value)" aria-label="Subcategory">
+              <option value="">— Subcategory —</option>
+            </select>
+          </div>
+        </div>
+        <div id="rm-custom-wrap" style="display:none">
+          <div class="fg"><label class="fl">Custom Subcategory</label><input id="rm-custom-subcat" class="fin" placeholder="Describe it..."></div>
+        </div>
+        <div id="rm-delivery-wrap" style="display:none">
+          <div class="fg"><label class="fl">Avg Delivery Fee $ <span style="font-size:9px;color:var(--muted)">(tracked separately)</span></label>
+            <input id="rm-delivery-fee" class="fin" type="number" step="0.01" placeholder="e.g. 5.99">
+          </div>
+        </div>
+        <div class="frow-2" style="align-items:center">
+          <div class="fg"><label class="fl">Spending Type</label>
+            <select id="rm-necessity" class="fin" aria-label="Spending Type">
+              <option value="necessary">✅ Necessary</option>
+              <option value="optional">🔶 Optional</option>
+            </select>
+          </div>
+          <div class="fg" style="justify-content:flex-end;padding-top:14px">
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--red);font-weight:700">
+              <input type="checkbox" id="rm-bad-habit" style="width:15px;height:15px;cursor:pointer;accent-color:var(--red)">
+              🚩 Bad Habit Flag
+            </label>
+          </div>
+        </div>
+      </div>
+      <div id="rec-income-fields" style="display:none">
+        <div class="hint" style="margin:0 0 8px;font-size:11px;padding:8px 10px">💵 Use monthly take-home (after tax). Recurring income feeds your cash flow projections.</div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><input id="rm-notes" class="fin" placeholder="Reminder, context, account info..."></div>
+      <input type="hidden" id="rm-edit-id">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('recurring-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveRecurring()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<script>window.HQ_CURRENT_PAGE = 'money';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/money-brain.js"></script>
+
+
+<!-- ═══ BILL PANIC MODE MODAL ════════════════════════════════ -->
+<div id="panic-modal" class="panic-modal" onclick="if(event.target===this)closePanicMode()">
+  <div class="panic-box">
+    <div class="panic-hd">🚨 Bill Panic Mode</div>
+    <div class="panic-sub">What absolutely must be paid in the next 7 days.</div>
+    <div class="panic-total" id="panic-total">$—</div>
+    <div id="panic-list"></div>
+    <button class="panic-close" onclick="closePanicMode()">✓ Got it — close</button>
+  </div>
+</div>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

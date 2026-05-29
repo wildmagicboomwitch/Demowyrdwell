@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍳 Kitchen Brain — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<!-- ═══ FONTS ════════════════════════════════════════════ -->
+<link rel="stylesheet" href="pages/kitchen-brain.css">
+</head>
+<body>
+<!-- Sidenav + overlay injected by hq-core.js -->
+<div id="appWrap" class="app-wrap">
+<div class="tv-layout">
+
+  <!-- Topbar injected by hq-core.js -->
+
+  <!-- SIDEBAR -->
+  <div class="tv-sidebar">
+    <div class="tv-nav-section">Cook</div>
+    <div class="tv-nav-item active" onclick="tvNav(this,'cook')"><span class="tv-nav-ico">📖</span>Cookbook</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'vibe')"><span class="tv-nav-ico">🎲</span>Vibe / Spin</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'plan')"><span class="tv-nav-ico">📅</span>Meal Plan</div>
+    <div class="tv-nav-section">Stock</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'inv')"><span class="tv-nav-ico">📦</span>Inventory</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'shop')"><span class="tv-nav-ico">🛒</span>Shopping List</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'fridge')"><span class="tv-nav-ico">🧊</span>Fridge &amp; Pantry</div>
+    <div class="tv-nav-section">Track</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'nutri')"><span class="tv-nav-ico">📊</span>Macros</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'waste')"><span class="tv-nav-ico">🗑️</span>Waste Log</div>
+    <div class="tv-nav-section">Tools</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'subs')"><span class="tv-nav-ico">🔄</span>Substitutions</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'conv')"><span class="tv-nav-ico">⚖️</span>Converter</div>
+    <div class="tv-nav-section">Config</div>
+    <div class="tv-nav-item" onclick="tvNav(this,'setup');kbSetupLoad();kbRenderSetup();"><span class="tv-nav-ico">⚙️</span>Setup</div>
+    <div style="flex:1"></div>
+    <div class="tv-nav-item" onclick="confirmReset()" style="color:rgba(255,120,120,.6);margin-top:8px"><span class="tv-nav-ico">🗃️</span>Reset Data</div>
+    <a class="tv-nav-item" href="data-sync.html" style="color:rgba(255,255,255,.5);text-decoration:none;margin-top:4px"><span class="tv-nav-ico">🔄</span>Data Sync</a>
+  </div>
+
+  <!-- MAIN -->
+  <div class="tv-main">
+
+    <!-- HERO -->
+    <div class="hero">
+
+      <div class="hero-curve"></div>
+      <div class="hero-content">
+        <div class="day-label" id="dayLabel">Saturday Kitchen</div>
+
+        <div class="hero-fuel">
+          <div class="hero-fuel-top"><span class="hero-fuel-label">⚡ FUEL LEVEL</span><span id="fuel-txt">--</span></div>
+          <div class="fuel-bar"><div id="fuel-fill"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="cmd-bar">
+        <select id="s-toggle" class="search-scope" onchange="render()" aria-label="Toggle">
+          <option value="all">🔍 ALL</option>
+          <option value="cook">📖 BOOK</option>
+          <option value="inv">📦 STOCK</option>
+        </select>
+        <input type="text" id="search" class="cmd-input" placeholder="Search Kitchen HQ..." oninput="render()">
+      </div>
+    </div>
+
+    <!-- TV 2-COL AREA -->
+    <div class="tv-content-area">
+
+      <!-- LEFT: tools grid + mobile panel wrap -->
+      <div class="tv-tools-col">
+        <div class="section-hd">Kitchen Tools</div>
+        <div class="kitchen-tools">
+          <div class="tool-btn active" onclick="showPanel('cook',this)"><span class="icon">📖</span><span class="icon-label">Book</span></div>
+          <div class="tool-btn" onclick="showPanel('vibe',this)"><span class="icon">🎲</span><span class="icon-label">Vibe</span></div>
+          <div class="tool-btn" onclick="showPanel('shop',this)"><span class="icon">🛒</span><span class="icon-label">Shop</span></div>
+          <div class="tool-btn" onclick="showPanel('nutri',this)"><span class="icon">📊</span><span class="icon-label">Macros</span></div>
+          <div class="tool-btn" onclick="showPanel('inv',this)"><span class="icon">📦</span><span class="icon-label">Stock</span></div>
+          <div class="tool-btn" onclick="showPanel('subs',this)"><span class="icon">🔄</span><span class="icon-label">Subs</span></div>
+          <div class="tool-btn" onclick="showPanel('conv',this)"><span class="icon">⚖️</span><span class="icon-label">Conv</span></div>
+          <div class="tool-btn" onclick="showPanel('waste',this)"><span class="icon">🗑️</span><span class="icon-label">Waste</span></div>
+          <div class="tool-btn" onclick="showPanel('fridge',this)"><span class="icon">🧊</span><span class="icon-label">Fridge</span></div>
+        </div>
+        <!-- mobile panels go here -->
+        <div class="panel-wrap" id="mobileWrap"></div>
+      </div>
+
+      <!-- RIGHT: TV panel col -->
+      <div class="tv-panel-col" id="tvPanelCol"></div>
+
+    </div>
+
+    <!-- MOBILE NAV — H-09: added More button; full section tray below -->
+    <div class="nav">
+      <div class="navbtn active" onclick="activateNav(this,'cook')"><div class="navbtn-ico">📖</div><div class="navbtn-lbl">Recipes</div></div>
+      <div class="navbtn" onclick="activateNav(this,'inv')"><div class="navbtn-ico">📦</div><div class="navbtn-lbl">Stock</div></div>
+      <div class="navbtn" onclick="activateNav(this,'shop')"><div class="navbtn-ico">🛒</div><div class="navbtn-lbl">Shop</div></div>
+      <div class="navbtn" onclick="activateNav(this,'fridge')"><div class="navbtn-ico">🧊</div><div class="navbtn-lbl">Fridge</div></div>
+      <div class="navbtn" onclick="toggleMoreTray(this)"><div class="navbtn-ico">⋯</div><div class="navbtn-lbl">More</div></div>
+    </div>
+
+    <!-- H-09: More Tray — overflow sections not in primary mobile nav -->
+    <div class="more-tray" id="moreTray">
+      <div class="more-tray-grid">
+        <div class="more-tray-btn" onclick="activateNavMore('vibe')"><span>🎲</span><span>Vibe</span></div>
+        <div class="more-tray-btn" onclick="activateNavMore('plan')"><span>📅</span><span>Plan</span></div>
+        <div class="more-tray-btn" onclick="activateNavMore('nutri')"><span>📊</span><span>Macros</span></div>
+        <div class="more-tray-btn" onclick="activateNavMore('waste')"><span>🗑️</span><span>Waste</span></div>
+        <div class="more-tray-btn" onclick="activateNavMore('subs')"><span>🔄</span><span>Subs</span></div>
+        <div class="more-tray-btn" onclick="activateNavMore('conv')"><span>⚖️</span><span>Convert</span></div>
+        <div class="more-tray-btn" onclick="activateNavMore('setup');kbSetupLoad();kbRenderSetup();"><span>⚙️</span><span>Setup</span></div>
+        <div class="more-tray-btn" onclick="confirmReset()" style="color:rgba(255,120,120,.7)"><span>🗃️</span><span>Reset</span></div>
+      </div>
+    </div>
+
+  </div><!-- /tv-main -->
+</div><!-- /tv-layout -->
+</div><!-- /appWrap -->
+
+<!-- ══════════════════ PANEL TEMPLATES (hidden, moved by JS) ══════════════════ -->
+
+<div id="panel-cook" class="tool-panel">
+  <div class="fav-filter">
+    <div class="fav-filter-btn active" id="cook-filter-all" onclick="setCookFilter('all',this)">📖 All Recipes</div>
+    <div class="fav-filter-btn" id="cook-filter-fav" onclick="setCookFilter('fav',this)">⭐ Favorites</div>
+  </div>
+  <div class="add-trigger" onclick="openRecipeModal()">
+    <span style="font-size:20px">📖</span><span style="color:var(--accent-teal);font-weight:900;font-size:24px">+</span>
+    <span style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase">Add New Recipe</span>
+  </div>
+  <div id="recipe-list"></div>
+</div>
+
+<div id="panel-vibe" class="tool-panel">
+  <button class="btn-teal" style="width:100%;padding:14px;font-size:15px" onclick="generateVibe()">🎲 SPIN THE WHEEL</button>
+  <div id="v-out" class="res-box" style="margin-top:12px">Hit the button to get a meal idea!</div>
+</div>
+
+<div id="panel-plan" class="tool-panel">
+  <div class="section-label">Weekly Meal Plan — tap any day to edit</div>
+  <div class="day-plan-grid" id="day-plan-grid"></div>
+  <div style="margin-top:12px;display:flex;gap:8px">
+    <button class="btn-ghost" style="flex:1" onclick="clearPlan()" aria-label="Delete">🗑 Clear Week</button>
+    <button class="btn-teal" style="flex:1" onclick="copyPlan()" aria-label="Copy">📋 Copy Plan</button>
+  </div>
+</div>
+
+<div id="panel-shop" class="tool-panel">
+  <div class="section-label">From Recipes</div>
+  <div id="shop-list" style="margin-bottom:12px;min-height:20px"></div>
+  <div class="section-label">Custom Items</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <input type="text" id="custom-shop-input" placeholder="Add item..." onkeydown="if(event.key==='Enter')addCustomShop()">
+    <button class="btn-teal" style="width:auto;flex-shrink:0" onclick="addCustomShop()" aria-label="Add item">+ ADD</button>
+  </div>
+  <div id="custom-shop-list" style="margin-bottom:14px;min-height:10px"></div>
+  <button onclick="copyShop()" class="btn-teal" style="width:100%" id="copy-shop-btn" aria-label="Copy">📋 COPY ALL</button>
+</div>
+
+<div id="panel-nutri" class="tool-panel">
+  <div class="section-label">Quick Log</div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;flex-wrap:wrap">
+    <div style="flex:1;min-width:80px"><div class="section-label">Protein (g)</div><input type="number" id="q-p" placeholder="0"></div>
+    <div style="flex:1;min-width:80px"><div class="section-label">Calories</div><input type="number" id="q-c" placeholder="0"></div>
+    <button class="btn-teal" style="width:auto" onclick="quickLogMacro()">⚡ LOG</button>
+  </div>
+  <div class="section-label">Last 10 Meals</div>
+  <div id="n-chart" class="chart-wrap"></div>
+  <div id="nutri-stats" style="font-size:11px;color:var(--text-muted);margin-top:8px"></div>
+  <div id="nutri-log"></div>
+</div>
+
+<div id="panel-inv" class="tool-panel">
+  <div class="fav-filter">
+    <div class="fav-filter-btn active" id="inv-filter-all" onclick="setInvFilter('all',this)">📦 All Items</div>
+    <div class="fav-filter-btn" id="inv-filter-fav" onclick="setInvFilter('fav',this)">⭐ Favorites</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <div class="add-trigger" onclick="openInvModal()" style="flex:1;margin-bottom:0">
+      <span style="font-size:20px">📦</span><span style="color:var(--accent-teal);font-weight:900;font-size:24px">+</span>
+      <span style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase">Add Item</span>
+    </div>
+    <div class="add-trigger" onclick="document.getElementById('json-inv-upload').click()" style="flex:1;margin-bottom:0" title="Import items from a JSON file">
+      <span style="font-size:20px">📂</span><span style="color:var(--accent-gold);font-weight:900;font-size:24px">↑</span>
+      <span style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase">Import JSON</span>
+    </div>
+  </div>
+  <input type="file" id="json-inv-upload" accept=".json,application/json" style="display:none" onchange="importInvJSON(this)" aria-label="Import inventory JSON">
+  <details open><summary>🥩 Proteins &amp; Dairy</summary><div id="list-p"></div></details>
+  <details open><summary>🌾 Dry Goods &amp; Pantry</summary><div id="list-d"></div></details>
+  <details open><summary>🥫 Canned &amp; Jarred</summary><div id="list-c"></div></details>
+  <details><summary>🫙 Condiments, Sauces &amp; Oils</summary><div id="list-co"></div></details>
+  <details><summary>🌶 Spices &amp; Seasonings</summary><div id="list-sp"></div></details>
+  <details><summary>🧂 Broths &amp; Bases</summary><div id="list-br"></div></details>
+  <details><summary>🍰 Baking &amp; Sweets</summary><div id="list-bk"></div></details>
+  <details><summary>🥦 Produce</summary><div id="list-pr"></div></details>
+</div>
+
+<div id="panel-subs" class="tool-panel">
+  <input type="text" id="sub-in" placeholder="Type ingredient to substitute..." oninput="doSub()" style="margin-bottom:10px">
+  <div id="sub-out" class="res-box">Type an ingredient above</div>
+</div>
+
+<div id="panel-conv" class="tool-panel">
+  <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
+    <input type="number" id="c-val" placeholder="Amount" oninput="doConv()" style="flex:1;min-width:80px">
+    <select id="c-from" onchange="doConv()" style="flex:1;min-width:70px" aria-label="C From"><option value="lb">lb</option><option value="kg">kg</option><option value="cup">cup</option><option value="ml">ml</option><option value="oz">oz</option><option value="tsp">tsp</option><option value="tbsp">tbsp</option><option value="g">g</option></select>
+    <span style="font-weight:900;color:var(--text-muted);padding:0 4px">→</span>
+    <select id="c-to" onchange="doConv()" style="flex:1;min-width:70px" aria-label="C To"><option value="kg">kg</option><option value="lb">lb</option><option value="ml">ml</option><option value="cup">cup</option><option value="oz">oz</option><option value="g">g</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option></select>
+  </div>
+  <div id="c-out" class="res-box">---</div>
+</div>
+
+<div id="panel-waste" class="tool-panel">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
+    <div style="flex:1;min-width:80px"><div class="section-label">$ Cost</div><input type="number" id="w-val" placeholder="0.00"></div>
+    <div style="flex:2;min-width:130px"><div class="section-label">Note</div><input type="text" id="w-note" placeholder="What was wasted?"></div>
+    <button class="btn-pink" style="width:auto" onclick="logWaste()">LOG</button>
+  </div>
+  <div class="section-label">Entries</div>
+  <div id="w-chart" class="chart-wrap"></div>
+  <div id="w-total" style="font-size:11px;color:var(--accent-pink);margin-top:6px;text-align:right"></div>
+  <div id="w-list" style="margin-top:10px"></div>
+</div>
+
+<div id="panel-fridge" class="tool-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <span style="font-size:13px;font-weight:900;color:var(--text-main)">🧊 Fridge &amp; Pantry</span>
+    <button class="btn-pink" onclick="fr_clearExpired()">💀 Clear Expired</button>
+  </div>
+
+  <!-- Urgency Banner -->
+  <div class="fr-urgency-banner" id="fr-urgencyBanner">
+    <h3>🚨 Use these up NOW</h3>
+    <div class="fr-urgency-chips" id="fr-urgencyChips"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="fr-stats-bar">
+    <div class="fr-stat-card fr-stat-green"><div class="fr-stat-num" id="fr-statGood">0</div><div class="fr-stat-lbl">🟢 Fine</div></div>
+    <div class="fr-stat-card fr-stat-yellow"><div class="fr-stat-num" id="fr-statSoon">0</div><div class="fr-stat-lbl">🟡 Use soon</div></div>
+    <div class="fr-stat-card fr-stat-orange"><div class="fr-stat-num" id="fr-statToday">0</div><div class="fr-stat-lbl">🔴 Today/tmrw</div></div>
+    <div class="fr-stat-card fr-stat-skull"><div class="fr-stat-num" id="fr-statExpired">0</div><div class="fr-stat-lbl">💀 Expired</div></div>
+  </div>
+
+  <!-- Quick Add -->
+  <div class="fr-quick-add">
+    <h2>➕ Add item</h2>
+    <div class="fr-qa-grid">
+      <div class="fr-form-group">
+        <label>Item name</label>
+        <input type="text" id="fr-inputName" placeholder="e.g. Leftover pasta" autocomplete="off" onkeydown="if(event.key==='Enter')fr_addItem()">
+      </div>
+      <div class="fr-form-group">
+        <label>Qty / notes</label>
+        <input type="text" id="fr-inputQty" placeholder="e.g. 2 portions">
+      </div>
+      <div class="fr-form-group">
+        <label>Expires</label>
+        <input type="date" id="fr-inputDate" aria-label="Fr Input Date">
+      </div>
+    </div>
+    <div class="fr-qa-row2">
+      <div class="fr-form-group">
+        <label>Category</label>
+        <select id="fr-inputCat" aria-label="Category">
+          <option value="🥩 Protein">🥩 Protein</option>
+          <option value="🥦 Produce">🥦 Produce</option>
+          <option value="🧀 Dairy">🧀 Dairy</option>
+          <option value="🍱 Leftovers">🍱 Leftovers</option>
+          <option value="🥤 Drinks">🥤 Drinks</option>
+          <option value="🧂 Condiments">🧂 Condiments</option>
+          <option value="❄️ Freezer">❄️ Freezer</option>
+          <option value="📦 Other">📦 Other</option>
+        </select>
+      </div>
+      <div class="fr-form-group">
+        <label>Location</label>
+        <select id="fr-inputLoc" aria-label="Location">
+          <option value="🧊 Fridge">🧊 Fridge</option>
+          <option value="❄️ Freezer">❄️ Freezer</option>
+          <option value="🍽️ Counter">🍽️ Counter</option>
+        </select>
+      </div>
+      <div class="fr-form-group">
+        <label>Priority</label>
+        <select id="fr-inputPriority" aria-label="Priority">
+          <option value="normal">Normal</option>
+          <option value="high">🔥 High</option>
+          <option value="low">💤 Low</option>
+        </select>
+      </div>
+      <div class="fr-form-group">
+        <label>💰 Cost <span style="font-weight:400;font-size:10px;color:var(--text-muted)">(optional — logs to Money Brain)</span></label>
+        <div style="position:relative"><span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px">$</span>
+        <input type="number" id="fr-inputCost" min="0" step="0.01" placeholder="0.00" style="padding-left:22px"></div>
+      </div>
+      <button class="fr-btn-add" onclick="fr_addItem()" aria-label="Add item">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="fr-filters">
+    <button class="fr-filter-chip active" data-fr-filter="all" onclick="fr_setFilter('all',this)">All</button>
+    <button class="fr-filter-chip" data-fr-filter="urg-red" onclick="fr_setFilter('urg-red',this)">🔴 Urgent</button>
+    <button class="fr-filter-chip" data-fr-filter="urg-yellow" onclick="fr_setFilter('urg-yellow',this)">🟡 Soon</button>
+    <button class="fr-filter-chip" data-fr-filter="urg-green" onclick="fr_setFilter('urg-green',this)">🟢 Fine</button>
+    <button class="fr-filter-chip" data-fr-filter="urg-skull" onclick="fr_setFilter('urg-skull',this)">💀 Expired</button>
+    <div class="fr-sort-wrap">
+      <select id="fr-sortSelect" onchange="fr_setSort(this.value)" aria-label="Fr Sort Select">
+        <option value="expiry">Sort: Expiry</option>
+        <option value="added">Sort: Recent</option>
+        <option value="name">Sort: Name</option>
+        <option value="category">Sort: Category</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="fr-items-wrap" id="fr-itemsWrap">
+    <div class="fr-empty-state" id="fr-emptyState">
+      <span class="fr-big-emoji">🧊</span>
+      <p>Nothing tracked yet.<br>Add your first fridge item above!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<div id="r-modal" class="modal-overlay">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeRecipeModal()" aria-label="Close" title="Close">✕</button>
+    <h3 class="modal-title">📖 Recipe Editor</h3>
+    <div class="section-label">Name</div><input type="text" id="r-n" placeholder="Recipe name" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:80px"><div class="section-label">Protein (g)</div><input type="number" id="r-p" placeholder="0"></div>
+      <div style="flex:1;min-width:80px"><div class="section-label">Calories</div><input type="number" id="r-c" placeholder="0"></div>
+      <div style="flex:1;min-width:80px"><div class="section-label">Servings</div><input type="number" id="r-s" placeholder="1" step="0.5"></div>
+      <div style="flex:1;min-width:110px">
+        <div class="section-label">Category</div>
+        <select id="r-tag" aria-label="Category"><option value="">None</option><option value="🥩 Protein">🥩 Protein</option><option value="🥗 Salad">🥗 Salad</option><option value="🍝 Pasta">🍝 Pasta</option><option value="🍜 Soup">🍜 Soup</option><option value="🥪 Sandwich">🥪 Sandwich</option><option value="🍳 Breakfast">🍳 Breakfast</option><option value="🍰 Dessert">🍰 Dessert</option><option value="🥤 Drink">🥤 Drink</option><option value="🔥 Bulk">🔥 Bulk</option><option value="✂️ Cut">✂️ Cut</option></select>
+      </div>
+    </div>
+    <div class="section-label">Ingredients (one per line)</div>
+    <textarea id="r-i" rows="5" placeholder="1 lb Ground Beef&#10;1 cup Rice" style="margin-bottom:10px;resize:vertical"></textarea>
+    <div class="section-label">Steps (one per line)</div>
+    <textarea id="r-st" rows="5" placeholder="Cook beef until browned.&#10;Serve over rice." style="margin-bottom:14px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn-teal" style="flex:1;padding:14px;font-size:14px" onclick="saveRecipe()" aria-label="Save">💾 SAVE</button>
+      <button class="btn-red"  style="flex:1;padding:14px;font-size:14px" onclick="closeRecipeModal()">✕ CANCEL</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PANEL: SETUP ════════════════════════════════════════ -->
+<div id="panel-setup" class="tool-panel">
+  <div style="padding:4px 0 12px">
+    <div style="font-size:12px;font-weight:800;color:var(--text2);letter-spacing:.06em;margin-bottom:12px">⚙️ KITCHEN BRAIN SETUP</div>
+
+    <!-- HOUSEHOLD BASICS -->
+    <div class="kb-setup-card">
+      <div class="kb-setup-hd">🏠 Household Basics</div>
+      <div class="kb-setup-desc">Who's eating here? Used to scale recipe servings and estimate shopping quantities.</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+        <label style="font-size:11px;color:var(--text2);font-weight:700">Household size</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="kb-stepper" onclick="kbAdjHousehold(-1)" aria-label="Remove">−</button>
+          <span id="kb-household-display" style="font-size:18px;font-weight:900;color:var(--text);min-width:28px;text-align:center">1</span>
+          <button class="kb-stepper" onclick="kbAdjHousehold(1)" aria-label="Add">+</button>
+        </div>
+        <button class="kb-setup-btn" onclick="kbSaveHousehold()">Save</button>
+      </div>
+
+      <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:5px;letter-spacing:.04em">🚫 DIETARY RESTRICTIONS / ALLERGIES</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:7px">Tag-style — add any that apply. Tap × to remove.</div>
+      <div id="kb-diet-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:7px">
+        <input id="kb-diet-input" class="cmd-input" placeholder="e.g. gluten-free, nut allergy, vegan…"
+          style="flex:1;font-size:12px;height:34px"
+          onkeydown="if(event.key==='Enter')kbAddDiet()">
+        <button class="kb-setup-btn" onclick="kbAddDiet()" aria-label="Add item">+ Add</button>
+      </div>
+    </div>
+
+    <!-- PANTRY STAPLES -->
+    <div class="kb-setup-card">
+      <div class="kb-setup-hd">🏪 Pantry Staples</div>
+      <div class="kb-setup-desc">Items you always want stocked. These show highlighted in inventory when running low.</div>
+      <div id="kb-staples-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:7px;margin-bottom:6px">
+        <input id="kb-staple-input" class="cmd-input" placeholder="e.g. olive oil, rice, pasta, oat milk…"
+          style="flex:1;font-size:12px;height:34px"
+          onkeydown="if(event.key==='Enter')kbAddStaple()">
+        <button class="kb-setup-btn" onclick="kbAddStaple()" aria-label="Add item">+ Add</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="kb-setup-btn" style="font-size:10px;padding:5px 10px" onclick="kbAddStaplesPreset('basic')">🌟 Basic preset</button>
+        <button class="kb-setup-btn" style="font-size:10px;padding:5px 10px" onclick="kbAddStaplesPreset('baking')">🥐 Baking preset</button>
+        <button class="kb-setup-btn" style="font-size:10px;padding:5px 10px" onclick="kbAddStaplesPreset('asian')">🍜 Asian preset</button>
+      </div>
+    </div>
+
+    <!-- INVENTORY IMPORT -->
+    <div class="kb-setup-card">
+      <div class="kb-setup-hd">📥 Inventory Import</div>
+      <div class="kb-setup-desc">Import your existing inventory in bulk. All fields editable after import.</div>
+
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:4px;letter-spacing:.04em">📋 PASTE TEXT — one item per line</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-style:italic">Format: Item name, Category, Quantity (all optional except name)</div>
+        <textarea id="kb-inv-import-text" rows="5"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);padding:9px 11px;font-size:11px;font-family:inherit;resize:vertical"
+          placeholder="Olive oil, pantry, 1 bottle&#10;Rice, pantry, 2kg&#10;Chicken breast, fridge&#10;Milk, fridge, 1L"></textarea>
+        <button class="kb-setup-btn" style="margin-top:6px" onclick="kbPreviewInvImport()" aria-label="Search">🔍 Preview Import</button>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:10px">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:4px;letter-spacing:.04em">📂 UPLOAD CSV</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-style:italic">Columns: Name, Category, Quantity, Location (header row optional)</div>
+        <input type="file" id="kb-inv-import-file" accept=".csv,.txt"
+          style="font-size:11px;color:var(--text2);display:block"
+          onchange="kbPreviewInvFileImport(this)"
+          aria-label="Import inventory CSV or text file">
+      </div>
+
+      <!-- Preview -->
+      <div id="kb-inv-preview" style="display:none;margin-top:10px">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:6px">
+          👀 <span id="kb-inv-preview-count">0</span> items parsed
+        </div>
+        <div id="kb-inv-preview-list" style="max-height:180px;overflow-y:auto;margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="kb-setup-btn" style="background:rgba(var(--green-rgb),.12);border-color:rgba(var(--green-rgb),.3);color:var(--green)"
+            onclick="kbConfirmInvImport()" aria-label="Complete">✅ Import All</button>
+          <button class="kb-setup-btn" style="background:rgba(var(--red-rgb),.07);border-color:rgba(var(--red-rgb),.2);color:var(--red)"
+            onclick="kbCancelInvImport()">✕ Cancel</button>
+        </div>
+      </div>
+      <div id="kb-inv-import-stats" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
+    </div>
+
+    <!-- BACKUP & RESTORE -->
+    <div class="kb-setup-card">
+      <div class="kb-setup-hd">💾 Backup & Restore</div>
+      <div class="kb-setup-desc">Export your Kitchen setup config (household size, dietary flags, pantry staples) as JSON.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="kb-setup-btn" onclick="kbExportSetup()" aria-label="Import">⬇️ Export setup JSON</button>
+        <label class="kb-setup-btn" style="cursor:pointer">
+          ⬆️ Restore setup JSON
+          <input type="file" accept=".json" style="display:none" onchange="kbImportSetup(this)" aria-label="Restore kitchen setup from JSON">
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="inv-modal" class="modal-overlay">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeInvModal()" aria-label="Close" title="Close">✕</button>
+    <h3 class="modal-title">📦 Add Stock Item</h3>
+    <div class="section-label">Name</div><input type="text" id="i-n" placeholder="e.g. Chicken Breast" style="margin-bottom:10px">
+    <div class="section-label">Quantity / Notes</div><input type="text" id="i-q" placeholder="e.g. 2 lbs" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:80px"><div class="section-label">Protein (g)</div><input type="number" id="i-p" placeholder="0"></div>
+      <div style="flex:1;min-width:80px"><div class="section-label">Calories</div><input type="number" id="i-c" placeholder="0"></div>
+      <div style="flex:1;min-width:110px"><div class="section-label">Category</div>
+        <select id="i-cat" aria-label="Category"><option value="p">🥩 Protein &amp; Dairy</option><option value="d">🌾 Dry Goods</option><option value="c">🥫 Canned &amp; Jarred</option><option value="co">🫙 Condiments &amp; Oils</option><option value="sp">🌶 Spices</option><option value="br">🧂 Broths &amp; Bases</option><option value="bk">🍰 Baking &amp; Sweets</option><option value="pr">🥦 Produce</option></select>
+      </div>
+      <div style="flex:1;min-width:110px"><div class="section-label">Storage</div>
+        <select id="i-loc" aria-label="Storage"><option value="pantry">🗄️ Pantry</option><option value="fridge">❄️ Fridge</option><option value="freezer">🧊 Freezer</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-teal" style="flex:1;padding:14px;font-size:14px" onclick="saveInvItem()" aria-label="Save">💾 ADD ITEM</button>
+      <button class="btn-red"  style="flex:1;padding:14px;font-size:14px" onclick="closeInvModal()">✕ CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<div id="plan-modal" class="modal-overlay">
+  <div class="modal-inner" style="max-width:440px">
+    <button class="modal-close" onclick="closePlanModal()" aria-label="Close" title="Close">✕</button>
+    <h3 class="modal-title" id="plan-modal-title">📅 Monday</h3>
+    <div class="section-label">Meals for this day</div>
+    <textarea id="plan-input" rows="4" placeholder="e.g. Chicken &amp; Rice — Beef Bowls for dinner" style="margin-bottom:14px;resize:vertical"></textarea>
+    <button class="btn-teal" style="width:100%;padding:12px;font-size:14px" onclick="savePlanDay()" aria-label="Save">💾 SAVE</button>
+  </div>
+</div>
+
+<!-- ══════════════════ JSON IMPORT MODAL ══════════════════ -->
+<div id="json-import-modal" class="modal-overlay">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeJsonImportModal()" aria-label="Close" title="Close">✕</button>
+    <h3 class="modal-title">📂 JSON Import Preview</h3>
+    <div id="json-import-summary" style="margin-bottom:14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-col);border-radius:10px;font-size:13px;color:var(--text-main)"></div>
+    <div id="json-import-errors" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(var(--red-rgb),.08);border:1px solid rgba(var(--red-rgb),.3);border-radius:10px;font-size:12px;color:#c04040"></div>
+    <div id="json-import-list" style="max-height:280px;overflow-y:auto;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-teal" id="json-import-confirm-btn" style="flex:1;padding:14px;font-size:14px" onclick="confirmJsonImport()" aria-label="Complete">✅ ADD ALL TO INVENTORY</button>
+      <button class="btn-red" style="flex:1;padding:14px;font-size:14px" onclick="closeJsonImportModal()">✕ CANCEL</button>
+    </div>
+    <div style="margin-top:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border-col);border-radius:10px">
+      <div class="section-label" style="margin-top:0">📋 Expected JSON Format</div>
+      <pre style="font-size:10px;color:var(--text-muted);white-space:pre-wrap;word-break:break-all;margin:0;font-family:monospace">[
+  {
+    "n": "Item Name",         ← required
+    "q": "2 lbs",             ← optional (quantity/notes)
+    "cat": "p",               ← optional (p/d/c/co/sp/br/bk/pr)
+    "loc": "pantry",          ← optional (pantry/fridge/freezer)
+    "p": 25,                  ← optional (protein g)
+    "c": 200                  ← optional (calories)
+  }
+]</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ FRIDGE EDIT MODAL ══════════════════ -->
+<div class="fr-modal-overlay" id="fr-editModal" onclick="if(event.target===this)fr_closeEdit()">
+  <div class="fr-modal">
+    <h2>✏️ Edit Fridge Item</h2>
+    <div class="fr-form-group" style="margin-bottom:10px">
+      <label>Item name</label>
+      <input type="text" id="fr-editName" aria-label="Fr Edit Name">
+    </div>
+    <div class="fr-form-group" style="margin-bottom:10px">
+      <label>Qty / notes</label>
+      <input type="text" id="fr-editQty" aria-label="Fr Edit Qty">
+    </div>
+    <div class="fr-form-group" style="margin-bottom:10px">
+      <label>Expires</label>
+      <input type="date" id="fr-editDate" aria-label="Fr Edit Date">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="fr-form-group">
+        <label>Category</label>
+        <select id="fr-editCat" aria-label="Category">
+          <option value="🥩 Protein">🥩 Protein</option>
+          <option value="🥦 Produce">🥦 Produce</option>
+          <option value="🧀 Dairy">🧀 Dairy</option>
+          <option value="🍱 Leftovers">🍱 Leftovers</option>
+          <option value="🥤 Drinks">🥤 Drinks</option>
+          <option value="🧂 Condiments">🧂 Condiments</option>
+          <option value="❄️ Freezer">❄️ Freezer</option>
+          <option value="📦 Other">📦 Other</option>
+        </select>
+      </div>
+      <div class="fr-form-group">
+        <label>Location</label>
+        <select id="fr-editLoc" aria-label="Location">
+          <option value="🧊 Fridge">🧊 Fridge</option>
+          <option value="❄️ Freezer">❄️ Freezer</option>
+          <option value="🍽️ Counter">🍽️ Counter</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr-modal-actions">
+      <button class="fr-btn-secondary" onclick="fr_closeEdit()" aria-label="Cancel">Cancel</button>
+      <button class="fr-btn-add" onclick="fr_saveEdit()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- FRIDGE TOAST -->
+<div class="fr-toast" id="fr-toast"></div>
+
+
+<!-- Bottom nav injected by hq-core.js -->
+<!-- Must be set before hq-core.js loads so it can read the current page -->
+<script>window.HQ_CURRENT_PAGE = 'kitchen';</script>
+<!-- hq-core.js: theme system, clock, flag-to-index, reminder banner -->
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/kitchen-brain.js"></script>
+
+<script>
+// markActiveNav: handled by hq-core.js via HQ_CURRENT_PAGE
+</script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

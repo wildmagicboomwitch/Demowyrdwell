@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Box Tracker — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="pages/box-tracker.css">
+</head>
+<body>
+
+<div id="toast-el" class="toast"></div>
+
+<!-- ═══ SIDENAV ══════════════════════════════════════ -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- Topbar injected by hq-core.js -->
+<div></div>
+
+<!-- ═══ IE MODAL ════════════════════════════════════ -->
+<div id="ie-modal" class="modal-bg" onclick="if(event.target===this)closeModal('ie-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">📦 Import / Export</div><button class="modal-x" onclick="closeModal('ie-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="ie-desc">Download all rooms and boxes as a backup. Import to restore or sync between devices.</div>
+    <button class="ie-action exp" onclick="exportData()" aria-label="Import"><span style="font-size:17px">⬇️</span><span>Download backup<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted)">box-tracker-backup-[date].json</span></span></button>
+    <div class="ie-div"></div>
+    <input type="file" id="ie-file-m" accept=".json" style="display:none" onchange="importData(this,'merge')" aria-label="Import JSON — merge with existing">
+    <input type="file" id="ie-file-r" accept=".json" style="display:none" onchange="importData(this,'replace')" aria-label="Import JSON — replace all data">
+    <button class="ie-action imp" onclick="document.getElementById('ie-file-m').click()" aria-label="Merge — add to existing data"><span style="font-size:17px">🔀</span><span>Merge import<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted)">Adds new rooms/boxes, keeps existing</span></span></button>
+    <button class="ie-action" style="border-color:rgba(var(--red-rgb),.3);color:var(--red)" onclick="document.getElementById('ie-file-r').click()" aria-label="Replace all — overwrites data"><span style="font-size:17px">⚠️</span><span>Replace import<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted)">Overwrites everything with file</span></span></button>
+  </div>
+</div>
+
+<!-- ═══ ADD ROOM MODAL ═══════════════════════════════ -->
+<div id="room-modal" class="modal-bg" onclick="if(event.target===this)closeModal('room-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="room-modal-title">📍 Add Room</div><button class="modal-x" onclick="closeModal('room-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="fg"><label class="fl">Room Name</label><input id="room-name" class="fin" placeholder="e.g. Bedroom, Living Room, Storage Unit…"></div>
+    <div class="fg">
+      <label class="fl">Emoji</label>
+      <div class="emoji-row" id="room-emojis">
+        <button class="epick sel" data-e="🛏️" aria-label="Button">🛏️</button><button class="epick" data-e="🛋️" aria-label="Button">🛋️</button>
+        <button class="epick" data-e="🍳" aria-label="Button">🍳</button><button class="epick" data-e="🚿" aria-label="Button">🚿</button>
+        <button class="epick" data-e="🏢" aria-label="Button">🏢</button><button class="epick" data-e="🚗" aria-label="Button">🚗</button>
+        <button class="epick" data-e="🏠" aria-label="Button">🏠</button><button class="epick" data-e="🗄️" aria-label="Button">🗄️</button>
+        <button class="epick" data-e="🧳" aria-label="Button">🧳</button><button class="epick" data-e="📦" aria-label="Button">📦</button>
+      </div>
+    </div>
+    <input type="hidden" id="room-edit-id">
+    <div class="form-actions">
+      <button class="btn-g" onclick="closeModal('room-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveRoom()" aria-label="Save">💾 Save Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD BOX MODAL ════════════════════════════════ -->
+<div id="box-modal" class="modal-bg" onclick="if(event.target===this)closeModal('box-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="box-modal-title">📦 New Box</div><button class="modal-x" onclick="closeModal('box-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="fg"><label class="fl">Box Name / Label</label><input id="bm-name" class="fin" placeholder="e.g. Box 1, Kitchen Stuff, Winter Clothes…"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg">
+        <label class="fl">Room</label>
+        <select id="bm-room" class="fin" aria-label="Room"><option value="">Unassigned</option></select>
+      </div>
+      <div class="fg">
+        <label class="fl">Size</label>
+        <select id="bm-size" class="fin" aria-label="Size">
+          <option value="SM">SM — Small</option>
+          <option value="MD" selected>MD — Medium</option>
+          <option value="LG">LG — Large</option>
+          <option value="XLG">XLG — Extra Large</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Type</label>
+      <select id="bm-type" class="fin" aria-label="Type">
+        <option value="">📦 Cardboard Box</option>
+        <option value="bin">🪣 Plastic Bin</option>
+        <option value="bag">👜 Bag / Tote</option>
+        <option value="suitcase">🧳 Suitcase</option>
+        <option value="crate">📋 Crate</option>
+        <option value="bag2">🎒 Backpack</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Initial Stickers</label>
+      <div class="flag-checks" id="bm-stickers">
+        <button class="fchk" data-s="fragile">🔴 Fragile</button>
+        <button class="fchk" data-s="heavy">⚠️ Heavy</button>
+        <button class="fchk" data-s="electronics">💻 Electronics</button>
+        <button class="fchk" data-s="valuable">💎 Valuable</button>
+      </div>
+    </div>
+    <input type="hidden" id="bm-edit-id">
+    <input type="hidden" id="bm-loc-id">
+    <div class="form-actions">
+      <button class="btn-g" onclick="closeModal('box-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveBox()">📦 Create Box</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD ITEM MODAL ════════════════════════════════ -->
+<div id="item-modal" class="modal-bg" onclick="if(event.target===this)closeModal('item-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="item-modal-title">➕ Add Item</div><button class="modal-x" onclick="closeModal('item-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="fg"><label class="fl">Item Name</label><input id="item-name" class="fin" placeholder="What is this?"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg">
+        <label class="fl">Category</label>
+        <select id="item-cat" class="fin" aria-label="Category">
+          <option value="">Uncategorized</option>
+          <option>💼 Work</option><option>🏥 Health</option><option>💪 Fitness</option>
+          <option>💬 Social</option><option>💰 Finance</option><option>🏠 Home</option>
+          <option>🧠 Self</option><option>📋 Admin</option><option>🌱 Personal</option>
+          <option>👗 Clothing</option><option>👟 Shoes</option><option>🧴 Toiletries</option>
+          <option>📚 Books &amp; Media</option><option>🔧 Tools</option><option>🎨 Hobbies</option>
+          <option>❄️ Seasonal</option><option>🎁 Gifts</option><option>📄 Documents</option>
+          <option>💻 Electronics</option><option>🍳 Kitchen</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Quantity</label>
+        <input id="item-qty" class="fin" type="number" min="1" value="1" aria-label="Item Qty">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Flags</label>
+      <div class="flag-checks">
+        <button class="fchk" onclick="togFchk(this)" data-f="donate">🎁 Donate</button>
+        <button class="fchk" onclick="togFchk(this)" data-f="duplicate">♊ Duplicate</button>
+        <button class="fchk" onclick="togFchk(this)" data-f="move">📍 Move</button>
+        <button class="fchk" onclick="togFchk(this)" data-f="seasonal">❄️ Seasonal</button>
+        <button class="fchk" onclick="togFchk(this)" data-f="fragile">⚠️ Fragile</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Notes (optional)</label><input id="item-notes" class="fin" placeholder="Any details…"></div>
+    <input type="hidden" id="item-loc-id">
+    <input type="hidden" id="item-cont-id">
+    <input type="hidden" id="item-edit-id">
+    <div class="form-actions">
+      <button class="btn-g" onclick="closeModal('item-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveItem()" aria-label="Save">💾 Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE HEADER ══════════════════════════════════ -->
+<div class="hdr">
+  <div class="hdr-title">📦 Box Tracker</div>
+  <button class="btn-new" onclick="openAddBox()">+ New Box</button>
+  <div class="hdr-filters">
+    <select class="hdr-sel" id="f-room" onchange="renderInventory()" aria-label="F Room">
+      <option value="">📍 All Rooms</option>
+    </select>
+    <select class="hdr-sel" id="f-sticker" onchange="renderInventory()" aria-label="F Sticker">
+      <option value="">🏷️ All Stickers</option>
+      <option value="fragile">🔴 Fragile</option>
+      <option value="heavy">⚠️ Heavy</option>
+      <option value="dry">🌂 Keep Dry</option>
+      <option value="priority">⚡ Priority</option>
+      <option value="handle">🤲 Handle w/ Care</option>
+      <option value="electronics">💻 Electronics</option>
+      <option value="valuable">💎 Valuable</option>
+      <option value="nostack">🚫 No Stack</option>
+    </select>
+    <select class="hdr-sel" id="f-size" onchange="renderInventory()" aria-label="F Size">
+      <option value="">📐 All Sizes</option>
+      <option value="SM">SM</option>
+      <option value="MD">MD</option>
+      <option value="LG">LG</option>
+      <option value="XLG">XLG</option>
+    </select>
+    <input class="hdr-search" id="inv-search" placeholder="🔍 Search boxes &amp; items…" oninput="renderInventory()">
+  </div>
+  <button class="hdr-btn" onclick="openModal('ie-modal')" aria-label="Export">📤 Import/Export</button>
+</div>
+
+<!-- Legend -->
+<div class="legend-bar">
+  <span style="font-weight:800;color:var(--text2)">Stickers:</span>
+  <span class="leg-item">🔴 Fragile</span>
+  <span class="leg-item">⚠️ Heavy</span>
+  <span class="leg-item">🌂 Keep Dry</span>
+  <span class="leg-item">⚡ Priority</span>
+  <span class="leg-item">🤲 Handle w/ Care</span>
+  <span class="leg-item">💻 Electronics</span>
+  <span class="leg-item">💎 Valuable</span>
+  <span class="leg-item">🚫 No Stack</span>
+  <span style="margin-left:auto;color:var(--text-muted)">Tap sticker to remove</span>
+</div>
+
+<!-- Stats -->
+<div class="stats-wrap" id="stats-wrap">
+  <div class="stat-chip"><div class="stat-n" id="s-total" style="color:var(--accent-gold)">0</div><div class="stat-l">Total</div></div>
+  <div class="stat-chip"><div class="stat-n" id="s-packed" style="color:var(--green)">0/0</div><div class="stat-l">Packed</div></div>
+  <div class="stat-chip"><div class="stat-n" id="s-fragile" style="color:var(--red)">0</div><div class="stat-l">Fragile</div></div>
+  <div class="stat-chip"><div class="stat-n" id="s-liquids" style="color:var(--teal)">0</div><div class="stat-l">Liquids</div></div>
+  <div class="stat-chip"><div class="stat-n" id="s-heavy" style="color:var(--orange)">0</div><div class="stat-l">Heavy</div></div>
+  <div class="stat-chip"><div class="stat-n" id="s-items" style="color:var(--accent)">0</div><div class="stat-l">Items</div></div>
+  <div class="room-stat-card">
+    <div class="room-stat-title">📍 By Room</div>
+    <div id="room-stat-body"></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="ntab-bar">
+  <button class="ntab on" onclick="sw('inv',this)" aria-label="Boxes tab">📦 Boxes</button>
+  <button class="ntab" onclick="sw('org',this)" aria-label="Organize tab">🗂️ Organize</button>
+  <button class="ntab" onclick="sw('life',this)" aria-label="Life Areas tab">🌈 Life Areas</button>
+</div>
+
+<div class="main">
+
+<!-- ═══ BOXES TAB ══════════════════════════════════ -->
+<div id="tab-inv" class="tab on">
+  <div class="boxes-grid" id="boxes-grid"></div>
+</div>
+
+<!-- ═══ ORGANIZE TAB ══════════════════════════════ -->
+<div id="tab-org" class="tab">
+  <div class="org-wrap">
+    <div class="sec-hd">✨ Category Sort Helper <span id="sort-progress" style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:none;letter-spacing:0">0 unsorted</span></div>
+    <div class="sort-card" id="sort-helper-card">
+      <div id="sort-content">
+        <div style="text-align:center;color:var(--text-muted);font-size:13px;padding:12px 0">
+          <div style="font-size:32px;opacity:.4;margin-bottom:8px">✨</div>
+          Add items without a category and they'll appear here for sorting.
+        </div>
+      </div>
+    </div>
+    <div class="sec-hd">📊 Everything by Category</div>
+    <div id="cat-overview"></div>
+    <div class="sec-hd">🚩 Flagged Items</div>
+    <div class="flags-card" id="flags-card">
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="fchk on" onclick="setFlagFilter('',this)">All</button>
+        <button class="fchk" onclick="setFlagFilter('donate',this)">🎁 Donate</button>
+        <button class="fchk" onclick="setFlagFilter('duplicate',this)">♊ Duplicate</button>
+        <button class="fchk" onclick="setFlagFilter('move',this)">📍 Move</button>
+        <button class="fchk" onclick="setFlagFilter('seasonal',this)">❄️ Seasonal</button>
+        <button class="fchk" onclick="setFlagFilter('fragile',this)">⚠️ Fragile</button>
+      </div>
+      <div id="flags-list"></div>
+    </div>
+    <div class="sec-hd">🔄 Simulate Reorganization</div>
+    <div class="hint">💡 Drag items between boxes to simulate reorganizing before you do it for real.</div>
+    <div id="org-drag-view"></div>
+    <div class="sec-hd">📍 Manage Rooms</div>
+    <div id="room-manager"></div>
+  </div>
+</div>
+
+<!-- ═══ LIFE AREAS TAB ════════════════════════════ -->
+<div id="tab-life" class="tab">
+  <div style="font-size:12px;color:var(--text2);margin-bottom:14px;padding-top:4px">
+    Your life on shelves. Tap any area to update its score (1–10).
+  </div>
+  <div class="life-shelf" id="life-shelf"></div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ═══ FAB BUTTONS (box tracker: no firebird FAB per spec — all 3 shown) ═══ -->
+
+<!-- Bottom nav injected by hq-core.js -->
+
+<!-- Must be set before hq-core.js loads so it can read the current page -->
+<script>window.HQ_CURRENT_PAGE = 'box';</script>
+<!-- hq-core.js: theme system, clock, flag-to-index, reminder banner.
+     Overwrites inline hqSetTheme/hqInitTheme stubs; re-initializes via DOMContentLoaded. -->
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/box-tracker.js"></script>
+<script src="core/hq-notifications.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

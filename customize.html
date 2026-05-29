@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚙️ Customize — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#120f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="pages/customize.css">
+</head>
+<body>
+<!-- hq-core injects topbar / sidenav / bottom-nav -->
+
+<!-- ── IMPORT/EXPORT MODAL ── -->
+<div id="ie-modal" class="modal-bg" onclick="if(event.target===this)closeModal('ie-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">📤 Import / Export Tag Engine</div><button class="modal-x" onclick="closeModal('ie-modal')" aria-label="Close" title="Close">✕</button></div>
+    <p class="ie-desc">Export your entire tag system — categories, flags — as a backup. Import to restore or sync.</p>
+    <button class="ie-action exp" onclick="exportData()" aria-label="Import"><span style="font-size:17px">⬇️</span><span>Download tag-engine backup<br><small style="font-weight:400;color:var(--muted)">tag-engine-[date].json</small></span></button>
+    <div class="ie-div"></div>
+    <input type="file" id="ie-file-m" accept=".json" style="display:none" onchange="importData(this,'merge')" aria-label="Import JSON — merge with existing">
+    <input type="file" id="ie-file-r" accept=".json" style="display:none" onchange="importData(this,'replace')" aria-label="Import JSON — replace all data">
+    <button class="ie-action imp" onclick="document.getElementById('ie-file-m').click()" aria-label="Merge — add to existing data"><span style="font-size:17px">🔀</span><span>Merge import<br><small style="font-weight:400;color:var(--muted)">Adds new items, keeps existing ones</small></span></button>
+    <button class="ie-action" style="border-color:rgba(var(--red-rgb),.3);color:var(--red)" onclick="document.getElementById('ie-file-r').click()" aria-label="Replace all — overwrites data"><span style="font-size:17px">⚠️</span><span>Replace import<br><small style="font-weight:400;color:var(--muted)">Overwrites everything</small></span></button>
+  </div>
+</div>
+
+<!-- ── ADD/EDIT CATEGORY MODAL ── -->
+<div id="cat-modal" class="modal-bg" onclick="if(event.target===this)closeModal('cat-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">➕ Add Category</div><button class="modal-x" onclick="closeModal('cat-modal')" aria-label="Close" title="Close">✕</button></div>
+    <input type="hidden" id="cm-edit-id">
+    <div class="form-row"><label class="form-label">Name</label><input class="form-input" id="cm-name" placeholder="e.g. Side Projects"></div>
+    <div class="form-row"><label class="form-label">Emoji</label><div style="display:flex;align-items:center;gap:8px;"><input class="form-input" id="cm-emoji" placeholder="🗂 or bi-house" style="font-size:14px;width:110px" oninput="updateEmojiPreview('cm-emoji','cm-emoji-preview')"><span id="cm-emoji-preview" style="font-size:22px;min-width:28px;text-align:center"></span></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Type an emoji or a Bootstrap icon name like <code style="font-size:9px">bi-star</code></div></div>
+    <div class="form-row"><label class="form-label">Color</label><div class="color-row" id="cm-colors"></div></div>
+    <div class="form-row"><label class="form-label">Applies To Modules</label><div class="mod-chips" id="cm-modules"></div></div>
+    <div class="modal-footer">
+      <button class="btn-s" onclick="closeModal('cat-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveCat()" aria-label="Save">💾 Save Category</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD/EDIT SUBCATEGORY MODAL ── -->
+<div id="sub-modal" class="modal-bg" onclick="if(event.target===this)closeModal('sub-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">➕ Add Subcategory</div><button class="modal-x" onclick="closeModal('sub-modal')" aria-label="Close" title="Close">✕</button></div>
+    <input type="hidden" id="sm-cat-id">
+    <div class="form-row"><label class="form-label">Name</label><input class="form-input" id="sm-name" placeholder="e.g. Side Projects"></div>
+    <div class="form-row"><label class="form-label">Emoji</label><input class="form-input" id="sm-emoji" placeholder="🗂" maxlength="4" style="font-size:20px;width:70px"></div>
+    <div class="form-row" id="sm-checkin-row" style="display:none">
+      <label class="form-label">Push to Check-In <span style="font-size:10px;font-weight:400;color:var(--muted)">— health only</span></label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600">
+        <input type="checkbox" id="sm-push-checkin"> Surface this subcategory in the daily check-in flow
+      </label>
+    </div>
+    <!-- P2: Cross-module push toggles -->
+    <div class="form-row" style="margin-top:8px">
+      <label class="form-label">Cross-module surfaces <span style="font-size:10px;font-weight:400;color:var(--muted)">— optional</span></label>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600">
+          <input type="checkbox" id="sm-push-index"> 📋 Show in Index Hero
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600">
+          <input type="checkbox" id="sm-push-weekly"> 📆 Surface in Weekly Review
+        </label>
+      </div>
+    </div>
+    <!-- P2: Item type scope picker -->
+    <div class="form-row" style="margin-top:8px">
+      <label class="form-label">Applies to item types <span style="font-size:10px;font-weight:400;color:var(--muted)">— Ctrl/Cmd+click for multiple</span></label>
+      <select id="sm-item-types" multiple style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:12px;width:100%;min-height:90px" aria-label="Sm Item Types">
+        <option value="all" selected>All types</option>
+        <option value="task">Task</option>
+        <option value="note">Note</option>
+        <option value="expense">Expense</option>
+        <option value="log-entry">Log Entry</option>
+        <option value="appointment">Appointment</option>
+        <option value="event">Event</option>
+        <option value="project">Project</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-s" onclick="closeModal('sub-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveSub()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD/EDIT FLAG MODAL ── -->
+<div id="flag-modal" class="modal-bg" onclick="if(event.target===this)closeModal('flag-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">➕ Add Custom Flag</div><button class="modal-x" onclick="closeModal('flag-modal')" aria-label="Close" title="Close">✕</button></div>
+    <input type="hidden" id="fm-edit-id">
+    <input type="hidden" id="fm-edit-group">
+    <div class="form-row"><label class="form-label">Name</label><input class="form-input" id="fm-name" placeholder="e.g. Focus Sprint"></div>
+    <div class="form-row"><label class="form-label">Emoji</label><div style="display:flex;align-items:center;gap:8px;"><input class="form-input" id="fm-emoji" placeholder="🎯 or bi-flag" style="font-size:14px;width:110px" oninput="updateEmojiPreview('fm-emoji','fm-emoji-preview')"><span id="fm-emoji-preview" style="font-size:22px;min-width:28px;text-align:center"></span></div><div style="font-size:10px;color:var(--muted);margin-top:3px">Type an emoji or a Bootstrap icon name like <code style="font-size:9px">bi-flag</code></div></div>
+    <div class="form-row"><label class="form-label">Color</label><select class="form-input" id="fm-color-sel" style="width:auto" aria-label="Color"></select><div class="color-row" id="fm-colors"></div></div>
+    <div class="form-row"><label class="form-label">Description <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input class="form-input" id="fm-desc" placeholder="reminds you what it means"></div>
+    <div class="form-row"><label class="form-label">Applies To</label><div class="mod-chips" id="fm-modules"></div></div>
+    <div class="form-row">
+      <label class="form-label">Behaviors <span style="font-weight:400;color:var(--muted)">(optional — can trigger system actions)</span></label>
+      <div class="beh-grid" id="fm-behaviors"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-s" onclick="closeModal('flag-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveFlag()" aria-label="Save">💾 Save Flag</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ PAGE HEADER ════════════════════════════════════ -->
+<div style="padding:14px 16px 0;max-width:660px;margin:0 auto;box-sizing:border-box">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+    <div>
+      <div style="font-size:20px;font-weight:900;line-height:1.2">⚙️ Customize</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Tags, reminders, profile, layout &amp; theme</div>
+    </div>
+  </div>
+  <!-- Docs quick-links -->
+  <div style="display:flex;gap:8px;margin-top:10px;margin-bottom:2px">
+    <a href="audhdhq-setup-guide.html" target="_blank"
+       style="display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(var(--primary-rgb),.1);border:1px solid rgba(var(--primary-rgb),.22);border-radius:8px;color:rgba(200,190,255,.8);text-decoration:none;font-size:11px;font-weight:700;transition:all .15s"
+       onmouseover="this.style.background='rgba(var(--primary-rgb),.2)';this.style.color='#e0d8ff'"
+       onmouseout="this.style.background='rgba(var(--primary-rgb),.1)';this.style.color='rgba(200,190,255,.8)'">
+      🚀 <span>Setup Guide</span>
+    </a>
+    <a href="audhdhq-feature-guide.html" target="_blank"
+       style="display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(var(--primary-rgb),.1);border:1px solid rgba(var(--primary-rgb),.22);border-radius:8px;color:rgba(200,190,255,.8);text-decoration:none;font-size:11px;font-weight:700;transition:all .15s"
+       onmouseover="this.style.background='rgba(var(--primary-rgb),.2)';this.style.color='#e0d8ff'"
+       onmouseout="this.style.background='rgba(var(--primary-rgb),.1)';this.style.color='rgba(200,190,255,.8)'">
+      📋 <span>Feature Guide</span>
+    </a>
+  </div>
+</div>
+
+<!-- ══ TAB NAV ══════════════════════════════════════════ -->
+<nav class="tab-nav">
+  <button class="ntab on"  onclick="sw('cats',this)" aria-label="Categories tab">🏷️ Categories</button>
+  <button class="ntab"     onclick="sw('modules',this)" aria-label="Modules tab">🧩 Modules</button>
+  <button class="ntab"     onclick="sw('flags',this)" aria-label="Flags tab">🚩 Flags</button>
+  <button class="ntab"     onclick="sw('ref',this)" aria-label="Reference tab">🎨 Reference</button>
+  <button class="ntab"     onclick="sw('reminders',this)" aria-label="Reminders tab">⏰ Reminders</button>
+  <button class="ntab"     onclick="sw('layout',this)" aria-label="Index Layout tab">🏠 Index Layout</button>
+  <button class="ntab"     onclick="sw('profile',this)" aria-label="Profile tab">👤 Profile</button>
+  <button class="ntab" onclick="sw('theme',this)" aria-label="Theme tab">🎨 Theme</button>
+  <button class="ntab"     onclick="sw('storage',this)" aria-label="Storage tab">🗄️ Storage</button>
+  <button class="ntab"     onclick="sw('spaces',this)" aria-label="Spaces &amp; Tasks tab">🏠 Spaces &amp; Tasks</button>
+</nav>
+
+<div class="main">
+
+<!-- ════════ 🧩 MODULES ════════ -->
+<div id="tab-modules" class="tab">
+  <div class="hint">🧩 Control which pages appear in your sidenav. <strong>Core modules</strong> are always visible and can't be hidden. Toggle optional modules on/off and reorder them within each section.</div>
+  <div id="modules-tab-body"><!-- rendered by renderModulesTab() --></div>
+</div>
+
+<!-- ════════ 🏷️ CATEGORIES ════════ -->
+<div id="tab-cats" class="tab on">
+  <div class="hint">🏷️ Categories describe <strong>what area of life</strong> an item belongs to. They appear on every task, appointment, symptom, and goal across all modules. Built-in categories can have subcategories added. Custom categories are fully yours.</div>
+  <div class="stats-row">
+    <div class="sc"><div class="sn" id="st-cats">0</div><div class="sl">Categories</div></div>
+    <div class="sc"><div class="sn" id="st-subs">0</div><div class="sl">Subcategories</div></div>
+    <div class="sc"><div class="sn" id="st-cust">0</div><div class="sl">Custom</div></div>
+    <div class="sc"><div class="sn" id="st-flags">0</div><div class="sl">Custom Flags</div></div>
+  </div>
+  <div class="sdiv">⚙️ Built-in Categories <span style="font-size:9px;font-weight:400;color:var(--muted)">Core — always present, can add subcategories</span></div>
+  <div id="cat-list-builtin"></div>
+  <div class="sdiv">✨ Custom Categories <span id="custom-cat-count" style="font-size:9px;font-weight:400;color:var(--muted)">0 custom</span></div>
+  <div id="cat-list-custom">
+    <div class="empty"><div class="empty-ic">🏷️</div>No custom categories yet. Add yours below.</div>
+  </div>
+  <button class="btn-p" onclick="openAddCat()" style="margin-top:8px">+ Add Category</button>
+  <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <button class="btn-s reset-tax-btn" onclick="resetTaxonomy()" title="Re-applies default subcategories and flag groups without deleting your customizations" aria-label="Refresh">🔄 Restore missing defaults</button>
+    <button class="btn-s" onclick="openModal('ie-modal')" aria-label="Export">📤 Import / Export</button>
+  </div>
+</div>
+
+<!-- ════════ 🚩 FLAGS ════════ -->
+<div id="tab-flags" class="tab">
+  <div class="hint">🚩 Flags are markers that modify how an item is <strong>treated, displayed, or filtered</strong> in any module. Built-ins cover Priority, Energy, Time, Context, Status (blocking/waiting), and Wellbeing &amp; Capacity (AuDHD task profile). Custom flags are yours — some can trigger behaviors.</div>
+
+  <div class="flag-group open" id="fg-priority">
+    <div class="flag-group-hd" onclick="togFG('fg-priority')"><span style="font-size:18px">⚡</span><div class="fg-title">Priority</div><div class="fg-count" id="fgc-priority">5 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-priority"></div></div>
+  </div>
+  <div class="flag-group" id="fg-energy">
+    <div class="flag-group-hd" onclick="togFG('fg-energy')"><span style="font-size:18px">🔋</span><div class="fg-title">Energy Cost <span style="font-size:10px;font-weight:400;color:var(--muted)"> — cosmetic sort only, not actual energy</span></div><div class="fg-count" id="fgc-energy">3 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-energy"></div></div>
+  </div>
+  <div class="flag-group" id="fg-time">
+    <div class="flag-group-hd" onclick="togFG('fg-time')"><span style="font-size:18px">📅</span><div class="fg-title">Time Sensitivity</div><div class="fg-count" id="fgc-time">4 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-time"></div></div>
+  </div>
+  <div class="flag-group" id="fg-context">
+    <div class="flag-group-hd" onclick="togFG('fg-context')"><span style="font-size:18px">🗺️</span><div class="fg-title">Context <span style="font-size:10px;font-weight:400;color:var(--muted)"> — where &amp; how it happens</span></div><div class="fg-count" id="fgc-context">7 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-context"></div></div>
+  </div>
+  <div class="flag-group" id="fg-status">
+    <div class="flag-group-hd" onclick="togFG('fg-status')"><span style="font-size:18px">⏳</span><div class="fg-title">Status <span style="font-size:10px;font-weight:400;color:var(--muted)"> — what's blocking or waiting</span></div><div class="fg-count" id="fgc-status">8 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-status"></div></div>
+  </div>
+  <div class="flag-group" id="fg-wellbeing">
+    <div class="flag-group-hd" onclick="togFG('fg-wellbeing')"><span style="font-size:18px">🧠</span><div class="fg-title">Wellbeing &amp; Capacity <span style="font-size:10px;font-weight:400;color:var(--muted)"> — AuDHD task profile</span></div><div class="fg-count" id="fgc-wellbeing">9 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-wellbeing"></div></div>
+  </div>
+  <div class="flag-group" id="fg-system">
+    <div class="flag-group-hd" onclick="togFG('fg-system')"><span style="font-size:18px">🔄</span><div class="fg-title">System State <span style="font-size:10px;font-weight:400;color:var(--muted)">(auto-set, read-only)</span></div><div class="fg-count" id="fgc-system">5 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body"><div id="fl-system"></div></div>
+  </div>
+  <div class="flag-group open" id="fg-custom">
+    <div class="flag-group-hd" onclick="togFG('fg-custom')"><span style="font-size:18px">✨</span><div class="fg-title">Custom Flags</div><div class="fg-count" id="fgc-custom">0 flags</div><div class="fg-ar">▼</div></div>
+    <div class="flag-group-body">
+      <div id="fl-custom"><div class="empty"><div class="empty-ic">🚩</div>No custom flags yet. Add yours below.</div></div>
+      <button class="btn-p" onclick="openAddFlag()" style="margin-top:10px">+ Add Custom Flag</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 🎨 QUICK REFERENCE ════════ -->
+<div id="tab-ref" class="tab">
+  <div class="hint">🎨 Your full tag system at a glance. Every category and flag available across all modules — use this as a reference when logging items.</div>
+  <div class="qr-section"><div class="qr-section-title">🏷️ All Categories</div><div class="qr-grid" id="qr-cats"></div></div>
+  <div class="qr-section"><div class="qr-section-title">⚡ Priority Flags</div><div class="qr-flag-row" id="qr-priority"></div></div>
+  <div class="qr-section"><div class="qr-section-title">🔋 Energy Cost</div><div class="qr-flag-row" id="qr-energy"></div></div>
+  <div class="qr-section"><div class="qr-section-title">📅 Time Sensitivity</div><div class="qr-flag-row" id="qr-time"></div></div>
+  <div class="qr-section"><div class="qr-section-title">🗺️ Context</div><div class="qr-flag-row" id="qr-context"></div></div>
+  <div class="qr-section"><div class="qr-section-title">⏳ Status</div><div class="qr-flag-row" id="qr-status"></div></div>
+  <div class="qr-section"><div class="qr-section-title">🧠 Wellbeing &amp; Capacity</div><div class="qr-flag-row" id="qr-wellbeing"></div></div>
+  <div class="qr-section" id="qr-custom-section"><div class="qr-section-title">✨ Custom Flags</div><div class="qr-flag-row" id="qr-custom"></div></div>
+</div>
+
+<!-- ════════ ⏰ REMINDERS ════════ -->
+<div id="tab-reminders" class="tab">
+  <div class="hint">⏰ Set which reminders are active. Banner reminders appear as a pulsing prompt on every page. All changes take effect immediately via <strong>hq-core.js</strong>.</div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🔔 Check-In Windows</div><div class="card-sub">Time-of-day windows that show a pulsing banner linking to Check-In</div></div></div>
+    <div id="reminder-windows-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🚶 Walking Log Reminder</div><div class="card-sub">Evening prompt to log today's miles</div></div>
+      <label class="tog"><input type="checkbox" id="rem-walk-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-row">
+      <label class="pf-label">Remind at time</label>
+      <input type="time" class="pf-input" id="rem-walk-time" value="20:00" onchange="saveReminderConfig()" style="width:140px" aria-label="Rem Walk Time">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">💭 Dream Journal Reminder</div><div class="card-sub">Morning prompt to log last night's dream</div></div>
+      <label class="tog"><input type="checkbox" id="rem-dream-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-row">
+      <label class="pf-label">Remind at time</label>
+      <input type="time" class="pf-input" id="rem-dream-time" value="08:00" onchange="saveReminderConfig()" style="width:140px" aria-label="Rem Dream Time">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🗓 DayBuilder Planning Reminder</div><div class="card-sub">Evening prompt to plan tomorrow's blocks</div></div>
+      <label class="tog"><input type="checkbox" id="rem-db-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-row">
+      <label class="pf-label">Remind after</label>
+      <input type="time" class="pf-input" id="rem-db-time" value="19:00" onchange="saveReminderConfig()" style="width:140px" aria-label="Rem Db Time">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">📅 Monthly Review Reminder</div><div class="card-sub">Prompt on last 2 days of month to review and plan ahead</div></div>
+      <label class="tog"><input type="checkbox" id="rem-monthly-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🫙 Thought Jar Nudge</div><div class="card-sub">Gentle "anything in your head right now?" brain dump prompt</div></div>
+      <label class="tog"><input type="checkbox" id="rem-jar-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-row">
+      <label class="pf-label">Remind at time</label>
+      <input type="time" class="pf-input" id="rem-jar-time" value="21:00" onchange="saveReminderConfig()" style="width:140px" aria-label="Rem Jar Time">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🩺 Health Tracker Daily Log</div><div class="card-sub">Evening prompt to log symptoms, sleep, and body notes</div></div>
+      <label class="tog"><input type="checkbox" id="rem-health-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-row">
+      <label class="pf-label">Remind at time</label>
+      <input type="time" class="pf-input" id="rem-health-time" value="21:30" onchange="saveReminderConfig()" style="width:140px" aria-label="Rem Health Time">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🔥 Firebird Cooldown Check</div><div class="card-sub">Follow-up nudge after activating Firebird Protocol</div></div>
+      <label class="tog"><input type="checkbox" id="rem-firebird-on" onchange="saveReminderConfig()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-row">
+      <label class="pf-label">Check after (hours)</label>
+      <input type="number" class="pf-input" id="rem-firebird-hours" value="2" min="1" max="12" onchange="saveReminderConfig()" style="width:100px" aria-label="Rem Firebird Hours">
+      <div class="pf-hint">How many hours after activation to send "are you doing better?" prompt</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 🏠 INDEX LAYOUT ════════ -->
+<div id="tab-layout" class="tab">
+  <div class="hint">🏠 Choose which modules appear in the two quick-access zones on your home screen. Drag to reorder within a zone. Click a module from the pool to add it; click × in a zone to remove it.</div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">⚡ Hero Tools</div><div class="card-sub">Large square buttons in the hero section · max 5</div></div></div>
+    <div class="layout-zone" id="zone-hero" ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'hero')" ondragleave="zoneDragLeave(event)">
+      <div class="layout-zone-label">HERO TOOLS (drag here)</div>
+      <div class="layout-chips" id="zone-hero-chips"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">🟦 Hero2 Quick Tiles</div><div class="card-sub">Compact tiles in the Quick Access section · max 3</div></div></div>
+    <div class="layout-zone" id="zone-h2" ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'h2')" ondragleave="zoneDragLeave(event)">
+      <div class="layout-zone-label">QUICK TILES (drag here)</div>
+      <div class="layout-chips" id="zone-h2-chips"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">📦 Available Modules</div><div class="card-sub">Click to add to a zone</div></div></div>
+    <div class="layout-pool" id="layout-pool"></div>
+  </div>
+
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+    <button class="btn-s" onclick="resetLayout()" aria-label="Reset all">↺ Reset defaults</button>
+    <button class="btn-p" onclick="saveLayout()" aria-label="Save">💾 Save Layout</button>
+  </div>
+</div>
+
+<!-- ════════ 👤 PROFILE ════════ -->
+<div id="tab-profile" class="tab">
+  <div class="hint">👤 Your personal settings. Changes here update across all modules that use your name, schedule, and preferences.</div>
+
+  <!-- Identity -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">👋 Identity</div></div>
+    <div class="pf-row">
+      <label class="pf-label">Preferred name</label>
+      <input type="text" class="pf-input" id="pf-name" placeholder="How you want to be greeted" oninput="saveProfile()">
+      <div class="pf-hint">Shown in the index greeting and check-in.</div>
+    </div>
+    <div class="pf-row" style="margin-top:10px">
+      <label class="pf-label">Timezone</label>
+      <select class="pf-input" id="pf-timezone" onchange="saveProfile()" style="max-width:280px" aria-label="Timezone">
+        <option value="">— auto-detect —</option>
+        <optgroup label="Americas">
+          <option value="America/New_York">Eastern (New York)</option>
+          <option value="America/Chicago">Central (Chicago)</option>
+          <option value="America/Denver">Mountain (Denver)</option>
+          <option value="America/Phoenix">Arizona (no DST)</option>
+          <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+          <option value="America/Anchorage">Alaska</option>
+          <option value="Pacific/Honolulu">Hawaii</option>
+          <option value="America/Toronto">Eastern Canada (Toronto)</option>
+          <option value="America/Vancouver">Pacific Canada (Vancouver)</option>
+          <option value="America/Mexico_City">Mexico City</option>
+          <option value="America/Sao_Paulo">Brazil (São Paulo)</option>
+          <option value="America/Argentina/Buenos_Aires">Argentina</option>
+        </optgroup>
+        <optgroup label="Europe">
+          <option value="Europe/London">UK (London)</option>
+          <option value="Europe/Dublin">Ireland (Dublin)</option>
+          <option value="Europe/Paris">Central Europe (Paris/Berlin)</option>
+          <option value="Europe/Helsinki">Eastern Europe (Helsinki)</option>
+          <option value="Europe/Istanbul">Turkey (Istanbul)</option>
+          <option value="Europe/Moscow">Russia (Moscow)</option>
+        </optgroup>
+        <optgroup label="Asia / Pacific">
+          <option value="Asia/Dubai">Gulf (Dubai)</option>
+          <option value="Asia/Kolkata">India (Kolkata)</option>
+          <option value="Asia/Bangkok">SE Asia (Bangkok)</option>
+          <option value="Asia/Singapore">Singapore</option>
+          <option value="Asia/Shanghai">China (Shanghai)</option>
+          <option value="Asia/Tokyo">Japan (Tokyo)</option>
+          <option value="Asia/Seoul">Korea (Seoul)</option>
+          <option value="Australia/Sydney">Australia (Sydney)</option>
+          <option value="Australia/Perth">Australia (Perth)</option>
+          <option value="Pacific/Auckland">New Zealand (Auckland)</option>
+        </optgroup>
+      </select>
+      <div class="pf-hint">Used for streak calculations and date-boundary logic. Auto-detected if left blank.</div>
+    </div>
+  </div>
+
+  <!-- Walking Goal + Units -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🚶 Walking Goal</div></div>
+    <div class="pf-row pf-row-2">
+      <div>
+        <label class="pf-label">Annual goal</label>
+        <input type="number" class="pf-input" id="pf-walking-goal" placeholder="3100" min="1" max="99999" oninput="saveProfile()" style="width:120px">
+      </div>
+      <div>
+        <label class="pf-label">Distance unit</label>
+        <div class="pf-seg" id="pf-unit-seg">
+          <button class="seg-btn on" data-unit="mi" onclick="setUnit(this)">Miles</button>
+          <button class="seg-btn" data-unit="km" onclick="setUnit(this)">Kilometres</button>
+        </div>
+      </div>
+    </div>
+    <div class="pf-hint">Syncs to the index progress bar and walking tracker.</div>
+  </div>
+
+  <!-- Work Schedule -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📅 Work Schedule</div><div class="card-sub">Baseline when no monthly schedule is uploaded. Monthly and weekly overrides take priority.</div></div>
+
+    <!-- Schedule type -->
+    <div class="pf-row">
+      <label class="pf-label">Schedule type</label>
+      <div class="pf-seg" id="pf-sched-type-seg">
+        <button class="seg-btn on" data-stype="standard"  onclick="setSchedType(this)">Standard</button>
+        <button class="seg-btn"    data-stype="overnight" onclick="setSchedType(this)">Overnight</button>
+        <button class="seg-btn"    data-stype="flexible"  onclick="setSchedType(this)">Flexible / N/A</button>
+      </div>
+      <div class="pf-hint" id="pf-sched-type-hint">Mon–Fri or custom days with defined start/end times.</div>
+    </div>
+
+    <!-- Work days (hidden when flexible/N/A) -->
+    <div id="pf-workdays-row" class="pf-row">
+      <label class="pf-label">Work days</label>
+      <div class="pf-days" id="pf-days">
+        <div class="pf-day on" data-day="1" onclick="toggleDay(this)">Mon</div>
+        <div class="pf-day on" data-day="2" onclick="toggleDay(this)">Tue</div>
+        <div class="pf-day on" data-day="3" onclick="toggleDay(this)">Wed</div>
+        <div class="pf-day on" data-day="4" onclick="toggleDay(this)">Thu</div>
+        <div class="pf-day on" data-day="5" onclick="toggleDay(this)">Fri</div>
+        <div class="pf-day" data-day="6" onclick="toggleDay(this)">Sat</div>
+        <div class="pf-day" data-day="0" onclick="toggleDay(this)">Sun</div>
+      </div>
+    </div>
+
+    <!-- Shift times (hidden when flexible/N/A) -->
+    <div id="pf-shift-row" class="pf-row pf-row-2">
+      <div>
+        <label class="pf-label">Shift start</label>
+        <input type="time" class="pf-input" id="pf-shift-start" value="09:00" onchange="saveProfile()" aria-label="Pf Shift Start">
+      </div>
+      <div>
+        <label class="pf-label">Shift end</label>
+        <input type="time" class="pf-input" id="pf-shift-end" value="17:00" onchange="saveProfile()" aria-label="Pf Shift End">
+      </div>
+    </div>
+  </div>
+
+  <!-- Default capture route -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🫙 Default Capture Route</div><div class="card-sub">Where notes go when you save from Check-In</div></div>
+    <div class="pf-row">
+      <div class="pf-seg" id="pf-capture-seg">
+        <button class="seg-btn on" data-route="jar-only"   onclick="setCaptureRoute(this)">🫙 Jar only</button>
+        <button class="seg-btn"    data-route="braindump"  onclick="setCaptureRoute(this)">🧠 Brain dump</button>
+        <button class="seg-btn"    data-route="ask"        onclick="setCaptureRoute(this)">❓ Always ask</button>
+      </div>
+      <div class="pf-hint">Jar only saves silently to Thought Jar. Brain dump opens the full Brain Dump page. Always ask prompts you each time.</div>
+    </div>
+  </div>
+
+  <!-- Check-In Quick Presets editor -->
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">⚡ Check-In Quick Presets</div><div class="card-sub">Tap-to-fill shortcuts on the Check-In page. Edit label, emoji, and starting values. Max 7 presets.</div></div>
+      <button class="btn-s" onclick="addPreset()" id="add-preset-btn" aria-label="Add item">+ Add</button>
+    </div>
+    <div id="presets-list"><!-- rendered by renderPresetsList() --></div>
+    <div style="margin-top:8px">
+      <button class="btn-s" onclick="resetPresets()" aria-label="Reset all">↺ Reset defaults</button>
+    </div>
+  </div>
+
+  <!-- Check-In Section Visibility -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🙈 Check-In Section Visibility</div><div class="card-sub">Show or hide specific sections on the Check-In page. Changes take effect immediately on next visit.</div></div>
+    <div id="checkin-vis-list"><!-- rendered by renderCheckinVisEditor() --></div>
+  </div>
+
+  <!-- Index Flag Panel -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🚨 Index Flag Panel</div><div class="card-sub">Which alert types appear in the hero alerts section</div></div>
+    <div id="pf-flag-types">
+      <div class="pf-check-row">
+        <div class="pf-check-info"><div class="pf-check-label">🔴 Past Due</div><div class="pf-check-sub">Overdue tasks, events, deadlines</div></div>
+        <label class="tog"><input type="checkbox" id="ft-pastdue" checked onchange="saveProfile()"><span class="tog-sl"></span></label>
+      </div>
+      <div class="pf-check-row">
+        <div class="pf-check-info"><div class="pf-check-label">🟠 Expiring</div><div class="pf-check-sub">Food, subscriptions, dates approaching</div></div>
+        <label class="tog"><input type="checkbox" id="ft-expiring" checked onchange="saveProfile()"><span class="tog-sl"></span></label>
+      </div>
+      <div class="pf-check-row">
+        <div class="pf-check-info"><div class="pf-check-label">🟡 Missed Logs</div><div class="pf-check-sub">Missed check-ins, health logs, dream entries</div></div>
+        <label class="tog"><input type="checkbox" id="ft-missed" checked onchange="saveProfile()"><span class="tog-sl"></span></label>
+      </div>
+      <div class="pf-check-row">
+        <div class="pf-check-info"><div class="pf-check-label">⚠️ Urgent</div><div class="pf-check-sub">Items explicitly flagged urgent by any module</div></div>
+        <label class="tog"><input type="checkbox" id="ft-urgent" checked onchange="saveProfile()"><span class="tog-sl"></span></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 🎨 THEME ════════ -->
+<div id="tab-theme" class="tab">
+  <div class="hint">🎨 Personalize your workspace with a theme that fits your vibe. Changes apply instantly across the entire HQ.</div>
+
+  <!-- Palette Picker -->
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-title">Theme Palette</div>
+        <div class="card-sub">Choose a primary color identity</div>
+      </div>
+    </div>
+    <div id="th-palette-grid" class="th-palette-grid"></div>
+  </div>
+
+  <!-- Mode Picker -->
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-title">Appearance Mode</div>
+        <div class="card-sub">Switch between light and dark modes</div>
+      </div>
+    </div>
+    <div id="th-mode-pills"></div>
+  </div>
+
+  <!-- Display Density -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📐 Display Density</div><div class="card-sub">Adjust spacing and text size globally</div></div>
+    <div class="density-grid">
+      <button class="density-btn" id="dn-compact" onclick="setDensity('compact')">
+        <div class="density-btn-ico">🔬</div>
+        <div class="density-btn-lbl">Compact</div>
+        <div class="density-btn-sub">More on screen, tighter spacing</div>
+      </button>
+      <button class="density-btn on" id="dn-comfortable" onclick="setDensity('comfortable')">
+        <div class="density-btn-ico">⚖️</div>
+        <div class="density-btn-lbl">Comfortable</div>
+        <div class="density-btn-sub">Default — balanced spacing</div>
+      </button>
+      <button class="density-btn" id="dn-accessible" onclick="setDensity('accessible')">
+        <div class="density-btn-ico">🔭</div>
+        <div class="density-btn-lbl">Accessible</div>
+        <div class="density-btn-sub">Larger text, more breathing room</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Accessibility / Motion -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">♿ Accessibility</div><div class="card-sub">Sensory and motion preferences applied globally</div></div>
+    <div class="pf-check-row">
+      <div class="pf-check-info">
+        <div class="pf-check-label">🎞 Reduce Motion</div>
+        <div class="pf-check-sub">Disables CSS transitions and animations across all pages — helpful for vestibular or sensory sensitivities</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="th-reduce-motion" onchange="saveDisplayPrefs()"><span class="tog-sl"></span></label>
+    </div>
+    <div class="pf-check-row">
+      <div class="pf-check-info">
+        <div class="pf-check-label">🔆 High Contrast</div>
+        <div class="pf-check-sub">Increases border opacity and text contrast beyond the default theme</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="th-high-contrast" onchange="saveDisplayPrefs()"><span class="tog-sl"></span></label>
+    </div>
+  </div>
+
+  <!-- Bottom Nav Slot Editor -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📱 Bottom Nav Slots</div><div class="card-sub">Choose which 4 pages fill the fixed mobile navigation bar. Home (🏠) is always slot 1.</div></div>
+    <div class="hint" style="margin:0 0 10px">Click a slot then pick a page from the pool below to assign it.</div>
+    <div id="bottomnav-editor"><!-- rendered by renderBottomNavEditor() --></div>
+    <button class="btn-s" style="margin-top:8px" onclick="resetBottomNav()" aria-label="Reset all">↺ Reset defaults</button>
+  </div>
+
+  <!-- Shortcuts Drawer Editor -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">⚡ Shortcuts Drawer</div><div class="card-sub">Customize which pages appear when you tap ⚡ in the top bar. Up to 8 shortcuts, ordered by drag order.</div></div>
+    <div id="shortcuts-editor"><!-- rendered by renderShortcutsEditor() --></div>
+    <button class="btn-s" style="margin-top:8px" onclick="resetShortcuts()" aria-label="Reset all">↺ Reset defaults</button>
+  </div>
+</div>
+
+<!-- ════════ 🗄️ STORAGE ════════ -->
+<div id="tab-storage" class="tab">
+  <div class="hint">🗄️ View and manage what's stored in your browser. Clear individual modules without wiping everything. Scan for old keys left over from earlier versions.</div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">📊 Storage Health</div><div class="card-sub" id="storage-total-size">Calculating…</div></div>
+      <button class="btn-s" onclick="renderStorageTab()">↺ Refresh</button>
+    </div>
+    <div id="storage-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">🧹 Legacy Key Scanner</div><div class="card-sub">Old keys from earlier versions that can be safely removed</div></div>
+      <button class="btn-s" onclick="scanLegacyKeys()">Scan</button>
+    </div>
+    <div id="legacy-list"><div class="storage-empty">Click Scan to check for old keys</div></div>
+  </div>
+</div>
+
+<!-- ══ SPACES & TASKS TAB ══════════════════════════════════════ -->
+<div id="tab-spaces" class="tab">
+  <div class="hint">🧹 Deep Clean customization — rename, reorder, and toggle rooms, and rearrange the operation phase sequence. Routine &amp; Prepwork tasks are managed from within the <a href="routines-prepwork.html" style="color:var(--purple)">Routines &amp; Prepwork</a> page itself.</div>
+
+  <!-- ── ROOMS POOL ── -->
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">🛏️ Rooms Pool</div><div class="card-sub">Toggle, rename, recolor &amp; reorder Deep Clean rooms</div></div>
+      <button class="btn-s" onclick="dcRoomsReset()" aria-label="Reset all">↺ Reset</button>
+    </div>
+    <div id="dc-rooms-list"></div>
+    <div style="margin-top:10px">
+      <button class="btn-p" onclick="openAddRoom()">➕ Add Custom Room</button>
+    </div>
+  </div>
+
+  <!-- ── OP FLOW ── -->
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">🌊 Operation Flow</div><div class="card-sub">Reorder Deep Clean phases — affects Category view order</div></div>
+      <button class="btn-s" onclick="dcFlowReset()" aria-label="Reset all">↺ Reset</button>
+    </div>
+    <div id="dc-flow-list"></div>
+  </div>
+
+  <!-- ── CUSTOM ROOM TASK POOLS (Tier 4: Layer 1 presets + Layer 2 per-task editor) ── -->
+  <div class="card" id="dc-task-pools-card">
+    <div class="card-hd">
+      <div><div class="card-title">🔧 Room Task Pools</div><div class="card-sub">Customize the default tasks for each room — changes apply to every new clean</div></div>
+      <button class="btn-s" onclick="dcTaskPoolsReset()" aria-label="Reset all">↺ Reset All</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+      Pick a preset per room or add/remove individual tasks. Your task pools are saved and loaded every time you start a Deep Clean session.
+    </div>
+    <div id="dc-task-pools-list"></div>
+  </div>
+</div>
+
+<!-- ── TASK POOL EDITOR MODAL ── -->
+<div id="task-pool-modal" class="modal-bg" onclick="if(event.target===this)closeModal('task-pool-modal')">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hd">
+      <div class="modal-title" id="tpm-title">✏️ Edit Task Pool</div>
+      <button class="modal-x" onclick="closeModal('task-pool-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px" id="tpm-room-label"></div>
+
+    <!-- Layer 1: Preset picker -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Quick Preset</div>
+      <div id="tpm-presets" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:10px 0"></div>
+
+    <!-- Layer 2: Per-task editor -->
+    <div style="font-size:11px;font-weight:800;color:var(--text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Task List</div>
+    <div id="tpm-task-list" style="max-height:240px;overflow-y:auto;margin-bottom:10px"></div>
+
+    <!-- Add custom task -->
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      <input class="form-input" id="tpm-new-task" placeholder="New task name…" style="flex:1;font-size:12px">
+      <select id="tpm-new-phase" class="form-input" style="width:120px;font-size:12px" aria-label="Tpm New Phase">
+        <option value="gather">🗑️ Gather</option>
+        <option value="tidy">📦 Tidy</option>
+        <option value="surfaces">✨ Surfaces</option>
+        <option value="special">⭐ Special</option>
+        <option value="floors">🧹 Floors</option>
+        <option value="bedroom">🛏️ Bedroom</option>
+        <option value="organize">🗂️ Organize</option>
+        <option value="final">🏆 Final</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <select id="tpm-new-diff" class="form-input" style="width:130px;font-size:12px" aria-label="Tpm New Diff">
+        <option value="cake">🍰 Easy</option>
+        <option value="usual" selected>😐 Normal</option>
+        <option value="rough">😤 Hard</option>
+        <option value="wall">🧱 Wall</option>
+      </select>
+      <button class="btn-p" style="font-size:11px;padding:5px 12px" onclick="tpmAddTask()">➕ Add Task</button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-s" onclick="closeModal('task-pool-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="tpmSave()" aria-label="Save">💾 Save Task Pool</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ── ADD/EDIT ROOM MODAL ── -->
+<div id="room-modal" class="modal-bg" onclick="if(event.target===this)closeModal('room-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="room-modal-title">🛏️ Room</div><button class="modal-x" onclick="closeModal('room-modal')" aria-label="Close" title="Close">✕</button></div>
+    <input type="hidden" id="rm-edit-id">
+    <div class="form-row"><label class="form-label">Name</label><input class="form-input" id="rm-name" placeholder="e.g. Office"></div>
+    <div class="form-row"><label class="form-label">Emoji</label><input class="form-input" id="rm-emoji" placeholder="🖥️" style="font-size:20px;width:70px" maxlength="4"></div>
+    <div class="form-row"><label class="form-label">Accent Color</label><input type="color" id="rm-color" value="#645EB7" style="height:36px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer"></div>
+    <div class="modal-footer">
+      <button class="btn-s" onclick="closeModal('room-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveRoom()" aria-label="Save">💾 Save Room</button>
+    </div>
+  </div>
+</div>
+
+
+<script>window.HQ_CURRENT_PAGE='customize';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/customize.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

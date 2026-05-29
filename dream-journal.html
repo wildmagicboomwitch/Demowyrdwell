@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌙 Dream Journal — AuDHD HQ</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#0e0c22">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- FONTS -->
+
+<!-- CHART.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<link rel="stylesheet" href="pages/dream-journal.css">
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- IMPORT/EXPORT MODAL -->
+<div id="ie-modal" class="modal-backdrop" onclick="if(event.target===this)closeIE()">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">📦 Import / Export Data</div>
+      <button class="modal-close" onclick="closeIE()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="ie-section">
+      <div class="ie-section-title">📤 Export</div>
+      <div class="ie-desc">Download all dream journal data as a JSON file for backup or device transfer.</div>
+      <button class="ie-action-btn export" onclick="exportData()" aria-label="Import">
+        <span class="ie-btn-icon">⬇️</span>
+        <span class="ie-btn-text">Download JSON backup<span class="ie-btn-sub">dream-journal-backup-[date].json</span></span>
+      </button>
+    </div>
+    <div class="ie-divider"></div>
+    <div class="ie-section">
+      <div class="ie-section-title">📥 Import</div>
+      <div class="ie-desc">Load a previously exported JSON file. <strong style="color:var(--teal)">Merge</strong> adds to existing data; <strong style="color:var(--red)">Replace</strong> overwrites everything.</div>
+      <input type="file" id="ie-file-merge"   accept=".json" style="display:none" onchange="importData(this,'merge')" aria-label="Import journal — merge with existing">
+      <input type="file" id="ie-file-replace" accept=".json" style="display:none" onchange="importData(this,'replace')" aria-label="Import journal — replace all data">
+      <button class="ie-action-btn import-merge" onclick="document.getElementById('ie-file-merge').click()" aria-label="Merge — add to existing data">
+        <span class="ie-btn-icon">🔀</span>
+        <span class="ie-btn-text">Merge — add to existing data<span class="ie-btn-sub">Keeps current dreams, adds imported ones (skips duplicates)</span></span>
+      </button>
+      <button class="ie-action-btn import-replace" onclick="document.getElementById('ie-file-replace').click()" aria-label="Replace all — overwrites data">
+        <span class="ie-btn-icon">⚠️</span>
+        <span class="ie-btn-text">Replace — overwrite all data<span class="ie-btn-sub">Deletes current data and loads the import file</span></span>
+      </button>
+    </div>
+    <div class="ie-divider"></div>
+    <div class="ie-section-title">📊 Current data</div>
+    <div id="ie-stats" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- Sidenav injected by hq-core.js -->
+<!-- Topbar injected by hq-core.js -->
+    <div class="tb-pill tb-pills">🔥 <strong id="h-streak">0</strong>d</div>
+    <button class="ie-btn" onclick="openIE()" aria-label="Backup data">📦 Backup</button>
+    <a href="customize.html" class="sync-btn" title="Customize">⚙️</a>
+    <a href="data-sync.html" class="sync-btn" title="Sync">🔄</a>
+
+
+<!-- INTERNAL TAB NAV -->
+<div class="dream-nav">
+  <button class="nav-tab active" onclick="switchTab('log',this)" aria-label="Log Dream tab">✍️ Log Dream</button>
+  <button class="nav-tab" onclick="switchTab('archive',this)" aria-label="Archive tab">📖 Archive</button>
+  <button class="nav-tab" onclick="switchTab('symbols',this)" aria-label="Symbols & Themes tab">🔮 Symbols & Themes</button>
+  <button class="nav-tab" onclick="switchTab('patterns',this)" aria-label="Pattern Analysis tab">📊 Pattern Analysis</button>
+</div>
+
+<div class="main">
+
+<!-- ═══ TAB: LOG DREAM ════════════════════════════════════ -->
+<div id="tab-log" class="tab-panel active">
+
+  <div class="hint">💡 Log your dream immediately after waking — even fragments count. Title + a few emotions + symbols = a complete entry in under 60 seconds.</div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title" id="form-mode-label">🌙 New Dream Entry</div>
+    </div>
+
+    <div class="frow frow-1">
+      <div class="fg">
+        <label class="flabel">Dream Title *</label>
+        <input id="f-title" class="finput" type="text" placeholder="Give this dream a name..." maxlength="120">
+      </div>
+    </div>
+
+    <div class="frow frow-3">
+      <div class="fg">
+        <label class="flabel">📅 Date</label>
+        <input id="f-date" class="finput" type="date" aria-label="F Date">
+      </div>
+      <div class="fg">
+        <label class="flabel">⏰ Wake Time</label>
+        <input id="f-time" class="finput" type="time" aria-label="F Time">
+      </div>
+      <div class="fg">
+        <label class="flabel">😴 Sleep Quality (1–5)</label>
+        <div class="rgroup" id="g-sleep">
+          <button class="rbtn" data-v="1" onclick="setR('sleep',1)">1</button>
+          <button class="rbtn" data-v="2" onclick="setR('sleep',2)">2</button>
+          <button class="rbtn" data-v="3" onclick="setR('sleep',3)">3</button>
+          <button class="rbtn" data-v="4" onclick="setR('sleep',4)">4</button>
+          <button class="rbtn" data-v="5" onclick="setR('sleep',5)">5</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="frow frow-2">
+      <div class="fg">
+        <label class="flabel">✨ Vividness (1–5)</label>
+        <div class="rgroup" id="g-vivid">
+          <button class="rbtn" data-v="1" onclick="setR('vivid',1)">1</button>
+          <button class="rbtn" data-v="2" onclick="setR('vivid',2)">2</button>
+          <button class="rbtn" data-v="3" onclick="setR('vivid',3)">3</button>
+          <button class="rbtn" data-v="4" onclick="setR('vivid',4)">4</button>
+          <button class="rbtn" data-v="5" onclick="setR('vivid',5)">5</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="flabel">🔮 Lucidity Level</label>
+        <div class="rgroup" id="g-lucid">
+          <button class="rbtn" data-v="0" onclick="setR('lucid',0)">0</button>
+          <button class="rbtn" data-v="1" onclick="setR('lucid',1)">1</button>
+          <button class="rbtn" data-v="2" onclick="setR('lucid',2)">2</button>
+          <button class="rbtn" data-v="3" onclick="setR('lucid',3)">3</button>
+        </div>
+        <div class="lucid-labels"><span>Not lucid</span><span>Slight</span><span>Moderate</span><span>Fully lucid</span></div>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:14px">
+      <label class="flabel">Dream Type <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(select all that apply)</span></label>
+      <div class="tchips" id="g-types">
+        <button class="tchip c-normal"    onclick="tog(this,'types')">🌙 Normal</button>
+        <button class="tchip c-lucid"     onclick="tog(this,'types')">✨ Lucid</button>
+        <button class="tchip c-night"     onclick="tog(this,'types')">😱 Nightmare</button>
+        <button class="tchip c-recur"     onclick="tog(this,'types')" aria-label="Refresh">🔄 Recurring</button>
+        <button class="tchip c-surreal"   onclick="tog(this,'types')">🌀 Surreal</button>
+        <button class="tchip c-proph"     onclick="tog(this,'types')">🔮 Prophetic-feeling</button>
+        <button class="tchip c-mem"       onclick="tog(this,'types')">💭 Memory-based</button>
+        <button class="tchip c-vivid-col" onclick="tog(this,'types')">🎨 Vivid Colors</button>
+        <button class="tchip c-hazy"      onclick="tog(this,'types')">🌫️ Hazy / Foggy</button>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:14px">
+      <label class="flabel">📝 Description <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional — stream of consciousness is fine)</span></label>
+      <textarea id="f-desc" class="ftextarea" placeholder="What happened? No editing, no judging — fragments welcome. Write now, make sense of it later." rows="5"></textarea>
+    </div>
+
+    <div class="fg" style="margin-bottom:14px">
+      <label class="flabel">💚 Emotions Felt in This Dream</label>
+      <div class="tchips" id="g-emotions">
+        <button class="tchip c-joy"    onclick="tog(this,'emotions')">😊 Joyful</button>
+        <button class="tchip c-fear"   onclick="tog(this,'emotions')">😨 Fearful</button>
+        <button class="tchip c-sad"    onclick="tog(this,'emotions')">😔 Sad</button>
+        <button class="tchip c-angry"  onclick="tog(this,'emotions')">😤 Angry</button>
+        <button class="tchip c-peace"  onclick="tog(this,'emotions')">😌 Peaceful</button>
+        <button class="tchip c-conf"   onclick="tog(this,'emotions')">😕 Confused</button>
+        <button class="tchip c-excite" onclick="tog(this,'emotions')">🤩 Excited</button>
+        <button class="tchip c-anx"    onclick="tog(this,'emotions')">😰 Anxious</button>
+        <button class="tchip c-love"   onclick="tog(this,'emotions')">💜 Loved</button>
+        <button class="tchip c-cur"    onclick="tog(this,'emotions')">🤔 Curious</button>
+        <button class="tchip c-numb"   onclick="tog(this,'emotions')">😶 Numb</button>
+        <button class="tchip c-hope"   onclick="tog(this,'emotions')">🌱 Hopeful</button>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:6px">
+      <label class="flabel">🔮 Symbols & Themes <span id="sym-badge" class="badge" style="display:none">0</span></label>
+      <div class="tchips" id="g-symbols">
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">💧 Water</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🦅 Flying</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')" aria-label="Import">⬇️ Falling</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🏃 Being Chased</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">👤 Unknown Person</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">👨‍👩‍👧 Family</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🐾 Animals</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🏠 House / Home</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🚗 Vehicles</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🌿 Nature</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">💀 Death / Ending</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🦋 Transformation</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🗺️ Being Lost</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🏫 School / Work</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">👁️ Being Watched</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🔑 Keys / Doors</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🌊 Ocean / Sea</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🔥 Fire</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">⚡ Storm</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🐍 Snakes</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🌙 Moon / Night Sky</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">☀️ Sun / Bright Light</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">👶 Children / Babies</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🏔️ Mountains</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🕷️ Spiders</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🚪 Doors / Portals</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">💊 Medication / Healing</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">📱 Technology</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🌀 Spiral / Void</button>
+        <button class="tchip c-sym" onclick="tog(this,'symbols')">🏛️ Ancient / Historic</button>
+      </div>
+      <div class="custom-row">
+        <span style="font-size:12px;color:var(--muted);flex-shrink:0">+ Custom:</span>
+        <input id="cust-input" placeholder="Type custom symbol, press Enter..." onkeydown="if(event.key==='Enter')addCustomSym()">
+        <button onclick="addCustomSym()" aria-label="Add item">Add</button>
+      </div>
+      <div id="cust-chips" class="tchips" style="margin-top:8px"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="clearForm()" aria-label="Delete">🗑️ Clear</button>
+      <button class="btn-primary" onclick="saveDream()" aria-label="Save">💾 Save Dream</button>
+    </div>
+  </div>
+</div><!-- /tab-log -->
+
+<!-- ═══ TAB: ARCHIVE ═════════════════════════════════════ -->
+<div id="tab-archive" class="tab-panel">
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📖 Dream Archive</div>
+      <span class="card-sub" id="arc-count">0 entries</span>
+    </div>
+    <div class="searchbar">
+      <input id="arc-search" type="text" placeholder="Search by title or description..." oninput="renderArchive()">
+    </div>
+    <div class="filter-row">
+      <button class="fchip on"  onclick="setFilter('all',this)">All</button>
+      <button class="fchip" onclick="setFilter('Lucid',this)">✨ Lucid</button>
+      <button class="fchip" onclick="setFilter('Nightmare',this)">😱 Nightmare</button>
+      <button class="fchip" onclick="setFilter('Recurring',this)" aria-label="Refresh">🔄 Recurring</button>
+      <button class="fchip" onclick="setFilter('Surreal',this)">🌀 Surreal</button>
+      <button class="fchip" onclick="setFilter('Prophetic',this)">🔮 Prophetic</button>
+    </div>
+    <div id="arc-list">
+      <div class="empty"><div class="empty-icon">🌙</div>No dreams logged yet.<br><span style="font-size:12px;margin-top:6px;display:block">Head to <strong style="color:var(--purple)">✍️ Log Dream</strong> to add your first entry.</span></div>
+    </div>
+  </div>
+</div><!-- /tab-archive -->
+
+<!-- ═══ TAB: SYMBOLS ═════════════════════════════════════ -->
+<div id="tab-symbols" class="tab-panel">
+  <div class="stats-row">
+    <div class="scard"><div class="snum" id="ss-total">0</div><div class="slabel">Dreams Logged</div></div>
+    <div class="scard"><div class="snum" id="ss-unique">0</div><div class="slabel">Unique Symbols</div></div>
+    <div class="scard"><div class="snum" id="ss-top">—</div><div class="slabel">Most Recurring</div></div>
+    <div class="scard"><div class="snum" id="ss-nights">0</div><div class="slabel">Nightmares</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🏆 Top 10 Symbols by Frequency</div></div>
+    <div id="top-sym-list"><div class="empty"><div class="empty-icon">🔮</div>Log dreams with symbols to see rankings here.</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">🔮 All Tracked Symbols</div>
+      <span class="card-sub" id="ss-all-count">0 symbols</span>
+    </div>
+    <div class="sym-grid" id="sym-grid">
+      <div class="empty" style="grid-column:1/-1"><div class="empty-icon">✨</div>Symbol patterns will emerge as you log more dreams.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">💚 Emotion Landscape</div></div>
+    <div id="emo-landscape" class="emo-landscape">
+      <div class="empty" style="width:100%"><div class="empty-icon">💚</div>Emotion breakdown will appear after logging dreams.</div>
+    </div>
+  </div>
+</div><!-- /tab-symbols -->
+
+<!-- ═══ TAB: PATTERNS ════════════════════════════════════ -->
+<div id="tab-patterns" class="tab-panel">
+  <div class="stats-row">
+    <div class="scard"><div class="snum" id="pp-total">0</div><div class="slabel">Total Dreams</div></div>
+    <div class="scard"><div class="snum" id="pp-sleep">—</div><div class="slabel">Avg Sleep Quality</div></div>
+    <div class="scard"><div class="snum" id="pp-vivid">—</div><div class="slabel">Avg Vividness</div></div>
+    <div class="scard"><div class="snum" id="pp-lucid">0</div><div class="slabel">Lucid Dreams</div></div>
+  </div>
+  <div class="charts-2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">😴 Sleep Quality Over Time</div></div>
+      <div class="chart-wrap"><canvas id="ch-sleep"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">✨ Vividness Over Time</div></div>
+      <div class="chart-wrap"><canvas id="ch-vivid"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">💚 Emotion Distribution</div></div>
+      <div class="chart-wrap"><canvas id="ch-emo"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🔮 Top 8 Symbols</div></div>
+      <div class="chart-wrap"><canvas id="ch-sym"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📅 Dream Frequency — Last 30 Days</div></div>
+    <div class="chart-wrap tall"><canvas id="ch-freq"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🌙 Dream Type Breakdown</div></div>
+    <div class="chart-wrap"><canvas id="ch-types"></canvas></div>
+  </div>
+</div><!-- /tab-patterns -->
+
+</div><!-- /main -->
+
+<!-- Bottom nav injected by hq-core.js -->
+<!-- HQ_CURRENT_PAGE declared here — will be read by hq-core.js once inline nav is removed -->
+
+<!-- PWA SERVICE WORKER -->
+
+<script>window.HQ_CURRENT_PAGE = 'dream';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/dream-journal.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

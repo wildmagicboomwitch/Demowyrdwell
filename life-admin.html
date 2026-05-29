@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📑 Life Admin Brain — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#120f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="pages/life-admin.css">
+</head>
+<body>
+<div id="la-toast-el" class="la-toast"></div>
+
+<!-- Topbar injected by hq-core.js -->
+
+<nav class="la-nav">
+  <button class="ntab on"  onclick="sw('docs',this)" aria-label="Documents tab">📂 Documents</button>
+  <button class="ntab"     onclick="sw('contacts',this)" aria-label="Contacts tab">📞 Contacts</button>
+  <button class="ntab"     onclick="sw('deadlines',this)" aria-label="Deadlines tab">📅 Deadlines</button>
+  <button class="ntab"     onclick="sw('waiting',this)" aria-label="Waiting On tab">⏳ Waiting On</button>
+  <button class="ntab"     onclick="sw('calls',this)" aria-label="Call Prep tab">📵 Call Prep</button>
+  <button class="ntab"     onclick="sw('appts',this)" aria-label="Appt History tab">🗒 Appt History</button>
+  <button class="ntab"     onclick="sw('resources',this)" aria-label="Resources tab">📚 Resources</button>
+  <!-- 🔧 Tool Vault tab removed — migrated to Tool Vault → Admin Portals (Phase 11) -->
+  <button class="ntab"     onclick="sw('setup',this);laSetupLoad();laRenderSetup();" aria-label="Settings">⚙️ Setup</button>
+</nav>
+
+<div class="main">
+
+<!-- ════════════════ DOCUMENTS ════════════════ -->
+<div id="tab-docs" class="tab on">
+  <div class="hint">📂 Where is it? Log location, expiry, and notes — not the file itself. Think: passport drawer, Google Drive folder, filing cabinet label.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="d-total" style="color:var(--purple)">0</div><div class="sl">Documents</div></div>
+    <div class="sc"><div class="sn" id="d-expiring" style="color:var(--orange)">0</div><div class="sl">Expiring soon</div></div>
+    <div class="sc"><div class="sn" id="d-expired" style="color:var(--red)">0</div><div class="sl">Expired</div></div>
+    <div class="sc"><div class="sn" id="d-cats" style="color:var(--teal)">0</div><div class="sl">Categories</div></div>
+  </div>
+  <div class="frow" id="doc-filter-row"></div>
+  <div id="doc-list"></div>
+  <button class="add-trigger" onclick="openModal('doc-modal')">+ Add Document</button>
+</div>
+
+<!-- ════════════════ CONTACTS ════════════════ -->
+<div id="tab-contacts" class="tab">
+  <div class="hint">📞 Key people in your life admin — one tap to call or email. Doctor, dentist, landlord, therapist, insurance agent.</div>
+  <div class="frow" id="contact-filter-row"></div>
+  <div id="contact-list"></div>
+  <button class="add-trigger" onclick="openModal('contact-modal')">+ Add Contact</button>
+</div>
+
+<!-- ════════════════ DEADLINES ════════════════ -->
+<div id="tab-deadlines" class="tab">
+  <div class="hint">📅 Renewals, registrations, and one-off deadlines that live in your head rent-free. Get them out.</div>
+  <div id="deadline-list"></div>
+  <button class="add-trigger" onclick="openDeadlineModal()">+ Add Deadline</button>
+</div>
+
+<!-- ════════════════ WAITING ON ════════════════ -->
+<div id="tab-waiting" class="tab">
+  <div class="hint">⏳ Open loops where the ball is in someone else's court. Log it, stop tracking it mentally.</div>
+  <div id="waiting-list"></div>
+  <button class="add-trigger" onclick="openModal('wait-modal')">+ Add Item</button>
+</div>
+
+<!-- ════════════════ CALL PREP ════════════════ -->
+<div id="tab-calls" class="tab">
+  <div class="hint">📵 Before a hard phone call: who, what you need, what you're anxious about, what to say if put on hold. Write it before you dial.</div>
+  <div id="calls-list"></div>
+  <button class="add-trigger" onclick="openModal('call-modal')">+ New Call Prep Card</button>
+</div>
+
+<!-- ════════════════ APPT HISTORY ════════════════ -->
+<div id="tab-appts" class="tab">
+  <div class="hint">🗒 Log appointments after they happen — what was said, what was decided, what to follow up. Especially useful for medical visits where you forget details.</div>
+  <div id="appts-list"></div>
+  <button class="add-trigger" onclick="openModal('appt-modal')">+ Log Appointment</button>
+</div>
+
+<!-- ════════════════ RESOURCES ════════════════ -->
+<div id="tab-resources" class="tab">
+  <div class="hint">📚 Information you need frequently but always have to look up — phone numbers, processes, policy details, instructions. Log once, find instantly.</div>
+  <div class="frow" id="res-filter-row"></div>
+  <div id="res-list"></div>
+  <button class="add-trigger" onclick="openModal('res-modal')">+ Add Resource</button>
+</div>
+
+
+<!-- ════════════════ SETUP ════════════════ -->
+<div id="tab-setup" class="tab">
+  <div class="hint">⚙️ Configure Life Admin — set up vault location presets, deadline templates, and manage your data.</div>
+
+  <!-- VAULT LOCATIONS -->
+  <div class="la-setup-card">
+    <div class="la-setup-hd">📍 Document Vault Locations</div>
+    <div class="la-setup-desc">Presets that appear in the "Where is it?" dropdown when logging documents. Add your actual physical and digital storage spots.</div>
+    <div class="la-setup-row">
+      <select id="la-vault-type" class="fin" style="width:110px;flex-shrink:0" aria-label="La Vault Type">
+        <option value="physical">📦 Physical</option>
+        <option value="digital">☁️ Digital</option>
+      </select>
+      <input id="la-vault-label" class="fin" placeholder="e.g. Fire safe, Google Drive › Admin…" style="flex:1">
+      <button class="la-setup-btn" onclick="laAddVault()" aria-label="Add item">+ Add</button>
+    </div>
+    <div id="la-vault-list" class="la-setup-list"></div>
+  </div>
+
+  <!-- DEADLINE TEMPLATES -->
+  <div class="la-setup-card">
+    <div class="la-setup-hd">📅 Deadline Templates</div>
+    <div class="la-setup-desc">Recurring deadline patterns — add once, spawn real deadlines from them any time. E.g. "Car insurance — every 12 months".</div>
+    <div class="la-setup-row">
+      <input id="la-tmpl-name" class="fin" placeholder="Template name…" style="flex:1">
+      <select id="la-tmpl-cat" class="fin" style="width:130px;flex-shrink:0" aria-label="La Tmpl Cat">
+        <option value="id">🪪 ID</option>
+        <option value="vehicle">🚗 Vehicle</option>
+        <option value="insurance">🛡 Insurance</option>
+        <option value="health">💊 Health / Rx</option>
+        <option value="finance">💰 Finance / Tax</option>
+        <option value="home">🏠 Home</option>
+        <option value="work">💼 Work</option>
+        <option value="other">📋 Other</option>
+      </select>
+      <select id="la-tmpl-freq" class="fin" style="width:120px;flex-shrink:0" aria-label="La Tmpl Freq">
+        <option value="monthly">Monthly</option>
+        <option value="quarterly">Quarterly</option>
+        <option value="6mo">Every 6 months</option>
+        <option value="yearly">Yearly</option>
+        <option value="2yr">Every 2 years</option>
+      </select>
+      <button class="la-setup-btn" onclick="laAddTemplate()" aria-label="Add item">+ Add</button>
+    </div>
+    <div id="la-tmpl-list" class="la-setup-list"></div>
+    <div style="margin-top:8px;padding:8px 10px;background:rgba(91,156,246,.07);border:1px solid rgba(91,156,246,.2);border-radius:8px;font-size:11px;color:var(--text2)">
+      💡 Tap a template to spawn a real deadline pre-filled with its name and category.
+    </div>
+  </div>
+
+  <!-- BACKUP & RESTORE -->
+  <div class="la-setup-card">
+    <div class="la-setup-hd">💾 Backup & Restore</div>
+    <div class="la-setup-desc">Export your setup config (vault locations + templates) as JSON. Restore it later or on a new device.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="la-setup-btn" onclick="laExportSetup()" aria-label="Import">⬇️ Export setup JSON</button>
+      <label class="la-setup-btn" style="cursor:pointer">
+        ⬆️ Restore setup JSON
+        <input type="file" accept=".json" style="display:none" onchange="laImportSetup(this)" aria-label="Restore life admin setup from JSON">
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SETUP STYLES ════════════════════════════════════════════ -->
+
+</div><!-- /main -->
+
+<!-- ════ MODALS ════════════════════════════════════════════════════ -->
+
+<!-- DOCUMENT MODAL -->
+<div id="doc-modal" class="modal-bg" onclick="if(event.target===this)closeModal('doc-modal')">
+  <div class="modal-box">
+    <div class="modal-title">📂 <span id="doc-modal-title">Add Document</span></div>
+    <input type="hidden" id="doc-id">
+    <div class="fg"><label class="fl">Document Name *</label><input id="doc-name" class="fin" placeholder="e.g. Passport, Birth Certificate, Lease…"></div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Category</label>
+        <select id="doc-cat" class="fin" aria-label="Category">
+          <option value="id">🪪 ID &amp; Identity</option>
+          <option value="health">🏥 Health &amp; Medical</option>
+          <option value="finance">💰 Finance &amp; Insurance</option>
+          <option value="home">🏠 Home &amp; Housing</option>
+          <option value="work">💼 Work &amp; Education</option>
+          <option value="legal">⚖️ Legal</option>
+          <option value="other">📁 Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Expiry Date</label><input id="doc-expiry" class="fin" type="date" aria-label="Doc Expiry"></div>
+    </div>
+    <div class="fg"><label class="fl">Where is it?</label><input id="doc-location" class="fin" placeholder="e.g. Top drawer, Google Drive › Admin folder, Wallet…"></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="doc-notes" class="ftextarea" rows="2" placeholder="Account number, policy number, who issued it…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('doc-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveDoc()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div id="contact-modal" class="modal-bg" onclick="if(event.target===this)closeModal('contact-modal')">
+  <div class="modal-box">
+    <div class="modal-title">📞 <span id="contact-modal-title">Add Contact</span></div>
+    <input type="hidden" id="ct-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Name *</label><input id="ct-name" class="fin" placeholder="e.g. Dr. Kim"></div>
+      <div class="fg"><label class="fl">Role / Category</label>
+        <select id="ct-role" class="fin" aria-label="Role / Category">
+          <option value="doctor">🩺 Doctor / GP</option>
+          <option value="specialist">🏥 Specialist</option>
+          <option value="therapist">🧠 Therapist / Counsellor</option>
+          <option value="dentist">🦷 Dentist</option>
+          <option value="pharmacy">💊 Pharmacy</option>
+          <option value="landlord">🏠 Landlord / Property</option>
+          <option value="insurance">🛡 Insurance</option>
+          <option value="government">🏛 Government / Benefits</option>
+          <option value="legal">⚖️ Legal</option>
+          <option value="utility">💡 Utility / Service</option>
+          <option value="other">📞 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Phone</label><input id="ct-phone" class="fin" type="tel" placeholder="e.g. (617) 555-0100"></div>
+      <div class="fg"><label class="fl">Email</label><input id="ct-email" class="fin" type="email" placeholder="e.g. office@example.com"></div>
+    </div>
+    <div class="fg"><label class="fl">Address / Location</label><input id="ct-address" class="fin" placeholder="e.g. 123 Main St, Floor 3"></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="ct-notes" class="ftextarea" rows="2" placeholder="Best time to call, reference numbers, preferred contact method…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('contact-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveContact()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEADLINE MODAL -->
+<div id="deadline-modal" class="modal-bg" onclick="if(event.target===this)closeModal('deadline-modal')">
+  <div class="modal-box">
+    <div class="modal-title">📅 <span id="dl-modal-title">Add Deadline</span></div>
+    <input type="hidden" id="dl-id">
+    <div class="fg"><label class="fl">What *</label><input id="dl-name" class="fin" placeholder="e.g. Car registration renewal, ID expiry…"></div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Due Date *</label><input id="dl-date" class="fin" type="date" aria-label="Dl Date"></div>
+      <div class="fg"><label class="fl">Category</label>
+        <select id="dl-cat" class="fin" aria-label="Category">
+          <option value="id">🪪 ID</option>
+          <option value="vehicle">🚗 Vehicle</option>
+          <option value="insurance">🛡 Insurance</option>
+          <option value="health">💊 Health / Rx</option>
+          <option value="finance">💰 Finance / Tax</option>
+          <option value="home">🏠 Home</option>
+          <option value="work">💼 Work</option>
+          <option value="other">📋 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Notes / Action needed</label><textarea id="dl-notes" class="ftextarea" rows="2" placeholder="What do you need to do? Where do you go?"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('deadline-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveDeadline()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- WAITING-ON MODAL -->
+<div id="wait-modal" class="modal-bg" onclick="if(event.target===this)closeModal('wait-modal')">
+  <div class="modal-box">
+    <div class="modal-title">⏳ <span id="wait-modal-title">Waiting On…</span></div>
+    <input type="hidden" id="w-id">
+    <div class="fg"><label class="fl">What are you waiting for? *</label><input id="w-what" class="fin" placeholder="e.g. Benefits application decision, DBS check…"></div>
+    <div class="fg"><label class="fl">Who / Where</label><input id="w-who" class="fin" placeholder="e.g. Housing office, HR department…"></div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Submitted / Applied</label><input id="w-sent" class="fin" type="date" aria-label="W Sent"></div>
+      <div class="fg"><label class="fl">Expected by</label><input id="w-due" class="fin" type="date" aria-label="W Due"></div>
+    </div>
+    <div class="fg"><label class="fl">Notes / Reference</label><textarea id="w-notes" class="ftextarea" rows="2" placeholder="Reference number, confirmation, what to do if no response…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('wait-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveWaiting()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALL PREP MODAL -->
+<div id="call-modal" class="modal-bg" onclick="if(event.target===this)closeModal('call-modal')">
+  <div class="modal-box">
+    <div class="modal-title">📵 <span id="call-modal-title">Call Prep Card</span></div>
+    <input type="hidden" id="call-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Calling who *</label><input id="call-who" class="fin" placeholder="e.g. Insurance company"></div>
+      <div class="fg"><label class="fl">Phone number</label><input id="call-number" class="fin" type="tel" placeholder="(617) 555-0100"></div>
+    </div>
+    <div class="fg"><label class="fl">What I need from this call</label><textarea id="call-need" class="ftextarea" rows="2" placeholder="The specific outcome or information I'm after…"></textarea></div>
+    <div class="fg"><label class="fl">What I'm anxious about</label><textarea id="call-anxiety" class="ftextarea" rows="2" placeholder="What feels hard about making this call?"></textarea></div>
+    <div class="fg"><label class="fl">What to say if put on hold / transferred</label><textarea id="call-hold" class="ftextarea" rows="2" placeholder="e.g. 'I was just speaking with X about Y, reference number Z.'"></textarea></div>
+    <div class="fg"><label class="fl">Opening line (say this first)</label><input id="call-opener" class="fin" placeholder="e.g. 'Hi, I'm calling to query a charge on my account.'"></div>
+    <div class="fg">
+      <label class="fl">Anxiety level</label>
+      <div style="display:flex;gap:6px;margin-top:3px">
+        <button class="fchip" data-anx="low" onclick="setCallAnxiety('low',this)">😌 Low</button>
+        <button class="fchip" data-anx="medium" onclick="setCallAnxiety('medium',this)">😟 Medium</button>
+        <button class="fchip" data-anx="high" onclick="setCallAnxiety('high',this)">😰 High</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('call-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveCall()" aria-label="Save">💾 Save Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPOINTMENT HISTORY MODAL -->
+<div id="appt-modal" class="modal-bg" onclick="if(event.target===this)closeModal('appt-modal')">
+  <div class="modal-box">
+    <div class="modal-title">🗒 <span id="appt-modal-title">Log Appointment</span></div>
+    <input type="hidden" id="appt-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Who (doctor/service) *</label><input id="appt-who" class="fin" placeholder="e.g. Dr. Kim — Psychiatry"></div>
+      <div class="fg"><label class="fl">Date</label><input id="appt-date" class="fin" type="date" aria-label="Appt Date"></div>
+    </div>
+    <div class="fg"><label class="fl">Reason / Type of visit</label><input id="appt-reason" class="fin" placeholder="e.g. Medication review, annual checkup…"></div>
+    <div class="fg"><label class="fl">What was said / decided</label><textarea id="appt-notes" class="ftextarea" rows="3" placeholder="Key things discussed, decisions made, changes…"></textarea></div>
+    <div class="fg"><label class="fl">Follow-up actions</label><textarea id="appt-followup" class="ftextarea" rows="2" placeholder="e.g. Book blood test, start new medication, call back in 4 weeks…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('appt-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveAppt()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESOURCE MODAL -->
+<div id="res-modal" class="modal-bg" onclick="if(event.target===this)closeModal('res-modal')">
+  <div class="modal-box">
+    <div class="modal-title">📚 <span id="res-modal-title">Add Resource</span></div>
+    <input type="hidden" id="res-id">
+    <div class="fg"><label class="fl">Title *</label><input id="res-title" class="fin" placeholder="e.g. How to dispute a medical bill, SNAP renewal process…"></div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Category</label>
+        <select id="res-cat" class="fin" aria-label="Category">
+          <option value="health">🏥 Health</option>
+          <option value="finance">💰 Finance</option>
+          <option value="housing">🏠 Housing</option>
+          <option value="benefits">🏛 Benefits / Gov</option>
+          <option value="work">💼 Work</option>
+          <option value="legal">⚖️ Legal</option>
+          <option value="other">📋 Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Link / URL</label><input id="res-url" class="fin" type="url" placeholder="https://…"></div>
+    </div>
+    <div class="fg"><label class="fl">Notes / Summary</label><textarea id="res-notes" class="ftextarea" rows="3" placeholder="Key info, steps to follow, important numbers or details…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('res-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveResource()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOOL VAULT MODAL removed — migrated to Tool Vault → Admin Portals (Phase 11) -->
+
+<script>window.HQ_CURRENT_PAGE = 'life-admin';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/life-admin.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

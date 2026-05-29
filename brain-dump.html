@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💭 Thought Jar — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="pages/brain-dump.css">
+</head>
+<body>
+<div id="toast-el" class="toast"></div>
+
+<!-- REROUTE MODAL (change destination of existing entry) -->
+<div id="reroute-modal" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">🔀 Re-route Entry</div><button class="modal-x" onclick="closeModal()" aria-label="Close" title="Close">✕</button></div>
+    <div class="modal-body">
+      <div id="rr-text" style="background:var(--card2);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.55"></div>
+      <div class="fg"><label class="fl">Send to</label>
+        <select id="rr-dest" class="fin" aria-label="Send to">
+          <option value="tier1">🔴 Tier 1 — Do Today (Day Builder)</option>
+          <option value="tier2">🟡 Tier 2 — This Week (Day Builder)</option>
+          <option value="tier3">🟢 Tier 3 — Someday (Day Builder)</option>
+          <option value="weekly">📆 Weekly Inbox</option>
+          <option value="monthly">🗓️ Monthly Inbox</option>
+          <option value="win">🏆 Log as Win</option>
+          <option value="health">🏥 Health Tracker</option>
+          <option value="finance">💰 Finance Note</option>
+          <option value="admin">📋 Life Admin</option>
+          <option value="social">👥 Social Brain</option>
+          <option value="taskboard">📌 Taskboard</option>
+          <option value="save">💭 Keep Here Only</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Category</label><select id="rr-cat" class="fin" onchange="onRrCatChange(this)" aria-label="Category"></select></div>
+      <div class="fg" id="rr-sub-wrap" style="display:none"><label class="fl">Subcategory</label><select id="rr-sub" class="fin" aria-label="Subcategory"></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal()" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="confirmReroute()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOPBAR ══════════════════════════════════════════ -->
+<!-- Topbar injected by hq-core.js -->
+
+<!-- FILE-LEVEL NAV (Dump / Log / Routed tabs) -->
+<div class="nav">
+  <button class="ntab on" onclick="sw('dump',this)" aria-label="Dump tab">💭 Dump</button>
+  <button class="ntab"    onclick="sw('log',this)" aria-label="Copy">📋 Log</button>
+  <button class="ntab"    onclick="sw('worry',this)" aria-label="Worries tab">😰 Worries</button>
+  <button class="ntab"    onclick="sw('wins',this)" aria-label="Wins tab">🏆 Wins</button>
+  <button class="ntab"    onclick="sw('routed',this)" aria-label="Export">📤 Routed</button>
+  <div style="margin-left:auto;display:flex;align-items:center;padding-right:4px">
+    <div class="hdr-count">🗃️ <strong id="hdr-total">0</strong></div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ======== DUMP TAB ======== -->
+<div id="tab-dump" class="tab on">
+
+  <div class="dump-zone">
+    <div class="dz-label">Get it out of your head</div>
+    <textarea
+      id="dump-ta"
+      class="dump-ta"
+      placeholder="What's in your head right now?&#10;&#10;Thought, worry, idea, task, feeling, random thing you remembered — dump it here first. Route it after. No editing, no judgment."
+      onkeydown="handleKey(event)"
+      oninput="bdRevealRoute(this)"
+    ></textarea>
+
+    <div class="bd-capture-hint" id="bd-capture-hint">✍️ Type your thought above — routing options will appear</div>
+
+    <!-- Category + type selectors -->
+    <div class="selectors-row route-reveal" id="dump-selectors">
+      <div class="sel-group">
+        <div class="sel-label">Category</div>
+        <select id="dump-cat" class="fin-sm" onchange="onCatChange(this)" aria-label="Category"></select>
+      </div>
+      <div class="sel-group" id="dump-sub-wrap" style="display:none">
+        <div class="sel-label">Subcategory</div>
+        <select id="dump-sub" class="fin-sm" aria-label="Subcategory"></select>
+      </div>
+      <div class="sel-group">
+        <div class="sel-label">Type</div>
+        <div class="type-chips" id="dump-type-chips">
+          <button class="tchip on" data-t="thought" onclick="selType(this)">💭 Thought</button>
+          <button class="tchip" data-t="task" onclick="selType(this)" aria-label="Complete">✅ Task</button>
+          <button class="tchip" data-t="worry" onclick="selType(this)">😰 Worry</button>
+          <button class="tchip" data-t="idea" onclick="selType(this)">💡 Idea</button>
+          <button class="tchip" data-t="feeling" onclick="selType(this)">💚 Feeling</button>
+          <button class="tchip" data-t="vent" onclick="selType(this)">🌋 Vent</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Route grid -->
+    <!-- Voice note placeholder -->
+    <div style="margin:8px 0 14px;padding:10px 12px;background:rgba(var(--primary-rgb),.07);border:1px dashed var(--border);border-radius:9px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="document.getElementById('voice-textarea').style.display='block';this.style.display='none';">
+      <span style="font-size:20px">🎙️</span>
+      <div><div style="font-size:11px;font-weight:800;color:var(--text2);">Spoke this, need to type it</div><div style="font-size:10px;color:var(--muted);">Tap to expand transcription field</div></div>
+    </div>
+    <textarea id="voice-textarea" placeholder="Type what you just said aloud…" class="dz-ta" style="display:none;margin-bottom:10px;" rows="3" oninput="document.getElementById('dump-ta').value=this.value"></textarea>
+
+    <div class="dz-label route-reveal" id="route-label" style="margin-top:14px">Route it to:</div>
+    <div class="route-grid route-reveal" id="route-grid">
+      <button class="route-btn rb-t1" onclick="dump('tier1')">
+        <span class="rb-icon">🔴</span>
+        <span class="rb-text"><span class="rb-name">Tier 1 — Today</span><span class="rb-desc">Urgent, do it today</span></span>
+      </button>
+      <button class="route-btn rb-t2" onclick="dump('tier2')">
+        <span class="rb-icon">🟡</span>
+        <span class="rb-text"><span class="rb-name">Tier 2 — This Week</span><span class="rb-desc">Important but flexible</span></span>
+      </button>
+      <button class="route-btn rb-t3" onclick="dump('tier3')">
+        <span class="rb-icon">🟢</span>
+        <span class="rb-text"><span class="rb-name">Tier 3 — Someday</span><span class="rb-desc">No urgency, keep it</span></span>
+      </button>
+      <button class="route-btn rb-weekly" onclick="dump('weekly')">
+        <span class="rb-icon">📆</span>
+        <span class="rb-text"><span class="rb-name">Weekly Inbox</span><span class="rb-desc">Schedule this week</span></span>
+      </button>
+      <button class="route-btn rb-monthly" onclick="dump('monthly')">
+        <span class="rb-icon">🗓️</span>
+        <span class="rb-text"><span class="rb-name">Monthly Inbox</span><span class="rb-desc">Bigger picture item</span></span>
+      </button>
+      <button class="route-btn rb-win" onclick="dump('win')">
+        <span class="rb-icon">🏆</span>
+        <span class="rb-text"><span class="rb-name">Log a Win</span><span class="rb-desc">Wins &amp; gratitude log</span></span>
+      </button>
+      <button class="route-btn rb-health" onclick="dump('health')">
+        <span class="rb-icon">🏥</span>
+        <span class="rb-text"><span class="rb-name">Health Tracker</span><span class="rb-desc">Symptom or health note</span></span>
+      </button>
+      <button class="route-btn rb-finance" onclick="dump('finance')">
+        <span class="rb-icon">💰</span>
+        <span class="rb-text"><span class="rb-name">Finance Note</span><span class="rb-desc">Money thought or reminder</span></span>
+      </button>
+      <button class="route-btn rb-admin" onclick="dump('admin')" aria-label="Copy">
+        <span class="rb-icon">📋</span>
+        <span class="rb-text"><span class="rb-name">Life Admin</span><span class="rb-desc">Paperwork, calls, deadlines</span></span>
+      </button>
+      <button class="route-btn rb-social" onclick="dump('social')">
+        <span class="rb-icon">👥</span>
+        <span class="rb-text"><span class="rb-name">Social Brain</span><span class="rb-desc">People, relationships, social notes</span></span>
+      </button>
+      <button class="route-btn rb-taskboard" onclick="dump('taskboard')" aria-label="Copy">
+        <span class="rb-icon">📋</span>
+        <span class="rb-text"><span class="rb-name">Taskboard</span><span class="rb-desc">Add to taskboard inbox</span></span>
+      </button>
+      <button class="route-btn rb-timeline" onclick="dump('timeline')">
+        <span class="rb-icon">📅</span>
+        <span class="rb-text"><span class="rb-name">Today's Timeline</span><span class="rb-desc">Add as today event</span></span>
+      </button>
+      <button class="route-btn rb-kitchen" onclick="dump('kitchen')">
+        <span class="rb-icon">🍳</span>
+        <span class="rb-text"><span class="rb-name">Kitchen Brain</span><span class="rb-desc">Food note or shopping item</span></span>
+      </button>
+      <button class="route-btn rb-save" onclick="dump('save')" style="grid-column:span 2">
+        <span class="rb-icon">💭</span>
+        <span class="rb-text"><span class="rb-name">Save Here Only</span><span class="rb-desc">Keep in brain dump without routing anywhere</span></span>
+      </button>
+    </div>
+
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center">
+      💡 Tip: <strong style="color:var(--text2)">Ctrl+Enter</strong> or <strong style="color:var(--text2)">⌘+Enter</strong> to save to Tier 1 instantly
+    </div>
+  </div>
+
+</div>
+
+<!-- ======== LOG TAB ======== -->
+<div id="tab-log" class="tab">
+
+  <div class="stats-row">
+    <div class="sc"><div class="sn" id="st-total" style="color:var(--purple)">0</div><div class="sl">Total</div></div>
+    <div class="sc"><div class="sn" id="st-today" style="color:var(--teal)">0</div><div class="sl">Today</div></div>
+    <div class="sc"><div class="sn" id="st-routed" style="color:var(--green)">0</div><div class="sl">Routed</div></div>
+    <div class="sc"><div class="sn" id="st-saved" style="color:var(--muted)">0</div><div class="sl">Saved Here</div></div>
+    <div class="sc" title="Worry + Vent entries in last 7 days — a rough measure of mental load"><div class="sn" id="st-load" style="color:var(--orange)">—</div><div class="sl">Load 7d</div></div>
+  </div>
+
+  <div class="filter-row">
+    <button class="fchip on" onclick="setFilter('all',this)">All</button>
+    <button class="fchip" onclick="setFilter('thought',this)" aria-label="Button">💭</button>
+    <button class="fchip" onclick="setFilter('task',this)" aria-label="Complete">✅</button>
+    <button class="fchip" onclick="setFilter('worry',this)" aria-label="Button">😰</button>
+    <button class="fchip" onclick="setFilter('idea',this)" aria-label="Button">💡</button>
+    <button class="fchip" onclick="setFilter('feeling',this)" aria-label="Button">💚</button>
+    <button class="fchip" onclick="setFilter('vent',this)" aria-label="Button">🌋</button>
+    <button class="fchip" onclick="setFilter('today',this)">📅 Today</button>
+  </div>
+
+  <div id="log-list"></div>
+
+</div>
+
+<!-- ======== ROUTED TAB ======== -->
+<div id="tab-routed" class="tab">
+
+  <div class="hint">📤 Everything that was routed to another module. These are your connections — Thought Jar items that became tasks, health notes, wins, or finance reminders.</div>
+
+  <div class="filter-row">
+    <button class="fchip on" onclick="setRoutedFilter('all',this)">All</button>
+    <button class="fchip" onclick="setRoutedFilter('tier1',this)">🔴 T1</button>
+    <button class="fchip" onclick="setRoutedFilter('tier2',this)">🟡 T2</button>
+    <button class="fchip" onclick="setRoutedFilter('tier3',this)">🟢 T3</button>
+    <button class="fchip" onclick="setRoutedFilter('weekly',this)">📆 Weekly</button>
+    <button class="fchip" onclick="setRoutedFilter('monthly',this)">🗓️ Monthly</button>
+    <button class="fchip" onclick="setRoutedFilter('win',this)">🏆 Win</button>
+    <button class="fchip" onclick="setRoutedFilter('health',this)">🏥 Health</button>
+    <button class="fchip" onclick="setRoutedFilter('finance',this)">💰 Finance</button>
+  </div>
+
+  <div id="routed-list"></div>
+
+</div>
+
+<!-- ======== WORRY QUEUE TAB ======== -->
+<div id="tab-worry" class="tab">
+  <div class="hint" style="background:rgba(var(--red-rgb),.07);border-color:rgba(var(--red-rgb),.25);border-left-color:var(--red,#ff6b6b)">
+    😰 Your worry queue. All entries tagged as "Worry" live here. Set a time to actually think about them — and let your brain rest in the meantime.
+  </div>
+  <div class="card" style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:8px;">⏰ Scheduled Worry Time</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="time" id="worry-time-input" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;width:auto;" aria-label="Worry Time Input">
+      <button onclick="setWorryTime()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;">Set time</button>
+      <span id="worry-time-display" style="font-size:11px;color:var(--muted);">No time set</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:7px;">When worry time arrives, open this tab and work through the list. Outside that window — they stay here so your brain can let go.</div>
+  </div>
+  <div id="worry-list"></div>
+</div>
+
+<!-- ======== WINS TAB ======== -->
+<div id="tab-wins" class="tab">
+  <div class="hint" style="background:rgba(var(--green-rgb),.07);border-color:rgba(var(--green-rgb),.25);border-left-color:var(--green)">
+    🏆 Every win you've logged — big, small, or micro. Showing up counts. Showering counts. Sending that email counts.
+  </div>
+  <div id="wins-monthly-summary" style="margin-bottom:12px;"></div>
+  <div id="wins-list"></div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ═══ BOTTOM NAV (mobile) ══════════════════════════════ -->
+<!-- Bottom nav injected by hq-core.js -->
+<!-- ═══ SLIDE-OUT SIDENAV (full menu) ════════════════════ -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- ═══ FAB BUTTONS (thought-jar excluded — this IS brain dump) ═══ -->
+
+
+<script>window.HQ_CURRENT_PAGE = 'braindump';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/brain-dump.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🩺 Health Tracker — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1a1040">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="pages/health-tracker.css">
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- Sidenav + overlay injected by hq-core.js -->
+
+<!-- ═══ APP WRAP ══════════════════════════════════════ -->
+<div class="app-wrap">
+
+<!-- Topbar injected by hq-core.js -->
+
+<!-- IMPORT/EXPORT MODAL -->
+<div id="ie-modal" class="modal-backdrop" onclick="if(event.target===this)closeIE()">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">📦 Import / Export Health Data</div>
+      <button class="modal-close" onclick="closeIE()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="ie-section">
+      <div class="ie-section-title">📤 Export</div>
+      <div class="ie-desc">Download all your health tracking data — periods, headaches, sleep, and symptoms — as a single JSON file.</div>
+      <button class="ie-action-btn export" onclick="exportData()" aria-label="Import">
+        <span class="ie-btn-icon">⬇️</span>
+        <span class="ie-btn-text">Download JSON backup<span class="ie-btn-sub">health-tracker-backup-[date].json</span></span>
+      </button>
+    </div>
+    <div class="ie-divider"></div>
+    <div class="ie-section">
+      <div class="ie-section-title">📥 Import</div>
+      <div class="ie-desc">Load a previously exported JSON file. <strong style="color:var(--teal)">Merge</strong> adds imported entries on top of your existing data. <strong style="color:var(--red)">Replace</strong> overwrites everything.</div>
+      <input type="file" id="ie-file-merge"   accept=".json" style="display:none" onchange="importData(this,'merge')" aria-label="Import JSON — merge with existing data">
+      <input type="file" id="ie-file-replace" accept=".json" style="display:none" onchange="importData(this,'replace')" aria-label="Import JSON — replace all data">
+      <button class="ie-action-btn import-merge"   onclick="document.getElementById('ie-file-merge').click()" aria-label="Merge — add to existing data">
+        <span class="ie-btn-icon">🔀</span>
+        <span class="ie-btn-text">Merge — add to existing data<span class="ie-btn-sub">Keeps current data, adds imported entries (skips duplicates)</span></span>
+      </button>
+      <button class="ie-action-btn import-replace" onclick="document.getElementById('ie-file-replace').click()" aria-label="Replace all — overwrites data">
+        <span class="ie-btn-icon">⚠️</span>
+        <span class="ie-btn-text">Replace — overwrite all data<span class="ie-btn-sub">Deletes all current data and loads the import file</span></span>
+      </button>
+    </div>
+    <div class="ie-divider"></div>
+    <div class="ie-section-title">📊 Current data</div>
+    <div id="ie-stats" style="margin-top:6px;flex-wrap:wrap;display:flex"></div>
+  </div>
+</div>
+
+<!-- HEALTH STATUS STRIP -->
+<div class="health-strip">
+  <span class="hs-pill rose">🩸 Next: <strong id="hp-next">—</strong></span>
+  <span class="hs-pill red">🧠 Last HA: <strong id="hp-ha">—</strong></span>
+  <span class="hs-pill sleep">😴 Sleep avg: <strong id="hp-sleep">—</strong></span>
+  <button class="hs-ie-btn" onclick="openIE()">📦 Import / Export</button>
+</div>
+
+<!-- SECTION TAB NAV -->
+<div class="htab-nav" id="htab-nav">
+  <button class="nav-tab active"       onclick="sw('overview',this)" aria-label="Overview tab">📊 Overview</button>
+  <button class="nav-tab a-rose"       onclick="sw('period',this)" aria-label="Period tab">🩸 Period</button>
+  <button class="nav-tab a-red"        onclick="sw('headache',this)" aria-label="Headaches tab">🧠 Headaches</button>
+  <button class="nav-tab a-sleep"      onclick="sw('sleep',this)" aria-label="Sleep tab">😴 Sleep</button>
+  <button class="nav-tab"              onclick="sw('dreams',this)" aria-label="Dreams tab">🌙 Dreams</button>
+  <button class="nav-tab a-teal"       onclick="sw('symptoms',this)" aria-label="Symptoms tab">🩺 Symptoms</button>
+  <button class="nav-tab"              onclick="sw('checkins',this)" aria-label="Check-ins tab">⚡ Check-ins</button>
+  <button class="nav-tab"              onclick="sw('energy',this)" aria-label="Energy tab">🔋 Energy</button>
+  <button class="nav-tab"              onclick="sw('provider',this)" aria-label="Provider Report tab">🏥 Provider Report</button>
+  <button class="nav-tab"              onclick="sw('meds',this)" aria-label="Meds tab">💊 Meds</button>
+  <button class="nav-tab"              onclick="sw('doctor',this)" aria-label="Doctor Prep tab">🩻 Doctor Prep</button>
+  <button class="nav-tab"              onclick="sw('trends',this)" aria-label="Trends tab">📈 Trends</button>
+  <button class="nav-tab"              onclick="sw('setup',this)" aria-label="Settings">⚙️ Health Setup</button>
+</div>
+
+<div class="main">
+
+<!-- ===================== OVERVIEW ===================== -->
+<div id="tab-overview" class="tab active">
+  <div class="srow">
+    <div class="sc"><div class="sn" id="ov-periods" style="color:var(--rose)">0</div><div class="sl">Periods Logged</div></div>
+    <div class="sc"><div class="sn" id="ov-headaches" style="color:var(--red)">0</div><div class="sl">Headaches</div></div>
+    <div class="sc"><div class="sn" id="ov-sleep" style="color:var(--sleep)">0</div><div class="sl">Sleep Entries</div></div>
+    <div class="sc"><div class="sn" id="ov-symptoms" style="color:var(--teal)">0</div><div class="sl">Symptoms</div></div>
+    <div class="sc"><div class="sn" id="ov-energy" style="color:var(--green)">—</div><div class="sl">Energy (7d)</div></div>
+  </div>
+  <div class="charts-2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">😴 Sleep Quality — Last 14 Days</div></div>
+      <div class="ch-wrap"><canvas id="ov-ch-sleep"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🧠 Headache Intensity — Recent</div></div>
+      <div class="ch-wrap"><canvas id="ov-ch-ha"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📋 Recent Entries — All Categories</div></div>
+    <div id="ov-recent"></div>
+  </div>
+</div>
+
+<!-- ===================== PERIOD ===================== -->
+<div id="tab-period" class="tab">
+  <div class="hint rose">🩸 Log each period start date for cycle predictions to improve. After 2+ cycles, fertile window and next period estimates appear on the calendar.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="p-avgcycle" style="color:var(--rose)">—</div><div class="sl">Avg Cycle (days)</div></div>
+    <div class="sc"><div class="sn" id="p-next" style="color:var(--rose)">—</div><div class="sl">Next Period</div></div>
+    <div class="sc"><div class="sn" id="p-ovul" style="color:var(--green)">—</div><div class="sl">Ovulation Est.</div></div>
+    <div class="sc"><div class="sn" id="p-fertile" style="color:var(--green)">—</div><div class="sl">Fertile Window</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📅 Cycle Calendar</div>
+      <span class="card-sub" id="p-cal-click-hint">Click any day to log</span>
+    </div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="moveCal(-1)" aria-label="Previous" title="Previous"></button>
+      <div class="cal-month" id="cal-month-label"></div>
+      <button class="cal-nav-btn" onclick="moveCal(1)" aria-label="Next" title="Next"></button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="leg-item"><div class="leg-swatch" style="background:rgba(var(--pink-rgb),.3);border:1px solid rgba(var(--pink-rgb),.5)"></div>Period</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:rgba(var(--green-rgb),.2);border:1px solid rgba(var(--green-rgb),.4)"></div>Fertile Window</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:rgba(var(--green-rgb),.4);border:1px solid rgba(var(--green-rgb),.6)"></div>Ovulation</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:rgba(var(--pink-rgb),.07);border:1px dashed rgba(var(--pink-rgb),.3)"></div>Predicted</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:transparent;border:1px solid var(--purple)"></div>Today</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:transparent;border:1px solid var(--border);box-shadow:inset 0 -3px 0 var(--yellow)"></div>PMS</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title" id="p-form-lbl">🩸 Log Period</div></div>
+    <div class="frow f2">
+      <div class="fg"><label class="flabel">Start Date</label><input id="p-start" class="finput" type="date" aria-label="P Start"></div>
+      <div class="fg"><label class="flabel">End Date <span style="color:var(--muted);font-weight:400;text-transform:none">(or leave open)</span></label><input id="p-end" class="finput" type="date" aria-label="P End"></div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Flow Intensity by Day</label>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Start date flow:</div>
+      <div class="flow-row">
+        <button class="flow-btn" data-f="1" onclick="setFlow(1)">🩺 Spotting</button>
+        <button class="flow-btn" data-f="2" onclick="setFlow(2)">💧 Light</button>
+        <button class="flow-btn" data-f="3" onclick="setFlow(3)">🩸 Moderate</button>
+        <button class="flow-btn" data-f="4" onclick="setFlow(4)">🔴 Heavy</button>
+        <button class="flow-btn" data-f="5" onclick="setFlow(5)">⚡ Very Heavy</button>
+      </div>
+    </div>
+    <div class="sdiv">PMS Symptoms</div>
+    <div class="fg" style="margin-bottom:13px">
+      <div class="chips" id="p-pms">
+        <button class="chip c-rose" onclick="tog(this)">😤 Irritability</button>
+        <button class="chip c-rose" onclick="tog(this)">😢 Mood swings</button>
+        <button class="chip c-rose" onclick="tog(this)">😰 Anxiety</button>
+        <button class="chip c-rose" onclick="tog(this)">😔 Low mood</button>
+        <button class="chip c-rose" onclick="tog(this)">🧠 Brain fog</button>
+        <button class="chip c-rose" onclick="tog(this)">😩 Fatigue</button>
+        <button class="chip c-rose" onclick="tog(this)">🤢 Nausea</button>
+        <button class="chip c-rose" onclick="tog(this)">🫄 Bloating</button>
+        <button class="chip c-rose" onclick="tog(this)">💢 Cramping</button>
+        <button class="chip c-rose" onclick="tog(this)">🔙 Back pain</button>
+        <button class="chip c-rose" onclick="tog(this)">🫀 Breast tenderness</button>
+        <button class="chip c-rose" onclick="tog(this)">🍫 Cravings</button>
+        <button class="chip c-rose" onclick="tog(this)">💤 Insomnia</button>
+        <button class="chip c-rose" onclick="tog(this)">🤧 Headache</button>
+        <button class="chip c-rose" onclick="tog(this)">🦶 Swelling</button>
+        <button class="chip c-rose" onclick="tog(this)">🎭 Sensory sensitivity</button>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Notes</label>
+      <textarea id="p-notes" class="ftextarea" rows="3" placeholder="Anything to note about this period..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="clearForm('p')" aria-label="Delete">🗑️ Clear</button>
+      <button class="btn-primary rose" onclick="savePeriod()" aria-label="Save">💾 Save Period</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Period History</div><span class="card-sub" id="p-hist-count">0 entries</span></div>
+    <div id="p-hist"></div>
+  </div>
+</div>
+
+<!-- ===================== HEADACHE ===================== -->
+<div id="tab-headache" class="tab">
+  <div class="hint red">🧠 Track every headache — type, triggers, meds, and duration. Patterns become visible after 5+ entries.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="ha-total" style="color:var(--red)">0</div><div class="sl">Total Logged</div></div>
+    <div class="sc"><div class="sn" id="ha-month" style="color:var(--orange)">0</div><div class="sl">This Month</div></div>
+    <div class="sc"><div class="sn" id="ha-avgdur" style="color:var(--yellow)">—</div><div class="sl">Avg Duration</div></div>
+    <div class="sc"><div class="sn" id="ha-top" style="color:var(--muted);font-size:14px">—</div><div class="sl">Top Type</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title" id="ha-form-lbl">🧠 Log Headache</div></div>
+    <div class="frow f2">
+      <div class="fg"><label class="flabel">Type</label>
+        <select id="ha-type" class="fselect" aria-label="Type">
+          <option value="">Select type…</option>
+          <option>🧠 Migraine — with aura</option>
+          <option>🧠 Migraine — without aura</option>
+          <option>😤 Tension headache</option>
+          <option>⚡ Cluster headache</option>
+          <option>🌀 Hormonal headache</option>
+          <option>🌡️ Sinus headache</option>
+          <option>💊 Medication-overuse headache</option>
+          <option>❓ Other / unknown</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flabel">Date</label><input id="ha-date" class="finput" type="date" aria-label="Ha Date"></div>
+    </div>
+    <div class="frow f3">
+      <div class="fg"><label class="flabel">Start Time</label><input id="ha-start" class="finput" type="time" aria-label="Ha Start"></div>
+      <div class="fg"><label class="flabel">End Time</label><input id="ha-end" class="finput" type="time" onchange="calcHADur()" aria-label="Ha End"></div>
+      <div class="fg"><label class="flabel">Duration (hrs)</label><input id="ha-dur" class="finput" type="number" step="0.5" min="0" placeholder="e.g. 4.5"></div>
+    </div>
+    <div class="frow f1">
+      <div class="fg">
+        <label class="flabel">Intensity (1–10) <span class="isl-val" id="ha-int-val">5</span></label>
+        <div class="isl-wrap">
+          <input class="isl" id="ha-int" type="range" min="1" max="10" value="5" oninput="updInt(this.value)" aria-label="Headache intensity 1–10">
+          <div class="isl-labels"><span>Mild</span><span>Moderate</span><span>Severe</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Aura?</label>
+      <div style="display:flex;gap:7px;margin-top:4px">
+        <button id="aura-yes" class="rb" onclick="setAura(true)">✓ Yes</button>
+        <button id="aura-no"  class="rb on" onclick="setAura(false)">✗ No</button>
+      </div>
+    </div>
+    <div id="aura-syms-wrap" style="display:none;margin-bottom:13px">
+      <label class="flabel" style="margin-bottom:6px">Aura Symptoms</label>
+      <div class="chips" id="aura-syms">
+        <button class="chip c-sleep" onclick="tog(this)">✨ Visual disturbances</button>
+        <button class="chip c-sleep" onclick="tog(this)">⚡ Flashing lights</button>
+        <button class="chip c-sleep" onclick="tog(this)">🔲 Blind spot / scotoma</button>
+        <button class="chip c-sleep" onclick="tog(this)">🌀 Zigzag lines</button>
+        <button class="chip c-sleep" onclick="tog(this)">💫 Tunnel vision</button>
+        <button class="chip c-sleep" onclick="tog(this)">🖐️ Numbness / tingling</button>
+        <button class="chip c-sleep" onclick="tog(this)">🗣️ Speech difficulty</button>
+        <button class="chip c-sleep" onclick="tog(this)">💪 Weakness</button>
+        <button class="chip c-sleep" onclick="tog(this)">🌀 Dizziness / vertigo</button>
+      </div>
+    </div>
+    <div class="sdiv">Triggers</div>
+    <div class="fg" style="margin-bottom:6px">
+      <div class="chips" id="ha-triggers">
+        <button class="chip c-red" onclick="tog(this)">😴 Poor sleep</button>
+        <button class="chip c-red" onclick="tog(this)">😰 Stress</button>
+        <button class="chip c-red" onclick="tog(this)">⛅ Weather change</button>
+        <button class="chip c-red" onclick="tog(this)">🍷 Alcohol</button>
+        <button class="chip c-red" onclick="tog(this)">☕ Caffeine (too much)</button>
+        <button class="chip c-red" onclick="tog(this)">☕ Caffeine (withdrawal)</button>
+        <button class="chip c-red" onclick="tog(this)">🍫 Chocolate</button>
+        <button class="chip c-red" onclick="tog(this)">🧀 Aged cheese</button>
+        <button class="chip c-red" onclick="tog(this)">💊 Medication</button>
+        <button class="chip c-red" onclick="tog(this)">🩸 Hormonal / cycle</button>
+        <button class="chip c-red" onclick="tog(this)">💡 Bright light</button>
+        <button class="chip c-red" onclick="tog(this)">📱 Screen time</button>
+        <button class="chip c-red" onclick="tog(this)">🍽️ Skipped meal</button>
+        <button class="chip c-red" onclick="tog(this)">💧 Dehydration</button>
+        <button class="chip c-red" onclick="tog(this)">🏃 Physical exertion</button>
+        <button class="chip c-red" onclick="tog(this)">🌸 Strong scent</button>
+        <button class="chip c-red" onclick="tog(this)">🔊 Loud noise</button>
+        <button class="chip c-red" onclick="tog(this)">😷 Illness / infection</button>
+        <button class="chip c-red" onclick="tog(this)">🌡️ Temperature extreme</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:13px">
+      <input id="ha-trig-inp" class="finput" style="font-size:12px" placeholder="Custom trigger…" onkeydown="if(event.key==='Enter')addCustomChip('ha-trig-inp','ha-trig-extra','c-red')">
+      <button class="btn-sm" onclick="addCustomChip('ha-trig-inp','ha-trig-extra','c-red')" aria-label="Add item">+ Add</button>
+    </div>
+    <div class="chips" id="ha-trig-extra" style="margin-bottom:13px"></div>
+    <div class="sdiv">Medications Taken</div>
+    <div class="fg" style="margin-bottom:6px">
+      <div class="chips" id="ha-meds">
+        <button class="chip" onclick="tog(this)">💊 Ibuprofen</button>
+        <button class="chip" onclick="tog(this)">💊 Acetaminophen</button>
+        <button class="chip" onclick="tog(this)">💊 Aspirin</button>
+        <button class="chip" onclick="tog(this)">💊 Naproxen</button>
+        <button class="chip" onclick="tog(this)">💊 Excedrin</button>
+        <button class="chip" onclick="tog(this)">💊 Sumatriptan / triptan</button>
+        <button class="chip" onclick="tog(this)">💊 Rizatriptan</button>
+        <button class="chip" onclick="tog(this)">🌿 Magnesium</button>
+        <button class="chip" onclick="tog(this)">🌿 Feverfew</button>
+        <button class="chip" onclick="tog(this)">🚫 No meds taken</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:13px">
+      <input id="ha-med-inp" class="finput" style="font-size:12px" placeholder="Custom medication…" onkeydown="if(event.key==='Enter')addCustomChip('ha-med-inp','ha-med-extra','')">
+      <button class="btn-sm" onclick="addCustomChip('ha-med-inp','ha-med-extra','')" aria-label="Add item">+ Add</button>
+    </div>
+    <div class="chips" id="ha-med-extra" style="margin-bottom:13px"></div>
+    <div class="sdiv">Relief Methods</div>
+    <div class="fg" style="margin-bottom:13px">
+      <div class="chips" id="ha-relief">
+        <button class="chip c-green" onclick="tog(this)">💤 Sleep / rest</button>
+        <button class="chip c-green" onclick="tog(this)">🧊 Cold compress</button>
+        <button class="chip c-green" onclick="tog(this)">🌡️ Heat pack</button>
+        <button class="chip c-green" onclick="tog(this)">🌑 Dark room</button>
+        <button class="chip c-green" onclick="tog(this)">🔕 Quiet / silence</button>
+        <button class="chip c-green" onclick="tog(this)">💧 Hydration</button>
+        <button class="chip c-green" onclick="tog(this)">☕ Caffeine</button>
+        <button class="chip c-green" onclick="tog(this)">🌬️ Fresh air</button>
+        <button class="chip c-green" onclick="tog(this)">🛁 Shower / bath</button>
+        <button class="chip c-green" onclick="tog(this)">💆 Massage / pressure</button>
+        <button class="chip c-green" onclick="tog(this)">🧘 Relaxation</button>
+      </div>
+    </div>
+    <div class="sdiv">Pain Location</div>
+    <div id="ha-locs-wrap"></div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Notes</label>
+      <textarea id="ha-notes" class="ftextarea" rows="3" placeholder="Any additional details…"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="clearForm('ha')" aria-label="Delete">🗑️ Clear</button>
+      <button class="btn-primary red" onclick="saveHA()" aria-label="Save">💾 Save Headache</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Headache History</div><span class="card-sub" id="ha-hist-count">0 entries</span></div>
+    <div id="ha-hist"></div>
+  </div>
+</div>
+
+<!-- ===================== SLEEP ===================== -->
+<div id="tab-sleep" class="tab">
+  <div class="hint sl">😴 Log bedtime, wake time, and quality. Charts update automatically. Consistent tracking reveals patterns with mood, headaches, and cycle.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="sl-total" style="color:var(--sleep)">0</div><div class="sl">Total Logged</div></div>
+    <div class="sc"><div class="sn" id="sl-avghrs" style="color:var(--blue)">—</div><div class="sl">Avg Hours</div></div>
+    <div class="sc"><div class="sn" id="sl-avgq" style="color:var(--sleep)">—</div><div class="sl">Avg Quality</div></div>
+    <div class="sc"><div class="sn" id="sl-best" style="color:var(--green)">—</div><div class="sl">Best Quality</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title" id="sl-form-lbl">😴 Log Sleep</div></div>
+    <div class="frow f3">
+      <div class="fg"><label class="flabel">Date (night of)</label><input id="sl-date" class="finput" type="date" aria-label="Sl Date"></div>
+      <div class="fg"><label class="flabel">Bedtime</label><input id="sl-bed" class="finput" type="time" onchange="calcHrs()" aria-label="Sl Bed"></div>
+      <div class="fg"><label class="flabel">Wake Time</label><input id="sl-wake" class="finput" type="time" onchange="calcHrs()" aria-label="Sl Wake"></div>
+    </div>
+    <div class="frow f2">
+      <div class="fg"><label class="flabel">Total Hours (auto-calc)</label><input id="sl-hrs" class="finput" type="number" step="0.5" min="0" max="24" placeholder="e.g. 7.5"></div>
+      <div class="fg">
+        <label class="flabel">Quality (1–5)</label>
+        <div class="rg" id="sl-quality-g">
+          <button class="rb" onclick="setR('sl',1)">1</button>
+          <button class="rb" onclick="setR('sl',2)">2</button>
+          <button class="rb" onclick="setR('sl',3)">3</button>
+          <button class="rb" onclick="setR('sl',4)">4</button>
+          <button class="rb" onclick="setR('sl',5)">5</button>
+        </div>
+      </div>
+    </div>
+    <div class="sdiv">Sleep Factors (what helped)</div>
+    <div class="fg" style="margin-bottom:13px">
+      <div class="chips">
+        <button class="chip c-green" onclick="tog(this)">📵 No screens before bed</button>
+        <button class="chip c-green" onclick="tog(this)">🌡️ Cool room</button>
+        <button class="chip c-green" onclick="tog(this)">🌑 Dark room</button>
+        <button class="chip c-green" onclick="tog(this)">🎶 White noise / music</button>
+        <button class="chip c-green" onclick="tog(this)">🧘 Wind-down routine</button>
+        <button class="chip c-green" onclick="tog(this)">💊 Sleep aid / supplement</button>
+        <button class="chip c-green" onclick="tog(this)">🏃 Exercise earlier</button>
+        <button class="chip c-green" onclick="tog(this)">🚫 No caffeine after noon</button>
+        <button class="chip c-green" onclick="tog(this)">🍵 Herbal tea</button>
+      </div>
+    </div>
+    <div class="sdiv">Sleep Disruptors (what hurt)</div>
+    <div class="fg" style="margin-bottom:13px">
+      <div class="chips">
+        <button class="chip c-red" onclick="tog(this)">📱 Screen time late</button>
+        <button class="chip c-red" onclick="tog(this)">☕ Late caffeine</button>
+        <button class="chip c-red" onclick="tog(this)">😰 Anxiety / racing mind</button>
+        <button class="chip c-red" onclick="tog(this)">🌡️ Too hot</button>
+        <button class="chip c-red" onclick="tog(this)">🔊 Noise</button>
+        <button class="chip c-red" onclick="tog(this)">🌙 Night waking</button>
+        <button class="chip c-red" onclick="tog(this)">🤢 Nausea / pain</button>
+        <button class="chip c-red" onclick="tog(this)">🚽 Bathroom wake</button>
+        <button class="chip c-red" onclick="tog(this)">😔 Low mood</button>
+        <button class="chip c-red" onclick="tog(this)">💊 Medication effect</button>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Notes</label>
+      <textarea id="sl-notes" class="ftextarea" rows="3" placeholder="Any notes about this sleep session…"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="clearForm('sl')" aria-label="Delete">🗑️ Clear</button>
+      <button class="btn-primary sl" onclick="saveSleep()" aria-label="Save">💾 Save Sleep</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Sleep History</div><span class="card-sub" id="sl-hist-count">0 entries</span></div>
+    <div id="sl-hist"></div>
+  </div>
+</div>
+
+<!-- ===================== DREAMS ===================== -->
+<div id="tab-dreams" class="tab">
+  <div class="srow srow-3">
+    <div class="sc"><div class="sn" id="dr-total" style="color:var(--purple)">0</div><div class="sl">Dreams Logged</div></div>
+    <div class="sc"><div class="sn" id="dr-streak" style="color:var(--green)">0</div><div class="sl">Day Streak</div></div>
+    <div class="sc"><div class="sn" id="dr-avgq" style="color:var(--yellow)">—</div><div class="sl">Avg Quality</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title" id="dr-form-lbl">🌙 Log Dream / Sleep Note</div></div>
+    <div class="frow f2">
+      <div class="fg"><label class="flabel">Date</label><input id="dr-date" class="finput" type="date" aria-label="Dr Date"></div>
+      <div class="fg">
+        <label class="flabel">Dream Quality (1–5)</label>
+        <div class="rg" id="dr-quality-g">
+          <button class="btn-sm-r" onclick="setDQ(1)">1</button>
+          <button class="btn-sm-r" onclick="setDQ(2)">2</button>
+          <button class="btn-sm-r" onclick="setDQ(3)">3</button>
+          <button class="btn-sm-r" onclick="setDQ(4)">4</button>
+          <button class="btn-sm-r" onclick="setDQ(5)">5</button>
+        </div>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Dream Emotions</label>
+      <div class="chips" id="dr-emotions">
+        <button class="chip" onclick="togC(this)">😊 Joyful</button>
+        <button class="chip" onclick="togC(this)">😨 Fearful</button>
+        <button class="chip" onclick="togC(this)">😔 Sad</button>
+        <button class="chip" onclick="togC(this)">😌 Peaceful</button>
+        <button class="chip" onclick="togC(this)">😰 Anxious</button>
+        <button class="chip" onclick="togC(this)">😤 Angry</button>
+        <button class="chip" onclick="togC(this)">🤩 Excited</button>
+        <button class="chip" onclick="togC(this)">😕 Confused</button>
+        <button class="chip" onclick="togC(this)">😶 Numb</button>
+        <button class="chip" onclick="togC(this)">💜 Loved</button>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Dream Notes</label>
+      <textarea id="dr-note" class="ftextarea" rows="4" placeholder="Describe the dream, themes, symbols, anything memorable…"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-g-sm" onclick="clearDreamForm()" aria-label="Delete">🗑️ Clear</button>
+      <button class="btn-p-sm" onclick="saveDream()" aria-label="Save">💾 Save Dream</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Dream History</div><span class="card-sub" id="dr-hist-count">0 entries</span></div>
+    <div id="dr-list"></div>
+  </div>
+</div>
+
+<!-- ===================== SYMPTOMS ===================== -->
+<div id="tab-symptoms" class="tab">
+  <div class="hint">🩺 Log any symptom — digestive, neurological, skin, mood, and more. Custom categories let you track anything unique to you.</div>
+  <div class="srow srow-3">
+    <div class="sc"><div class="sn" id="sy-total" style="color:var(--teal)">0</div><div class="sl">Total Logged</div></div>
+    <div class="sc"><div class="sn" id="sy-month" style="color:var(--blue)">0</div><div class="sl">This Month</div></div>
+    <div class="sc"><div class="sn" id="sy-cats-count" style="color:var(--indigo)">0</div><div class="sl">Categories Used</div></div>
+  </div>
+  <div class="inner-tabs" id="sy-cat-tabs"></div>
+  <div class="ccat-grid" id="sy-cat-grid"></div>
+  <div class="card" id="sy-form-card" style="display:none">
+    <div class="card-hd"><div class="card-title" id="sy-form-lbl">🩺 Log Symptom</div></div>
+    <div class="frow f2">
+      <div class="fg"><label class="flabel">Date</label><input id="sy-date" class="finput" type="date" aria-label="Sy Date"></div>
+      <div class="fg"><label class="flabel">Time (optional)</label><input id="sy-time" class="finput" type="time" aria-label="Sy Time"></div>
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Symptom Name</label>
+      <input id="sy-name" class="finput" type="text" placeholder="Describe the symptom…" aria-label="Symptom description">
+    </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Severity (1–10) <span class="isl-val" id="sy-sev-val">5</span></label>
+      <div class="isl-wrap">
+        <input class="isl" id="sy-sev" type="range" min="1" max="10" value="5" oninput="updSev(this.value)" aria-label="Symptom severity 1–10">
+        <div class="isl-labels"><span>Mild</span><span>Moderate</span><span>Severe</span></div>
+      </div>
+    </div>
+    <div class="sdiv">Location (optional)</div>
+    <div id="sy-locs-wrap"></div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="flabel">Notes</label>
+      <textarea id="sy-notes" class="ftextarea" rows="3" placeholder="Any additional details…"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="clearForm('sy')" aria-label="Delete">🗑️ Clear</button>
+      <button class="btn-primary teal" onclick="saveSymptom()" aria-label="Save">💾 Save Symptom</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Symptom History</div><span class="card-sub" id="sy-hist-count">0 entries</span></div>
+    <div id="sy-hist"></div>
+  </div>
+</div>
+
+<!-- ===================== CHECK-INS ===================== -->
+<div id="tab-checkins" class="tab">
+  <div class="hint">⚡ Check-in data pulled from the Check-In tool. Log mood, energy and sleep there — they appear here automatically.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="ci-total" style="color:var(--purple)">0</div><div class="sl">Total Check-ins</div></div>
+    <div class="sc"><div class="sn" id="ci-streak" style="color:var(--green)">0</div><div class="sl">Day Streak</div></div>
+    <div class="sc"><div class="sn" id="ci-avgmood" style="color:var(--rose)">—</div><div class="sl">Avg Mood</div></div>
+    <div class="sc"><div class="sn" id="ci-avgenergy" style="color:var(--yellow)">—</div><div class="sl">Avg Energy</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">😊 14-Day Mood Trend</div></div>
+    <div class="trend-dots" id="ci-mood-dots"></div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">😭1 😔2 😐3 🙂4 🤩5</div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">⚡ 14-Day Energy Trend</div></div>
+    <div class="trend-dots" id="ci-energy-dots"></div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">🪫1 😴2 😐3 😊4 🚀5</div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📋 Check-in History</div><a href="checkin.html" style="font-size:10px;color:var(--teal);font-weight:700;text-decoration:none">Open Check-in →</a></div>
+    <div id="ci-list"></div>
+  </div>
+</div>
+
+<!-- ===================== ENERGY ===================== -->
+<div id="tab-energy" class="tab">
+  <div class="hint" style="background:rgba(var(--primary-rgb),.07);border-color:rgba(var(--primary-rgb),.25);color:var(--text2)">
+    🔋 Energy logs come from Check-In. Each rating is mapped low/medium/high and stored in <code>audhd-hq-health.energyLog</code>.
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hd"><div class="card-title">⚡ Current Energy State</div></div>
+    <div id="ht-energy-now" style="font-size:13px;font-weight:700;padding:4px 0"></div>
+    <div id="ht-energy-ts"  style="font-size:10px;color:var(--muted);margin-top:2px"></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-hd"><div class="card-title">📊 30-Day Distribution</div></div>
+    <div id="ht-energy-dist" style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0"></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📋 Energy Log</div>
+      <span class="card-sub" id="ht-energy-log-count"></span>
+    </div>
+    <div id="ht-energy-log-list"></div>
+  </div>
+</div>
+
+<!-- ===================== TRENDS ===================== -->
+<div id="tab-trends" class="tab">
+  <!-- CRASH/SHUTDOWN PATTERN -->
+  <div class="card" style="margin-top:0">
+    <div class="card-hd">
+      <div class="card-title">💥 Crash &amp; Shutdown Pattern</div>
+      <div class="card-sub">High activity vs shutdown days — 30d</div>
+    </div>
+    <div class="crash-legend">
+      <span><span class="crash-legend-dot" style="background:#f87171"></span>Shutdown</span>
+      <span><span class="crash-legend-dot" style="background:#fbbf24"></span>High activity</span>
+    </div>
+    <div class="ch-wrap" style="height:160px"><canvas id="tr-crash"></canvas></div>
+    <div id="tr-crash-insight" style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic;padding:8px 10px;background:var(--surface);border-radius:8px;display:none"></div>
+  </div>
+
+  <div class="srow">
+    <div class="sc"><div class="sn" id="tr-days" style="color:var(--purple)">0</div><div class="sl">Active Days</div></div>
+    <div class="sc"><div class="sn" id="tr-ha-month" style="color:var(--red)">0</div><div class="sl">Headaches/Month</div></div>
+    <div class="sc"><div class="sn" id="tr-sleep-avg" style="color:var(--sleep)">—</div><div class="sl">Avg Sleep</div></div>
+    <div class="sc"><div class="sn" id="tr-top-trig" style="color:var(--orange);font-size:13px">—</div><div class="sl">Top Trigger</div></div>
+  </div>
+  <div class="charts-2">
+    <div class="card"><div class="card-hd"><div class="card-title">😴 Sleep Hours — 30 Days</div></div><div class="ch-wrap"><canvas id="tr-sleep-hrs"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-title">⭐ Sleep Quality — 30 Days</div></div><div class="ch-wrap"><canvas id="tr-sleep-q"></canvas></div></div>
+  </div>
+  <div class="charts-2">
+    <div class="card"><div class="card-hd"><div class="card-title">🧠 Headache Frequency — 12 Weeks</div></div><div class="ch-wrap"><canvas id="tr-ha-freq"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-title">⚡ Headache Intensity Over Time</div></div><div class="ch-wrap"><canvas id="tr-ha-int"></canvas></div></div>
+  </div>
+  <div class="charts-2">
+    <div class="card"><div class="card-hd"><div class="card-title">🔴 Top Triggers</div></div><div class="ch-wrap tall"><canvas id="tr-triggers"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-title">📊 Headache Types</div></div><div class="ch-wrap"><canvas id="tr-ha-types"></canvas></div></div>
+  </div>
+  <div class="charts-2">
+    <div class="card"><div class="card-hd"><div class="card-title">🩺 Symptoms by Category</div></div><div class="ch-wrap"><canvas id="tr-sym-cats"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div class="card-title">🩸 Cycle Lengths Over Time</div></div><div class="ch-wrap"><canvas id="tr-cycle"></canvas></div></div>
+  </div>
+  <!-- CORRELATION EXPLORER -->
+  <div class="card" style="margin-top:12px">
+    <div class="card-hd">
+      <div class="card-title">🔬 Correlation Explorer</div>
+      <div class="card-sub">Pick two variables — see if they move together</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
+      <div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">X Axis</div>
+        <select id="corr-x" class="fin" onchange="renderCorrelation()" aria-label="X Axis">
+          <option value="sleep_hrs">😴 Sleep hours</option>
+          <option value="sleep_q">⭐ Sleep quality</option>
+          <option value="mood">😊 Mood</option>
+          <option value="energy">⚡ Energy</option>
+          <option value="anxiety">😰 Anxiety</option>
+          <option value="ha_intensity">🧠 Headache intensity</option>
+          <option value="sensory">🔊 Sensory sensitivity</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Y Axis</div>
+        <select id="corr-y" class="fin" onchange="renderCorrelation()" aria-label="Y Axis">
+          <option value="ha_intensity">🧠 Headache intensity</option>
+          <option value="sleep_hrs">😴 Sleep hours</option>
+          <option value="sleep_q">⭐ Sleep quality</option>
+          <option value="mood">😊 Mood</option>
+          <option value="energy">⚡ Energy</option>
+          <option value="anxiety">😰 Anxiety</option>
+          <option value="sensory">🔊 Sensory sensitivity</option>
+        </select>
+      </div>
+    </div>
+    <div class="ch-wrap" style="height:240px"><canvas id="corr-chart"></canvas></div>
+    <div id="corr-insight" style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px 10px;background:var(--surface);border-radius:8px;display:none;font-style:italic"></div>
+    <div id="corr-empty" style="font-size:11px;color:var(--muted);text-align:center;padding:16px;display:none">Not enough data yet. Log more entries to see patterns.</div>
+  </div>
+
+</div>
+
+<!-- =========== MEDS TAB =========== -->
+<div id="tab-meds" class="tab">
+  <div class="hint" style="background:rgba(var(--primary-rgb),.07);border-color:rgba(var(--primary-rgb),.25);color:var(--text2)">
+    💊 Log your medications once. Tap Taken today each morning. Refill warning appears 14 days out.
+  </div>
+  <div class="srow" style="margin-bottom:12px">
+    <div class="sc"><div class="sn" id="med-total" style="color:var(--purple)">0</div><div class="sl">Medications</div></div>
+    <div class="sc"><div class="sn" id="med-taken" style="color:var(--green)">0</div><div class="sl">Taken Today</div></div>
+    <div class="sc"><div class="sn" id="med-refill-soon" style="color:var(--orange)">0</div><div class="sl">Refill Soon</div></div>
+  </div>
+  <div id="med-list"></div>
+  <button onclick="openAddMed()" style="width:100%;padding:10px;background:rgba(var(--primary-rgb),.1);border:1.5px dashed rgba(var(--primary-rgb),.35);color:var(--purple);border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px">+ Add Medication</button>
+  <!-- Med modal -->
+  <!-- H-06 -->
+<div id="med-modal" class="hq-modal-bg">
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto">
+      <div style="font-size:15px;font-weight:900;color:var(--text);margin-bottom:16px" id="med-modal-title">💊 Add Medication</div>
+      <input type="hidden" id="med-edit-id">
+      <div style="margin-bottom:11px"><label class="fl">Name *</label><input id="med-name" class="fin" placeholder="e.g. Vyvanse 30mg"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">
+        <div><label class="fl">Dose</label><input id="med-dose" class="fin" placeholder="e.g. 30mg"></div>
+        <div><label class="fl">Time</label><input id="med-time" class="fin" type="time" aria-label="Med Time"></div>
+      </div>
+      <div style="margin-bottom:11px"><label class="fl">Prescribing Doctor</label><input id="med-doctor" class="fin" placeholder="e.g. Dr. Smith"></div>
+      <div style="margin-bottom:11px"><label class="fl">Refill Date</label><input id="med-refill" class="fin" type="date" aria-label="Med Refill"></div>
+      <div style="margin-bottom:11px"><label class="fl">Notes</label><textarea id="med-notes" class="fin" rows="2" style="resize:vertical"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button onclick="closeMedModal()" style="background:var(--surface);border:1.5px solid var(--border);color:var(--muted);border-radius:9px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Cancel">Cancel</button>
+        <button onclick="saveMed()" style="background:var(--purple);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========== DOCTOR PREP TAB =========== -->
+<div id="tab-doctor" class="tab">
+  <div class="hint" style="background:rgba(40,144,168,.07);border-color:rgba(40,144,168,.25);color:var(--text2)">
+    🩻 Fill this before your next appointment. Pull it up in the waiting room. Never forget what you meant to say.
+  </div>
+  <div class="dr-prep-card">
+    <div class="dr-prep-title">Appointment Info</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <div><label class="fl">Doctor</label><input id="dr-doctor" class="fin" placeholder="e.g. Dr. Kim — Psychiatry"></div>
+      <div><label class="fl">Date</label><input id="appt-date" class="fin" type="date" aria-label="Appt Date"></div>
+    </div>
+    <div style="margin-top:9px"><label class="fl">Reason / Type</label><input id="dr-reason" class="fin" placeholder="e.g. Medication review…"></div>
+  </div>
+  <div class="dr-prep-card">
+    <div class="dr-prep-title">🩺 Current Symptoms to Mention</div>
+    <textarea id="dr-symptoms" class="fin" rows="3" placeholder="What has been happening since your last visit?" style="resize:vertical"></textarea>
+  </div>
+  <div class="dr-prep-card">
+    <div class="dr-prep-title">❓ Questions to Ask</div>
+    <textarea id="dr-questions" class="fin" rows="3" placeholder="List everything — you will forget if you do not write it down." style="resize:vertical"></textarea>
+  </div>
+  <div class="dr-prep-card">
+    <div class="dr-prep-title">💊 Medications</div>
+    <div id="dr-meds-list" style="font-size:11px;color:var(--muted);margin-bottom:8px"></div>
+    <textarea id="dr-meds-extra" class="fin" rows="2" placeholder="OTC, supplements, recent changes…" style="resize:vertical"></textarea>
+  </div>
+  <div class="dr-prep-card">
+    <div class="dr-prep-title">😰 What I am Most Worried About</div>
+    <textarea id="dr-worry" class="fin" rows="2" placeholder="The thing you might not say unless you write it first." style="resize:vertical"></textarea>
+  </div>
+  <div style="display:flex;gap:9px;flex-wrap:wrap">
+    <button onclick="saveDoctorPrep()" style="flex:1;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Save Prep Notes</button>
+    <button onclick="loadDoctorPrep()" style="padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Load Last</button>
+  </div>
+  <div style="margin-top:16px">
+    <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Past Notes</div>
+    <div id="dr-past-list"></div>
+  </div>
+</div>
+
+<!-- ===================== PROVIDER REPORT ===================== -->
+<div id="tab-provider" class="tab">
+  <div class="hint" style="background:rgba(var(--teal-rgb),.07);border-color:rgba(var(--teal-rgb),.25);color:var(--text2)">
+    🏥 Select what to include, add any notes, then copy or print. Designed to share with a doctor, therapist, or other medical provider.
+  </div>
+
+  <!-- Date range -->
+  <div class="pr-group">
+    <div class="pr-group-title">📅 Date Range</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap" id="pr-range-btns">
+      <button class="pr-range-btn on" data-days="14"  onclick="setPRRange(14,this)">Last 2 weeks</button>
+      <button class="pr-range-btn"    data-days="30"  onclick="setPRRange(30,this)">Last month</button>
+      <button class="pr-range-btn"    data-days="90"  onclick="setPRRange(90,this)">Last 3 months</button>
+    </div>
+  </div>
+
+  <!-- Section checkboxes -->
+  <div class="pr-group">
+    <div class="pr-group-title">🧠 Mental / Emotional</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-mood" checked> Mood trend (daily averages)</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-energy-data" checked> Energy levels + variance</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-anxiety" checked> Anxiety levels</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-crashes" checked> Shutdown / crash days</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-confidence"> Confidence ratings by life area</div>
+  </div>
+
+  <div class="pr-group">
+    <div class="pr-group-title">🏥 Physical</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-sleep" checked> Sleep hours + quality</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-headache" checked> Headache frequency, intensity + triggers</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-symptoms" checked> Symptoms log</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-walking"> Walking / activity log</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-sensory"> Sensory sensitivity scores</div>
+  </div>
+
+  <div class="pr-group">
+    <div class="pr-group-title">💊 Clinical</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-meds" checked> Medication list + daily taken/missed log</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-doctor-hist"> Appointment history + notes</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-period"> Menstrual cycle data</div>
+  </div>
+
+  <div class="pr-group">
+    <div class="pr-group-title">📊 Function + Success</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-score"> Weekly score trend</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-tasks"> Task completion rates</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-habits"> Habit consistency</div>
+    <div class="pr-check-row"><input type="checkbox" id="pr-wins"> Wins logged</div>
+  </div>
+
+  <!-- Notes -->
+  <div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:5px">📝 Additional notes for provider</div>
+    <textarea id="pr-notes" class="fin" rows="3" style="resize:vertical" placeholder="Any context you want to include — current concerns, medication questions, things you want to raise…"></textarea>
+  </div>
+
+  <!-- Export buttons -->
+  <div style="display:flex;gap:9px;flex-wrap:wrap">
+    <button onclick="generateProviderReport('copy')" style="flex:1;padding:11px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Copy">📋 Copy as text</button>
+    <button onclick="generateProviderReport('print')" style="padding:11px 14px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Save as PDF">🖨 Print / PDF</button>
+  </div>
+</div>
+
+
+<!-- ===================== HEALTH SETUP ===================== -->
+<div id="tab-setup" class="tab">
+  <div class="hint teal">⚙️ Configure persistent health foundations. These populate check-ins, symptom tracking, provider prep, and the setup wizard. Add items one at a time <em>or</em> import a list in bulk — both paths always available.</div>
+
+  <!-- ── IMPORT MODAL (shared for all setup fields) ── -->
+  <!-- H-06 -->
+<div id="hs-import-modal" class="hq-modal-bg" style="align-items:flex-start;overflow-y:auto">
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:480px;margin:auto">
+      <div style="font-size:15px;font-weight:900;color:var(--text);margin-bottom:4px" id="hs-import-title">📥 Import</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px" id="hs-import-hint">One item per line. CSV: first column used. XLS: first sheet, first column.</div>
+
+      <!-- Tab: paste text -->
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button id="hs-itab-text" class="hs-itab active" onclick="hsImportTab('text')">📝 Paste text</button>
+        <button id="hs-itab-file" class="hs-itab"        onclick="hsImportTab('file')">📂 Upload file</button>
+      </div>
+
+      <div id="hs-import-text-panel">
+        <textarea id="hs-import-textarea" class="fin" rows="8" style="resize:vertical;font-size:12px"
+          placeholder="One item per line…&#10;e.g.&#10;ADHD — diagnosed 2019&#10;Migraine disorder&#10;Ehlers-Danlos syndrome (hEDS)"></textarea>
+        <div style="font-size:10px;color:var(--muted);margin-top:5px">Blank lines and leading/trailing spaces are ignored.</div>
+      </div>
+
+      <div id="hs-import-file-panel" style="display:none">
+        <input type="file" id="hs-import-file-input" accept=".txt,.csv,.xls,.xlsx" style="display:none" onchange="hsHandleFileImport(this)" aria-label="Import health data file">
+        <div style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer" onclick="document.getElementById('hs-import-file-input').click()">
+          <div style="font-size:22px;margin-bottom:6px">📂</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text2)">Tap to choose file</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">.txt · .csv · .xls · .xlsx</div>
+        </div>
+        <div id="hs-import-file-preview" style="margin-top:10px;font-size:11px;color:var(--muted)"></div>
+      </div>
+
+      <!-- Preview of parsed items -->
+      <div id="hs-import-preview-wrap" style="display:none;margin-top:14px">
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Preview — <span id="hs-import-count">0</span> items detected</div>
+        <div id="hs-import-preview" style="max-height:160px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;line-height:1.7"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button onclick="closeHsImport()" style="background:var(--surface);border:1.5px solid var(--border);color:var(--muted);border-radius:9px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Cancel">Cancel</button>
+        <button onclick="hsPreviewImport()" style="background:var(--surface);border:1.5px solid var(--border);color:var(--teal);border-radius:9px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Previous">Preview</button>
+        <button onclick="hsConfirmImport()" style="background:var(--teal);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Import</button>
+      </div>
+    </div>
+  </div>
+  <!-- /hs-import-modal -->
+
+  <!-- ── CONDITIONS ── -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">🩺 Conditions</div>
+      <button class="hs-import-btn" onclick="openHsImport('conditions')" aria-label="Import">📥 Import list</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Diagnoses, disabilities, allergies, chronic conditions — anything you track over time.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="setup-condition-input" class="fin" placeholder="Add condition, diagnosis, disability, allergy…" style="flex:1" onkeydown="if(event.key==='Enter')addHealthSetupItem('conditions')">
+      <button class="btn" onclick="addHealthSetupItem('conditions')" aria-label="Add item">Add</button>
+    </div>
+    <div id="setup-conditions-list"></div>
+  </div>
+
+  <!-- ── PROVIDERS ── -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">🏥 Providers</div>
+      <button class="hs-import-btn" onclick="openHsImport('providers')" aria-label="Import">📥 Import list</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Doctors, therapists, pharmacists, clinics, specialists.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="setup-provider-input" class="fin" placeholder="Doctor, therapist, clinic, specialist…" style="flex:1" onkeydown="if(event.key==='Enter')addHealthSetupItem('providers')">
+      <button class="btn" onclick="addHealthSetupItem('providers')" aria-label="Add item">Add</button>
+    </div>
+    <div id="setup-providers-list"></div>
+  </div>
+
+  <!-- ── MEDICATIONS ── -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">💊 Medications</div>
+      <button class="hs-import-btn" onclick="openHsImport('medications')" aria-label="Import">📥 Import list</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Prescriptions, OTC meds, supplements. Include dosage if useful. <em>Full med tracking (schedule, refills) lives in the 💊 Meds tab.</em></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="setup-medication-input" class="fin" placeholder="Medication, supplement, dosage…" style="flex:1" onkeydown="if(event.key==='Enter')addHealthSetupItem('medications')">
+      <button class="btn" onclick="addHealthSetupItem('medications')" aria-label="Add item">Add</button>
+    </div>
+    <div id="setup-medications-list"></div>
+  </div>
+
+  <!-- ── SYMPTOM WATCHLIST ── -->
+  <div class="card" id="ht-condition-pool-card">
+    <div class="card-hd"><div class="card-title" style="color:var(--purple)">🧩 Condition Pool &amp; Symptom Watchlist</div></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Select your conditions — symptoms are auto-populated from the pool. Your watchlist powers Quick Log and Check-in chips.</div>
+    <div id="condition-pool-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+    <div id="condition-pool-watchlist-chips" style="margin-top:8px"></div>
+  </div>
+
+<div class="card">
+    <div class="card-hd">
+      <div class="card-title">⚠️ Symptom Watchlist</div>
+      <button class="hs-import-btn" onclick="openHsImport('symptoms')" aria-label="Import">📥 Import list</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Custom symptoms to monitor beyond the built-in category chips.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="setup-symptom-input" class="fin" placeholder="e.g. Fatigue after eating, joint pain on waking…" style="flex:1" onkeydown="if(event.key==='Enter')addHealthSetupItem('symptoms')">
+      <button class="btn" onclick="addHealthSetupItem('symptoms')" aria-label="Add item">Add</button>
+    </div>
+    <div id="setup-symptoms-list"></div>
+  </div>
+
+  <!-- ── CHECK-IN MODE PRESETS ── -->
+  <div class="card" id="preset-builder-card">
+    <div class="card-hd">
+      <div class="card-title">⚡ Check-In Mode Presets</div>
+      <button onclick="openPresetModal(null)" style="background:rgba(var(--teal-rgb),.12);border:1.5px solid rgba(var(--teal-rgb),.3);color:var(--teal);border-radius:8px;padding:4px 11px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">+ New Preset</button>
+    </div>
+    <div class="hint" style="margin-bottom:10px">Each preset defines which check-in sections to show, optional default values, and whether quick-entry mode is on. Built-in presets are always available as fallback.</div>
+
+    <!-- Built-in presets row (read-only display) -->
+    <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🔒 Built-In (always available)</div>
+    <div id="setup-builtin-presets" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <!-- rendered by renderCheckinPresets() -->
+    </div>
+
+    <!-- User presets list -->
+    <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🎨 My Custom Presets</div>
+    <div id="setup-presets-list">
+      <!-- rendered by renderCheckinPresets() -->
+    </div>
+  </div>
+
+  <!-- ── PRESET EDITOR MODAL ── -->
+  <!-- H-06 -->
+<div id="preset-modal" class="hq-modal-bg" style="align-items:flex-start;overflow-y:auto">
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;max-width:480px;margin:20px auto;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-weight:900;font-size:15px;color:var(--text)" id="preset-modal-title">New Preset</div>
+        <button onclick="closePresetModal()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px" aria-label="Close" title="Close">✕</button>
+      </div>
+
+      <!-- Label + Emoji row -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:0 0 auto">
+          <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px">EMOJI</div>
+          <input id="pm-emoji" maxlength="4" style="width:52px;text-align:center;font-size:22px;padding:6px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit" placeholder="⚡" value="⚡">
+        </div>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:4px">PRESET NAME</div>
+          <input id="pm-label" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit" placeholder="e.g. Morning Quick">
+        </div>
+      </div>
+
+      <!-- Sections to show -->
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📋 Sections to show</div>
+      <div id="pm-sections" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+        <!-- rendered by openPresetModal() -->
+      </div>
+
+      <!-- Default values -->
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🎯 Pre-fill defaults (optional)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Mood (1–5)</div>
+          <select id="pm-def-mood" style="width:100%;padding:6px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:inherit" aria-label="Mood (1–5)">
+            <option value="">None</option>
+            <option value="1">1 — Rock bottom</option>
+            <option value="2">2 — Rough</option>
+            <option value="3">3 — Okay</option>
+            <option value="4">4 — Good</option>
+            <option value="5">5 — Great</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Energy (1–5)</div>
+          <select id="pm-def-energy" style="width:100%;padding:6px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:inherit" aria-label="Energy (1–5)">
+            <option value="">None</option>
+            <option value="1">1 — Depleted</option>
+            <option value="2">2 — Low</option>
+            <option value="3">3 — Moderate</option>
+            <option value="4">4 — High</option>
+            <option value="5">5 — Charged</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Feeling tone</div>
+          <select id="pm-def-tone" style="width:100%;padding:6px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:inherit" aria-label="Feeling tone">
+            <option value="">None</option>
+            <option value="bad">😖 Bad</option>
+            <option value="blah">😑 Blah</option>
+            <option value="fine">😐 Fine</option>
+            <option value="good">😊 Good</option>
+            <option value="great">🌟 Great</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:16px">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;font-weight:700;color:var(--text)">
+            <input type="checkbox" id="pm-def-walked" style="width:15px;height:15px;accent-color:var(--teal)"> Walked today ✓
+          </label>
+        </div>
+      </div>
+
+      <!-- Quick entry toggle -->
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(var(--teal-rgb),.06);border:1.5px solid rgba(var(--teal-rgb),.15);border-radius:10px;cursor:pointer;margin-bottom:16px">
+        <input type="checkbox" id="pm-quick-entry" style="width:16px;height:16px;accent-color:var(--teal)">
+        <div>
+          <div style="font-size:12px;font-weight:800;color:var(--text)">⚡ Quick Entry Mode</div>
+          <div style="font-size:10px;color:var(--muted)">Auto-scrolls through visible sections. Good for fast daily check-ins.</div>
+        </div>
+      </label>
+
+      <!-- Save / Delete buttons -->
+      <div style="display:flex;gap:8px">
+        <button onclick="savePresetFromModal()" style="flex:1;padding:10px;background:rgba(var(--teal-rgb),.15);border:1.5px solid rgba(var(--teal-rgb),.4);color:var(--teal);border-radius:9px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit" aria-label="Save">💾 Save Preset</button>
+        <button id="pm-delete-btn" onclick="deletePresetFromModal()" style="padding:10px 14px;background:rgba(var(--red-rgb),.08);border:1.5px solid rgba(var(--red-rgb),.2);color:#ff6666;border-radius:9px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;display:none" aria-label="Delete" title="Delete"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPORT THIS SETUP ── -->
+  <div class="card" style="background:rgba(var(--teal-rgb),.04);border-color:rgba(var(--teal-rgb),.18)">
+    <div class="card-hd"><div class="card-title" style="color:var(--teal)">💾 Backup / Restore Setup</div></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Download your health setup config as JSON, or restore from a previous backup.</div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button onclick="exportHealthSetup()" style="flex:1;padding:9px;background:rgba(var(--teal-rgb),.1);border:1.5px solid rgba(var(--teal-rgb),.3);color:var(--teal);border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Import">⬇️ Export setup JSON</button>
+      <input type="file" id="hs-restore-file" accept=".json" style="display:none" onchange="importHealthSetupFile(this)" aria-label="Restore health setup from JSON file">
+      <button onclick="document.getElementById('hs-restore-file').click()" style="padding:9px 14px;background:var(--surface);border:1.5px solid var(--border);color:var(--muted);border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">📂 Restore from JSON</button>
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /main -->
+</div><!-- /app-wrap -->
+
+<!-- Bottom nav injected by hq-core.js -->
+
+<!-- FAB cluster injected by _fab-cluster.js -->
+
+<script>
+// markActiveNav: delegated to hq-core.js via window.HQ_CURRENT_PAGE
+</script>
+
+<script>window.HQ_CURRENT_PAGE = 'health';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<!-- Phase B: Symptom Pool System -->
+<script src="data/symptoms/category-registry.js"></script>
+<script src="data/symptoms/symptom-registry.js"></script>
+<script src="data/symptoms/condition-pools.js"></script>
+<script src="core/symptom-utils.js"></script>
+<script src="core/symptom-search.js"></script>
+<script src="core/symptom-filters.js"></script>
+<script src="components/symptom-picker.js"></script>
+<script src="components/condition-pool-view.js"></script>
+<script src="setup-symptoms.js"></script>
+<!-- Phase B4: Optimization layer -->
+<script src="core/symptom-index.js"></script>
+<script src="core/symptom-cache.js"></script>
+<script src="core/symptom-lazy.js"></script>
+<script src="core/symptom-history-store.js"></script>
+    <!-- ══════════════════════════════════════════════════════════════
+         Phase C7 Templates — health-tracker.js HQRenderer.list() targets
+         No user data is written via innerHTML in JS for these items.
+         HQRenderer.setText / DOM createElement are used for all text.
+    ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- Period history item -->
+    <template id="ht-period-item-template">
+      <div class="hitem">
+        <div class="hitem-hd" data-action="toggle">
+          <div class="hitem-icon">🩸</div>
+          <div class="hitem-info">
+            <div class="hitem-title"></div>
+            <div class="hitem-meta">
+              <span class="p-meta-days"></span>
+              <span class="p-meta-flow"></span>
+            </div>
+            <div class="hitem-tags p-pms-preview"></div>
+          </div>
+          <span class="expand-ic">▼</span>
+        </div>
+        <div class="hitem-body">
+          <div class="p-pms-body" style="margin:10px 0 4px"></div>
+          <div class="hitem-desc p-notes"></div>
+          <div class="hitem-actions">
+            <button class="btn-sm" data-action="edit" aria-label="Edit">✏️ Edit</button>
+            <button class="btn-sm del" data-action="delete" aria-label="Delete">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Headache history item -->
+    <template id="ht-headache-item-template">
+      <div class="hitem">
+        <div class="hitem-hd" data-action="toggle">
+          <div class="hitem-icon"></div>
+          <div class="hitem-info">
+            <div class="hitem-title"></div>
+            <div class="hitem-meta">
+              <span class="ha-time"></span>
+              <span class="ha-dur"></span>
+              <span class="ha-int-val"></span>
+              <span class="ha-aura" style="color:var(--sleep)">✨ Aura</span>
+            </div>
+            <div style="margin:4px 0 0">
+              <div class="int-bar" style="width:160px">
+                <div class="int-fill"></div>
+              </div>
+            </div>
+            <div class="hitem-tags ha-tags-preview"></div>
+          </div>
+          <span class="expand-ic">▼</span>
+        </div>
+        <div class="hitem-body">
+          <div class="ha-trigger-wrap" style="margin:10px 0 4px"></div>
+          <div class="ha-meds-wrap"    style="margin:4px 0"></div>
+          <div class="ha-relief-wrap"  style="margin:4px 0"></div>
+          <div class="ha-loc-wrap"     style="margin:4px 0"></div>
+          <div class="hitem-desc ha-notes"></div>
+          <div class="hitem-actions">
+            <button class="btn-sm" data-action="edit" aria-label="Edit">✏️ Edit</button>
+            <button class="btn-sm del" data-action="delete" aria-label="Delete">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Sleep history item -->
+    <template id="ht-sleep-item-template">
+      <div class="hitem">
+        <div class="hitem-hd" data-action="toggle">
+          <div class="hitem-icon">😴</div>
+          <div class="hitem-info">
+            <div class="hitem-title"></div>
+            <div class="hitem-meta">
+              <span class="sl-bed"></span>
+              <span class="sl-wake"></span>
+              <span class="sl-hrs"></span>
+            </div>
+            <div class="dots5" style="margin-top:5px"></div>
+          </div>
+          <span class="expand-ic">▼</span>
+        </div>
+        <div class="hitem-body">
+          <div class="sl-factors" style="margin:10px 0 4px"></div>
+          <div class="hitem-desc sl-notes"></div>
+          <div class="hitem-actions">
+            <button class="btn-sm del" data-action="delete" aria-label="Delete">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- C10-01: Med list item -->
+    <template id="ht-med-item-template">
+      <div class="med-card">
+        <div class="med-hd" data-action="toggle">
+          <span class="med-ico">💊</span>
+          <div class="med-info">
+            <div class="med-name">
+              <span class="mi-name"></span>
+              <span class="mi-dose" style="font-size:10px;color:var(--muted)"></span>
+            </div>
+            <div class="med-meta">
+              <span class="mi-time"></span>
+              <span class="mi-doctor"></span>
+              <span class="mi-refill-warn med-refill-warn" style="display:none"></span>
+            </div>
+          </div>
+          <button class="med-taken-btn" data-action="taken" aria-label="Button"></button>
+        </div>
+        <div class="med-body">
+          <div class="mi-notes" style="font-size:11px;color:var(--text2);margin-bottom:8px;white-space:pre-wrap"></div>
+          <div class="mi-refill-date" style="font-size:10px;color:var(--muted);margin-bottom:8px"></div>
+          <div style="display:flex;gap:7px">
+            <button class="btn-sm" data-action="edit" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text2);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" aria-label="Edit">✏️ Edit</button>
+            <button class="btn-sm del" data-action="delete" style="background:none;border:1.5px solid rgba(239,68,68,.3);color:var(--red);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" aria-label="Delete">🗑 Delete</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- C10-01: Symptom history item -->
+    <template id="ht-symptom-item-template">
+      <div class="hitem">
+        <div class="hitem-hd" data-action="toggle">
+          <div class="hitem-icon si-cat-emoji"></div>
+          <div class="hitem-info">
+            <div class="hitem-title">
+              <span class="si-name"></span>
+              <span class="si-cat-name" style="font-size:11px;font-weight:400;color:var(--muted)"></span>
+            </div>
+            <div class="hitem-meta">
+              <span class="si-date"></span>
+              <span class="si-severity-label">⚡ <strong class="si-severity-val"></strong></span>
+            </div>
+            <div style="margin:4px 0 2px">
+              <div class="int-bar" style="width:140px">
+                <div class="int-fill si-severity-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="hitem-tags si-location-tags"></div>
+          </div>
+          <span class="expand-ic">▼</span>
+        </div>
+        <div class="hitem-body">
+          <div class="si-locations-full" style="margin:10px 0 4px"></div>
+          <div class="hitem-desc si-notes"></div>
+          <div class="hitem-actions">
+            <button class="btn-sm del" data-action="delete" aria-label="Delete">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+<script src="pages/health-tracker.js"></script>
+<script src="core/hq-notifications.js"></script>
+
+<script>
+/* ── P4: Register med reminder source with HQNotif ── */
+(function registerHealthSource() {
+  if (typeof HQNotif === 'undefined' || !HQNotif.registerSource) return;
+  HQNotif.registerSource('health-tracker', function () {
+    try {
+      const health = window.HQStore ? window.HQStore.get('audhd-hq-health', {}) : {};
+      const meds   = (health.medications || health.meds || []);
+      const events = [];
+      const today  = new Date();
+
+      meds.forEach(function (med) {
+        if (!med || !med.name) return;
+        // Build a reminder time for today if med has a scheduled time
+        if (med.time) {
+          const parts = med.time.split(':');
+          if (parts.length === 2) {
+            const d = new Date(today);
+            d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+            events.push({
+              title:    '💊 Take ' + med.name + (med.dose ? ' (' + med.dose + ')' : ''),
+              time:     d.toISOString(),
+              type:     'medication',
+              moduleId: 'health-tracker'
+            });
+          }
+        }
+        // Refill warning: if refill date is within 14 days
+        if (med.refillDate) {
+          const refill = new Date(med.refillDate);
+          const msLeft = refill.getTime() - Date.now();
+          const daysLeft = msLeft / (1000 * 60 * 60 * 24);
+          if (daysLeft >= 0 && daysLeft <= 14) {
+            events.push({
+              title:    '💊 Refill soon: ' + med.name,
+              time:     refill.toISOString(),
+              type:     'medication',
+              moduleId: 'health-tracker'
+            });
+          }
+        }
+      });
+      return events;
+    } catch (e) {
+      console.warn('[health-tracker] registerSource error:', e);
+      return [];
+    }
+  });
+})();
+</script>
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

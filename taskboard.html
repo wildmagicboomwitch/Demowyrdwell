@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>📌 TaskBoard HQ — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link rel="stylesheet" href="pages/taskboard.css">
+</head>
+<body>
+<!-- Sidenav injected by hq-core.js -->
+<div class="app-wrap" id="appWrap">
+
+  <!-- Topbar injected by hq-core.js -->
+  <!-- HERO -->
+  <div class="hero">
+
+    <div class="hero-curve"></div>
+    <div class="hero-content">
+      <div class="day-label" id="dayLabel">Saturday Tasks</div>
+
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-val" id="stat-total">0</div><div class="hero-stat-lbl">Total</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="stat-done">0</div><div class="hero-stat-lbl">Done</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="stat-urgent">0</div><div class="hero-stat-lbl">🔥 Urgent</div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span class="progress-lbl">Progress</span>
+          <span class="progress-pct" id="prog-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="prog-fill" style="width:0%">
+            <span class="sparkle-star" id="prog-star">✨</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- TIME BRAIN STRIP -->
+  <div class="time-brain-strip">
+    <a href="day-view.html" class="tbs-btn" data-tbs="timeline">📅 Today</a>
+    <a href="day-view.html#plan" class="tbs-btn" data-tbs="daybuilder">🗓 Day Plan</a>
+    <a href="weekly-planner.html" class="tbs-btn" data-tbs="weekly">📆 Week</a>
+    <a href="monthly-planner.html" class="tbs-btn" data-tbs="monthly">🗓️ Month</a>
+    <a href="recurring-events.html" class="tbs-btn" data-tbs="recurring">🔁 Recurring</a>
+  </div>
+
+  <!-- CATEGORY LEGEND -->
+  <div class="cat-legend" id="cat-legend"></div>
+
+  <!-- VIEWS -->
+  <div id="view-daily" class="view-panel active">
+    <div class="board-wrap" id="board-daily"></div>
+    <div style="padding:0 12px 8px">
+      <div class="add-postit-trigger" onclick="openNewPostit('daily')">
+        <span style="font-size:16px">📝</span>
+        <span style="color:var(--accent);font-weight:900;font-size:20px">+</span>
+        <span style="font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase">New Daily List</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-weekly" class="view-panel">
+    <div class="board-wrap" id="board-weekly"></div>
+    <div style="padding:0 12px 8px">
+      <div class="add-postit-trigger" onclick="openNewPostit('weekly')">
+        <span style="font-size:16px">📝</span>
+        <span style="color:var(--accent);font-weight:900;font-size:20px">+</span>
+        <span style="font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase">New Weekly List</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-monthly" class="view-panel">
+    <div class="board-wrap" id="board-monthly"></div>
+    <div style="padding:0 12px 8px">
+      <div class="add-postit-trigger" onclick="openNewPostit('monthly')">
+        <span style="font-size:16px">📝</span>
+        <span style="color:var(--accent);font-weight:900;font-size:20px">+</span>
+        <span style="font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase">New Monthly List</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRESETS VIEW -->
+  <div id="view-presets" class="view-panel">
+    <div class="board-wrap" id="board-presets" style="padding-bottom:8px">
+      <!-- preset lists + preset tasks rendered here -->
+    </div>
+    <div style="padding:0 12px 8px">
+      <div class="add-postit-trigger" onclick="openSavePresetModal()">
+        <span style="font-size:16px">⭐</span>
+        <span style="color:var(--accent);font-weight:900;font-size:20px">+</span>
+        <span style="font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase">Save Current Lists as Preset</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHIVE VIEW -->
+  <div id="view-archive" class="view-panel">
+    <div class="board-wrap" id="board-archive" style="padding-bottom:8px"></div>
+  </div>
+
+  <!-- ROUTINES + PREPWORK VIEW (embedded suite) -->
+  <div id="view-routines" class="view-panel">
+    <div id="rp-suite-wrap" style="padding:0 0 80px"></div>
+  </div>
+
+  <!-- SETUP VIEW -->
+  <div id="view-setup" class="view-panel">
+    <div style="padding:12px 12px 100px">
+
+      <div style="font-size:11px;color:var(--text-muted);background:rgba(var(--primary-rgb),.07);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:14px">
+        ⚙️ TaskBoard setup — configure how tasks behave, label your priority tiers, and build preset lists for recurring routines.
+      </div>
+
+      <!-- Priority labels -->
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:10px">🔥 Priority Label Names</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">Rename any tier. Changes apply across all lists. Leave blank to keep defaults.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Tier 1 (highest)</div>
+            <input id="tb-setup-p1" class="modal-input" placeholder="🔥 Urgent" style="font-size:12px;padding:7px 10px">
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Tier 2</div>
+            <input id="tb-setup-p2" class="modal-input" placeholder="⬆ High" style="font-size:12px;padding:7px 10px">
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Tier 3</div>
+            <input id="tb-setup-p3" class="modal-input" placeholder="Normal" style="font-size:12px;padding:7px 10px">
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Tier 4 (lowest)</div>
+            <input id="tb-setup-p4" class="modal-input" placeholder="⬇ Low" style="font-size:12px;padding:7px 10px">
+          </div>
+        </div>
+        <button onclick="tbSavePriorityLabels()" style="width:100%;margin-top:10px;padding:9px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Save Labels</button>
+      </div>
+
+      <!-- Cross-module links -->
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:4px">🔗 Cross-Module Links</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:12px">Auto-push completed daily tasks to other planners.</div>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="checkbox" id="tb-link-monthly" onchange="tbSaveLinks()" style="width:16px;height:16px;accent-color:var(--accent)">
+          📅 Completed tasks → Monthly Planner log
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="checkbox" id="tb-link-weekly" onchange="tbSaveLinks()" style="width:16px;height:16px;accent-color:var(--accent)">
+          📆 Completed tasks → Weekly Planner log
+        </label>
+      </div>
+
+      <!-- Energy tier defaults -->
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:4px">🔋 Energy Tier Defaults</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">Tag each task tier with a default energy level. Used by Survival Mode and energy-gated views.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">🔥 Urgent default energy</div>
+            <select id="tb-energy-urgent" class="modal-select" style="font-size:11px" onchange="tbSaveEnergy()" aria-label="🔥 Urgent default energy">
+              <option value="high">🔴 High</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">⬆ High default energy</div>
+            <select id="tb-energy-high" class="modal-select" style="font-size:11px" onchange="tbSaveEnergy()" aria-label="⬆ High default energy">
+              <option value="high">🔴 High</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Normal default energy</div>
+            <select id="tb-energy-normal" class="modal-select" style="font-size:11px" onchange="tbSaveEnergy()" aria-label="Normal default energy">
+              <option value="high">🔴 High</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">⬇ Low default energy</div>
+            <select id="tb-energy-low" class="modal-select" style="font-size:11px" onchange="tbSaveEnergy()" aria-label="⬇ Low default energy">
+              <option value="high">🔴 High</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="low" selected>🟢 Low</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preset list seeds -->
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:4px">⭐ Starter Preset Lists</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">Seed a preset list with tasks. They live in the Presets tab and can be deployed to any time frame with one tap.</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="tb-seed-name" class="modal-input" placeholder="Preset name (e.g. Work Day)…" style="flex:1;font-size:12px;padding:7px 10px">
+          <button onclick="tbAddPresetSeed()" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Add item">+ Add</button>
+        </div>
+        <div id="tb-preset-seeds-list" style="font-size:11px;color:var(--text-muted)">No preset seeds yet — add one above.</div>
+      </div>
+
+      <!-- Reset / export -->
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px">
+        <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:8px">💾 Backup Setup</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="tbExportSetup()" style="flex:1;padding:9px;background:rgba(var(--primary-rgb),.1);border:1.5px solid rgba(var(--primary-rgb),.3);color:var(--accent);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Import">⬇️ Export setup JSON</button>
+          <input type="file" id="tb-restore-file" accept=".json" style="display:none" onchange="tbImportSetup(this)" aria-label="Restore taskboard from JSON">
+          <button onclick="document.getElementById('tb-restore-file').click()" style="padding:9px 14px;background:var(--card-hover,var(--surface));border:1.5px solid var(--border);color:var(--text-muted);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">📂 Restore</button>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /view-setup -->
+
+  <!-- SYNC BAR -->
+  <div class="sync-bar">
+    <span id="last-sync">Not synced</span>
+    <div class="sync-btns">
+      <button class="sync-btn import" onclick="importJSON()">📂 Import</button>
+      <button class="sync-btn" onclick="exportJSON()" aria-label="Save">💾 Export</button>
+    </div>
+  </div>
+
+  <!-- TASKBOARD INTERNAL TAB NAV -->
+  <button class="sq-toggle-btn" id="sq-toggle-btn" onclick="toggleSideQuestMode()" title="Reduces urgency pressure — no overdue warnings">🗺 Side-Quest Mode</button>
+  <div class="tb-tab-nav">
+    <button class="navbtn active" onclick="switchTab('daily',null,this)" id="nav-daily" aria-label="Daily tab"><span class="navbtn-ico">📅</span><span class="navbtn-lbl">Daily</span></button>
+    <button class="navbtn" onclick="switchTab('weekly',null,this)" id="nav-weekly" aria-label="Weekly tab"><span class="navbtn-ico">📆</span><span class="navbtn-lbl">Weekly</span></button>
+    <button class="navbtn" onclick="switchTab('monthly',null,this)" id="nav-monthly" aria-label="Monthly tab"><span class="navbtn-ico">🗓</span><span class="navbtn-lbl">Monthly</span></button>
+    <button class="navbtn" onclick="switchTab('presets',null,this)" id="nav-presets" aria-label="⭐Presets tab"><span class="navbtn-ico">⭐</span><span class="navbtn-lbl">Presets</span></button>
+    <button class="navbtn" onclick="switchTab('archive',null,this)" id="nav-archive" aria-label="Archive tab"><span class="navbtn-ico">🗄</span><span class="navbtn-lbl">Archive</span></button>
+    <button class="navbtn" onclick="switchTab('routines',null,this)" id="nav-routines" aria-label="Routines tab"><span class="navbtn-ico">🔁</span><span class="navbtn-lbl">Routines</span></button>
+    <button class="navbtn" onclick="switchTab('setup',null,this)" id="nav-setup" aria-label="Settings"><span class="navbtn-ico">⚙️</span><span class="navbtn-lbl">Setup</span></button>
+  </div>
+</div>
+
+<!-- /.app-wrap -->
+
+<!-- ═══ NEW LIST MODAL ═══ -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal-box">
+    <div class="modal-title">📝 New List</div>
+    <div class="modal-label">List Title</div>
+    <input type="text" class="modal-input" id="new-postit-title" placeholder="e.g. Morning Routine, Work Tasks…" maxlength="40" onkeydown="if(event.key==='Enter')confirmNewPostit()">
+    <div class="modal-two-col">
+      <div>
+        <div class="modal-label">List Type</div>
+        <select class="modal-select" id="new-list-type" aria-label="List Type">
+          <option value="daily">📅 Daily</option>
+          <option value="weekly">📆 Weekly</option>
+          <option value="monthly">🗓 Monthly</option>
+        </select>
+      </div>
+      <div>
+        <div class="modal-label">Category</div>
+        <select class="modal-select" id="new-list-cat" aria-label="Category">
+          <option value="">— None —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-label">Note Color</div>
+    <div class="color-picker-row" id="color-picker"></div>
+    <div class="modal-label" style="margin-top:10px">🔗 Link to Modules <span style="font-size:9px;font-weight:600;opacity:.6">(optional)</span></div>
+    <div class="mod-link-chips" id="new-module-links"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('modal-new')" aria-label="Cancel">Cancel</button>
+      <button class="btn-accent" onclick="confirmNewPostit()">Create List</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SAVE PRESET MODAL ═══ -->
+<div class="modal-overlay" id="modal-preset-save">
+  <div class="modal-box">
+    <div class="modal-title">⭐ Save as Preset</div>
+    <div class="modal-label">Preset Name</div>
+    <input type="text" class="modal-input" id="preset-name-input" placeholder="e.g. Work Week, Morning Routine…" maxlength="40" onkeydown="if(event.key==='Enter')confirmSavePreset()">
+    <div class="modal-label">Include these tabs</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="preset-tab-checks"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('modal-preset-save')" aria-label="Cancel">Cancel</button>
+      <button class="btn-accent" onclick="confirmSavePreset()">Save Preset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ USE PRESET MODAL ═══ -->
+<div class="modal-overlay" id="modal-preset-use">
+  <div class="modal-box">
+    <div class="modal-title">↩ Use Preset</div>
+    <div id="preset-use-name" style="font-weight:700;color:var(--text-main);margin-bottom:12px;font-size:14px"></div>
+    <div class="modal-label">Add lists to which tab?</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="preset-use-tabs"></div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal('modal-preset-use')" aria-label="Cancel">Cancel</button>
+      <button class="btn-accent" onclick="confirmUsePreset()">Add to Board</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MANAGE CATEGORIES MODAL ═══ -->
+<div class="modal-overlay" id="modal-cats">
+  <div class="modal-box">
+    <div class="modal-title">🏷 Manage Categories</div>
+    <div class="cat-manage-list" id="cat-manage-list"></div>
+    <div class="modal-label">Add New Category</div>
+    <div class="cat-add-row">
+      <button class="cat-add-emo" id="cat-add-emo-btn" onclick="openEmojiPicker({type:'newcat'},this)" aria-label="Add" title="Add"></button>
+      <input type="text" class="cat-add-input" id="cat-add-name" placeholder="Category name…" maxlength="20" onkeydown="if(event.key==='Enter')addNewCategory()">
+      <button class="cat-add-btn" onclick="addNewCategory()" aria-label="Add item">Add</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-accent" onclick="closeModal('modal-cats');renderCatLegend()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EMOJI PICKER ═══ -->
+<div class="ep-overlay" id="ep-overlay">
+  <div class="ep-backdrop" onclick="closeEmojiPicker()"></div>
+  <div class="ep-box" id="ep-box">
+    <div class="ep-cats" id="ep-cats"></div>
+    <input class="ep-search" id="ep-search" placeholder="🔍 Search…" oninput="epFilter(this.value)" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off">
+    <div class="ep-grid" id="ep-grid"></div>
+  </div>
+</div>
+
+<input type="file" id="file-import" accept=".json" style="display:none" onchange="handleImport(event)" aria-label="Import taskboard JSON">
+<div class="toast" id="toast"></div>
+
+<!-- Must be set before hq-core.js loads so it can read the current page -->
+
+<script>window.HQ_CURRENT_PAGE = 'taskboard';</script>
+<!-- hq-core.js: theme system, clock, flag-to-index, reminder banner -->
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/taskboard.js"></script>
+<script src="core/hq-notifications.js"></script>
+<!-- removed duplicate core/hq-notifications.js -->
+
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

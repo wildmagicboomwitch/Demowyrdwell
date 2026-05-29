@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ Check Invite Code — AuDHD HQ</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#120f24">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="pages/invite.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-icon">✨</div>
+    <h1 class="header-title">Verify Invite Code</h1>
+    <p class="header-subtitle">Check if your code is valid before creating an account</p>
+  </div>
+
+  <div class="card">
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
+
+    <form id="inviteForm">
+      <div class="form-group">
+        <label class="form-label" for="code">Invite Code</label>
+        <input
+          class="form-input"
+          type="text"
+          id="code"
+          name="code"
+          placeholder="e.g., ABC123"
+          required
+          autocomplete="off"
+          maxlength="20"
+        >
+        <div class="code-status" id="codeStatus">
+          <span class="status-indicator"></span>
+          <span class="status-text" id="codeStatusText">Validating...</span>
+        </div>
+        <div class="form-hint">Enter the 6-character code you received</div>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary" id="checkBtn">
+          <span class="loading-spinner"></span>
+          Check Code
+        </button>
+        <button type="button" class="btn btn-secondary" id="clearBtn">
+          Clear
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="divider">or</div>
+
+  <div class="footer">
+    <p class="footer-text">Already have an account?</p>
+    <a href="login.html" class="footer-link">Sign In</a>
+    <p class="footer-text" style="margin-top: 12px;">Don't have a code?</p>
+    <a href="create-account.html" class="footer-link">Create Account Anyway</a>
+  </div>
+</div>
+
+<script type="module">
+  import { db } from './core/firebase-config.js';
+  import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+
+  // Redirect already-logged-in users to the app
+  if (localStorage.getItem('audhd-hq-user-uid')) {
+    window.location.href = 'index.html';
+  }
+
+  const form = document.getElementById('inviteForm');
+  const codeInput = document.getElementById('code');
+  const checkBtn = document.getElementById('checkBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const codeStatus = document.getElementById('codeStatus');
+  const codeStatusText = document.getElementById('codeStatusText');
+  const errorMessage = document.getElementById('errorMessage');
+  const successMessage = document.getElementById('successMessage');
+
+  // Show error
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+    successMessage.classList.remove('show');
+  }
+
+  // Show success
+  function showSuccess(message) {
+    successMessage.textContent = message;
+    successMessage.classList.add('show');
+    errorMessage.classList.remove('show');
+  }
+
+  // Clear messages
+  function clearMessages() {
+    errorMessage.classList.remove('show');
+    successMessage.classList.remove('show');
+  }
+
+  // Show code status
+  function showCodeStatus(isValid, message) {
+    codeStatus.classList.add('show');
+    codeStatusText.textContent = message;
+
+    if (isValid) {
+      codeStatus.classList.add('valid');
+      codeStatus.classList.remove('invalid');
+    } else {
+      codeStatus.classList.add('invalid');
+      codeStatus.classList.remove('valid');
+    }
+  }
+
+  // Validate invite code via Firestore
+  async function validateCode(code) {
+    if (!code || code.length === 0) {
+      return false;
+    }
+
+    try {
+      const docRef = doc(db, 'invite-codes', code.toUpperCase());
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        showCodeStatus(false, '✗ Code not found');
+        return false;
+      }
+
+      const data = docSnap.data();
+      if (data.used) {
+        showCodeStatus(false, '✗ Code already used');
+        return false;
+      }
+
+      showCodeStatus(true, '✓ Code is valid');
+      return true;
+    } catch (error) {
+      console.error('Code validation error:', error);
+      showCodeStatus(false, '✗ Unable to validate code');
+      return false;
+    }
+  }
+
+  // Auto-fill invite code from URL ?code= param (used by invite links)
+  const _urlCode = new URLSearchParams(window.location.search).get('code');
+  if (_urlCode) {
+    codeInput.value = _urlCode.toUpperCase();
+    validateCode(_urlCode.toUpperCase());
+  }
+
+  // Real-time code validation
+  let validationTimeout;
+  codeInput.addEventListener('input', async () => {
+    clearTimeout(validationTimeout);
+    const code = codeInput.value.trim().toUpperCase();
+
+    if (!code) {
+      codeStatus.classList.remove('show');
+      return;
+    }
+
+    codeStatus.classList.add('show');
+    codeStatusText.textContent = 'Validating...';
+
+    validationTimeout = setTimeout(async () => {
+      await validateCode(code);
+    }, 500);
+  });
+
+  // Handle form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const code = codeInput.value.trim().toUpperCase();
+
+    if (!code) {
+      showError('Please enter your invite code.');
+      return;
+    }
+
+    checkBtn.disabled = true;
+    checkBtn.classList.add('loading');
+
+    const isValid = await validateCode(code);
+
+    if (isValid) {
+      showSuccess('✓ Code is valid! Proceeding to account creation...');
+      
+      // Store code in session/URL for create-account page
+      setTimeout(() => {
+        window.location.href = `create-account.html?code=${code}`;
+      }, 800);
+    } else {
+      showError('Invalid or already used code. Please check and try again.');
+      checkBtn.disabled = false;
+      checkBtn.classList.remove('loading');
+    }
+  });
+
+  // Clear button
+  clearBtn.addEventListener('click', () => {
+    codeInput.value = '';
+    codeStatus.classList.remove('show');
+    clearMessages();
+    codeInput.focus();
+  });
+
+  // Focus to clear messages
+  codeInput.addEventListener('focus', clearMessages);
+</script>
+
+</body>
+</html>

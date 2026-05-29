@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<title>🔔 Notifications — AuDHD HQ</title>
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#120f24"><link rel="stylesheet" href="pages/notifications.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="header-top">
+    <a href="index.html" class="hq-back-btn">← HQ</a>
+    <div>
+      <div class="page-title">🔔 Notifications</div>
+      <div class="page-sub">Reminders · Alerts · Nudges</div>
+    </div>
+  </div>
+</div>
+
+<!-- PERMISSION BANNER -->
+<div class="perm-banner hidden" id="perm-banner">
+  <div class="perm-ico" id="perm-ico">🔔</div>
+  <div class="perm-body">
+    <div class="perm-title" id="perm-title">Enable Notifications</div>
+    <div class="perm-desc" id="perm-desc">Allow AuDHD HQ to send reminders and alerts to your device.</div>
+    <button class="perm-btn" id="perm-btn" style="display:none">Enable Notifications</button>
+  </div>
+</div>
+
+<!-- ═══ SCHEDULED REMINDERS ═══ -->
+<div class="section">
+  <div class="section-header" onclick="toggleSection('scheduled')">
+    <span class="section-ico">⏰</span>
+    <span class="section-lbl">Scheduled Reminders</span>
+    <span class="section-chevron open" id="chevron-scheduled">›</span>
+  </div>
+  <div class="section-body open" id="body-scheduled">
+
+    <!-- Morning Check-In -->
+    <div class="notif-card" id="card-checkin-morning">
+      <div class="card-top">
+        <span class="card-ico">✅</span>
+        <div class="card-info">
+          <div class="card-title">Morning Check-In</div>
+          <div class="card-desc">A moment to reconnect — mood, energy &amp; body state</div>
+        </div>
+        <div class="toggle-wrap">
+          <input type="checkbox" class="toggle" id="tog-checkin-morning"
+                 onchange="toggleNotif('checkin-morning', this.checked)">
+        </div>
+      </div>
+      <div class="card-controls">
+        <span class="time-lbl">Time</span>
+        <input type="time" class="time-input" id="time-checkin-morning" value="09:00"
+               onchange="setTime('checkin-morning', this.value)" aria-label="Time Checkin Morning">
+        <button class="test-btn" onclick="testNotif('checkin-morning')" aria-label="Notifications">🔔 Test</button>
+      </div>
+      <div class="days-row" id="days-checkin-morning"></div>
+    </div>
+
+    <!-- Evening Wind-Down -->
+    <div class="notif-card" id="card-checkin-evening">
+      <div class="card-top">
+        <span class="card-ico">🌙</span>
+        <div class="card-info">
+          <div class="card-title">Evening Wind-Down</div>
+          <div class="card-desc">Thread closing — whenever you're ready</div>
+        </div>
+        <div class="toggle-wrap">
+          <input type="checkbox" class="toggle" id="tog-checkin-evening"
+                 onchange="toggleNotif('checkin-evening', this.checked)">
+        </div>
+      </div>
+      <div class="card-controls">
+        <span class="time-lbl">Time</span>
+        <input type="time" class="time-input" id="time-checkin-evening" value="20:00"
+               onchange="setTime('checkin-evening', this.value)" aria-label="Time Checkin Evening">
+        <button class="test-btn" onclick="testNotif('checkin-evening')" aria-label="Notifications">🔔 Test</button>
+      </div>
+      <div class="days-row" id="days-checkin-evening"></div>
+    </div>
+
+    <!-- DayBuilder Prompt -->
+    <div class="notif-card" id="card-daybuilder-morning">
+      <div class="card-top">
+        <span class="card-ico">🗓</span>
+        <div class="card-info">
+          <div class="card-title">Day View</div>
+          <div class="card-desc">A thread worth opening — your day is waiting to take shape (weekdays)</div>
+        </div>
+        <div class="toggle-wrap">
+          <input type="checkbox" class="toggle" id="tog-daybuilder-morning"
+                 onchange="toggleNotif('daybuilder-morning', this.checked)">
+        </div>
+      </div>
+      <div class="card-controls">
+        <span class="time-lbl">Time</span>
+        <input type="time" class="time-input" id="time-daybuilder-morning" value="08:00"
+               onchange="setTime('daybuilder-morning', this.value)" aria-label="Time Daybuilder Morning">
+        <button class="test-btn" onclick="testNotif('daybuilder-morning')" aria-label="Notifications">🔔 Test</button>
+      </div>
+      <div class="days-row" id="days-daybuilder-morning"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ BRAIN DUMP NUDGES ═══ -->
+<div class="section">
+  <div class="section-header" onclick="toggleSection('nudges')">
+    <span class="section-ico">🧠</span>
+    <span class="section-lbl">Thought Jar Nudges</span>
+    <span class="section-chevron open" id="chevron-nudges">›</span>
+  </div>
+  <div class="section-body open" id="body-nudges">
+
+    <div class="notif-card" id="card-braindump-nudge">
+      <div class="card-top">
+        <span class="card-ico">🧠</span>
+        <div class="card-info">
+          <div class="card-title">Thought Jar</div>
+          <div class="card-desc">Anything rattling around? Worth catching before it drifts</div>
+        </div>
+        <div class="toggle-wrap">
+          <input type="checkbox" class="toggle" id="tog-braindump-nudge"
+                 onchange="toggleNotif('braindump-nudge', this.checked)">
+        </div>
+      </div>
+      <div class="card-controls">
+        <span class="time-lbl">Time</span>
+        <input type="time" class="time-input" id="time-braindump-nudge" value="14:00"
+               onchange="setTime('braindump-nudge', this.value)" aria-label="Time Braindump Nudge">
+        <button class="test-btn" onclick="testNotif('braindump-nudge')" aria-label="Notifications">🔔 Test</button>
+      </div>
+      <div class="days-row" id="days-braindump-nudge"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ CUSTOM NOTIFICATIONS ═══ -->
+<div class="section">
+  <div class="section-header" onclick="toggleSection('custom')">
+    <span class="section-ico">🔔</span>
+    <span class="section-lbl">Custom Notifications</span>
+    <span class="section-chevron open" id="chevron-custom">›</span>
+  </div>
+  <div class="section-body open" id="body-custom">
+
+    <div class="custom-form">
+      <div class="form-row">
+        <label class="form-lbl">TITLE</label>
+        <input type="text" class="form-input" id="custom-title" placeholder="e.g. Take meds 💊">
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">MESSAGE</label>
+        <textarea class="form-textarea" id="custom-body" placeholder="Short reminder text…"></textarea>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-lbl">TIME</label>
+          <input type="time" class="form-input" id="custom-time" value="12:00" aria-label="Custom Time">
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">OPENS</label>
+          <input type="text" class="form-input" id="custom-url" placeholder="./index.html">
+        </div>
+      </div>
+      <div class="days-row" id="custom-days-row"></div>
+      <button class="send-btn" onclick="addCustom()">＋ Add Notification</button>
+    </div>
+
+    <div id="custom-list"></div>
+
+  </div>
+</div>
+
+<!-- ═══ UPCOMING EVENTS ═══ -->
+<div class="section">
+  <div class="section-header" onclick="toggleSection('events')">
+    <span class="section-ico">📅</span>
+    <span class="section-lbl">Upcoming Event Alerts</span>
+    <span class="section-chevron" id="chevron-events">›</span>
+  </div>
+  <div class="section-body" id="body-events">
+
+    <!-- master toggle card -->
+    <div class="notif-card" id="card-events-master">
+      <div class="card-top">
+        <span class="card-ico">📅</span>
+        <div class="card-info">
+          <div class="card-title">Event Reminders</div>
+          <div class="card-desc">Get a notification 15 min before events from planner, health, routines &amp; recurring events</div>
+        </div>
+        <div class="toggle-wrap">
+          <input type="checkbox" class="toggle" id="tog-events"
+                 onchange="toggleEvents(this.checked)">
+        </div>
+      </div>
+      <div class="card-controls" style="margin-top:10px">
+        <span style="font-size:11px;color:rgba(226,224,240,0.5)">
+          Reads from all registered modules · refreshes when you open this page
+        </span>
+        <button class="test-btn" onclick="refreshUpcomingList()" style="margin-left:auto" aria-label="Refresh">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- live upcoming list — populated from source registry -->
+    <div id="upcoming-events-list"></div>
+
+  </div>
+</div>
+
+<!-- ═══ FCM / COMING SOON ═══ -->
+<div class="section" style="margin-bottom:0">
+  <div class="section-header" onclick="toggleSection('fcm')">
+    <span class="section-ico">☁️</span>
+    <span class="section-lbl">Background Push</span>
+    <span class="section-chevron" id="chevron-fcm">›</span>
+  </div>
+  <div class="section-body" id="body-fcm">
+    <div class="fcm-card">
+      <div class="fcm-badge">SOON</div>
+      <div class="fcm-body">
+        <div class="fcm-title">Notifications when app is fully closed</div>
+        <div class="fcm-desc">
+          Current notifications fire while the app is open or running in the background.
+          Full push (even when closed) requires Firebase Cloud Messaging — already wired
+          in the codebase, just needs activation. No changes needed to this page when
+          that's turned on.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+
+<!-- Phase 14: Soft Auth Gate -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+<script>window.HQ_CURRENT_PAGE = 'notifications';</script>
+<!-- H-01 fix: full store + core so HQState/HQBus are available -->
+<script src="core/hq-keys.js"></script>
+<script src="core/hq-migrate.js"></script>
+<script src="core/hq-store.js"></script>
+<script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+<!-- C-NEW-4 fix: runtime scripts required by HQBus consumers (HQState, HQCascade, HQRecurrence etc.) -->
+<script src="core/runtime/runtime-state.js"></script>
+<script src="core/runtime/runtime-events.js"></script>
+<script src="core/runtime/runtime-bootstrap.js"></script>
+<script src="core/runtime/runtime-services.js"></script>
+<script src="core/runtime/runtime-observer.js"></script>
+<script src="core/runtime/runtime-validator.js"></script>
+<script src="core/runtime/runtime-schema-registry.js"></script>
+<script src="core/runtime/runtime-import-pipeline.js"></script>
+<script src="core/runtime/runtime-utils.js"></script>
+<script src="core/runtime/runtime-recurrence.js"></script>
+<script src="core/runtime/runtime-item-status.js"></script>
+<script src="core/runtime/runtime-notif-dedup.js"></script>
+<script src="core/runtime/runtime-cascade.js"></script>
+<script src="core/runtime/runtime-environment.js"></script>
+<script src="core/hq-notifications.js"></script>
+<script>
+/* ══════════════════════════════════════════════════
+   NOTIFICATIONS PAGE CONTROLLER
+══════════════════════════════════════════════════ */
+
+const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const DEFAULT_DAYS_ALL  = [0,1,2,3,4,5,6];
+const DEFAULT_DAYS_WEEK = [1,2,3,4,5];
+
+// per-card day state
+const cardDays = {
+  'checkin-morning':   [...DEFAULT_DAYS_ALL],
+  'checkin-evening':   [...DEFAULT_DAYS_ALL],
+  'braindump-nudge':   [...DEFAULT_DAYS_ALL],
+  'daybuilder-morning':[...DEFAULT_DAYS_WEEK]
+};
+
+// custom form day state
+let customSelectedDays = [...DEFAULT_DAYS_ALL];
+
+/* ── Section collapse ───────────────────────── */
+function toggleSection(id) {
+  const body    = document.getElementById('body-' + id);
+  const chevron = document.getElementById('chevron-' + id);
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+/* CSS-07: local showToast shim — delegates to HQToast then silent no-op */
+const showToast = (msg) => { if (window.HQToast) HQToast.show(msg); }; // L-04: was console.log fallback
+
+/* ── Permission banner ──────────────────────── */
+function renderPermBanner() {
+  const p   = HQNotif.getPermission();
+  const ban = document.getElementById('perm-banner');
+  const ico = document.getElementById('perm-ico');
+  const ttl = document.getElementById('perm-title');
+  const dsc = document.getElementById('perm-desc');
+  const btn = document.getElementById('perm-btn');
+
+  ban.className = 'perm-banner';
+  btn.style.display = 'none';
+
+  if (p === 'granted') {
+    ban.classList.add('granted');
+    ico.textContent = '✅';
+    ttl.textContent = 'Notifications enabled';
+    dsc.textContent = 'Visibility threads are on — you\'ll hear from HQ when it matters.';
+  } else if (p === 'denied') {
+    ban.classList.add('denied');
+    ico.textContent = '🚫';
+    ttl.textContent = 'Notifications blocked';
+    dsc.textContent = 'Open your browser or phone settings → AuDHD HQ → enable Notifications.';
+  } else if (p === 'unsupported') {
+    ban.classList.add('denied');
+    ico.textContent = '❌';
+    ttl.textContent = 'Notifications not supported';
+    dsc.textContent = 'Your browser doesn\'t support notifications. Try Chrome on Android.';
+  } else {
+    ban.classList.add('default');
+    ico.textContent = '🔔';
+    ttl.textContent = 'Enable notifications';
+    dsc.textContent = 'Allow AuDHD HQ to send visibility threads — gentle pings for continuity, not pressure.';
+    btn.style.display = 'inline-block';
+  }
+}
+
+document.getElementById('perm-btn').addEventListener('click', async () => {
+  const result = await HQNotif.requestPermission();
+  renderPermBanner();
+  if (result === 'granted') showToast('✅ Notifications enabled!');
+  else showToast('⚠️ Permission denied in browser settings');
+});
+
+/* ── Day chips ──────────────────────────────── */
+function buildDayChips(containerId, stateKey, isCustom) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const state = isCustom ? customSelectedDays : cardDays[stateKey];
+  DAYS.forEach((lbl, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'day-chip' + (state.includes(i) ? ' on' : '');
+    chip.textContent = lbl;
+    chip.onclick = () => {
+      if (isCustom) {
+        if (customSelectedDays.includes(i))
+          customSelectedDays = customSelectedDays.filter(d => d !== i);
+        else customSelectedDays.push(i);
+        buildDayChips(containerId, null, true);
+      } else {
+        const arr = cardDays[stateKey];
+        if (arr.includes(i)) arr.splice(arr.indexOf(i), 1);
+        else arr.push(i);
+        buildDayChips(containerId, stateKey, false);
+        // update store
+        const all = HQNotif.getAll();
+        const s   = all.find(x => x.id === stateKey);
+        if (s) { s.days = [...arr]; HQNotif.upsert(s); }
+      }
+    };
+    container.appendChild(chip);
+  });
+}
+
+/* ── Toggle enable/disable ──────────────────── */
+function toggleNotif(id, enabled) {
+  HQNotif.setEnabled(id, enabled);
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.toggle('enabled', enabled);
+  if (enabled && HQNotif.getPermission() !== 'granted') {
+    HQNotif.requestPermission().then(renderPermBanner);
+  }
+  showToast(enabled ? '🔔 Reminder on' : '🔕 Reminder off');
+}
+
+/* ── Set time ───────────────────────────────── */
+function setTime(id, time) {
+  HQNotif.setTime(id, time);
+}
+
+/* ── Test ───────────────────────────────────── */
+async function testNotif(id) {
+  if (HQNotif.getPermission() !== 'granted') {
+    const r = await HQNotif.requestPermission();
+    renderPermBanner();
+    if (r !== 'granted') { showToast('⚠️ Enable notifications first'); return; }
+  }
+  await HQNotif.test(id);
+  showToast('🔔 Test sent!');
+}
+
+/* ── Events toggle ──────────────────────────── */
+function toggleEvents(enabled) {
+  window.HQStore.set('audhd-hq-notif-events', enabled ? '1' : '0');
+  showToast(enabled ? '📅 Event alerts on' : '📅 Event alerts off');
+  HQNotif.rescheduleAll();
+}
+
+/* ── Upcoming events list (source registry P4) ── */
+const TYPE_META = {
+  appointment: { emoji: '📅', color: 'rgba(59,130,246,' },
+  deadline:    { emoji: '⚠️', color: 'rgba(249,115,22,' },
+  medication:  { emoji: '💊', color: 'rgba(124,58,237,' },
+  routine:     { emoji: '🔁', color: 'rgba(34,197,94,'  },
+  recurring:   { emoji: '🔁', color: 'rgba(34,197,94,'  },
+  event:       { emoji: '📌', color: 'rgba(59,130,246,' }
+};
+
+function _fmtRelTime(isoStr) {
+  const ms = new Date(isoStr).getTime() - Date.now();
+  if (isNaN(ms)) return '';
+  if (ms < 0) return 'Past';
+  const mins = Math.round(ms / 60000);
+  const hrs  = Math.floor(mins / 60);
+  const days = Math.floor(hrs / 24);
+  if (days >= 2) return `in ${days}d`;
+  if (hrs  >= 1) return `in ${hrs}h ${mins % 60}m`;
+  return `in ${mins}m`;
+}
+
+function _fmtTime(isoStr) {
+  try {
+    return new Date(isoStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch { return isoStr; }
+}
+
+function _fmtDate(isoStr) {
+  try {
+    return new Date(isoStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  } catch { return ''; }
+}
+
+function refreshUpcomingList() {
+  const list = document.getElementById('upcoming-events-list');
+  if (!list) return;
+  const items = (typeof HQNotif !== 'undefined' && HQNotif.getUpcomingFromSources)
+    ? HQNotif.getUpcomingFromSources(24 * 60 * 60 * 1000)
+    : [];
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">No upcoming events from registered modules in the next 24 hours.<br><span style="font-size:10px;display:block;margin-top:4px;opacity:.6">Modules register events when their page is open. Open Monthly Planner, Health, Routines, or Recurring Events to populate this list.</span></div>';
+    return;
+  }
+  list.innerHTML = items.map(item => {
+    const meta = TYPE_META[item.type] || TYPE_META.event;
+    const rel  = _fmtRelTime(item.time);
+    const tStr = _fmtTime(item.time);
+    const dStr = _fmtDate(item.time);
+    const src  = item.moduleId
+      ? `<span style="font-size:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px;color:rgba(226,224,240,.45)">${item.moduleId}</span>`
+      : '';
+    return `
+      <div class="notif-card" style="border-color:${meta.color}.25);margin-bottom:8px">
+        <div class="card-top">
+          <span class="card-ico" style="font-size:18px">${meta.emoji}</span>
+          <div class="card-info">
+            <div class="card-title" style="font-size:13px">${item.title}</div>
+            <div class="card-desc" style="margin-top:3px">
+              ${dStr} · ${tStr}
+              <span style="color:${meta.color}.9);font-weight:800;margin-left:4px">${rel}</span>
+              <span style="margin-left:6px">${src}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ── Custom notifications ───────────────────── */
+function addCustom() {
+  const title = document.getElementById('custom-title').value.trim();
+  const body  = document.getElementById('custom-body').value.trim();
+  const time  = document.getElementById('custom-time').value;
+  const url   = document.getElementById('custom-url').value.trim() || './index.html';
+
+  if (!title) { showToast('⚠️ Add a title first'); return; }
+
+  const entry = {
+    id:      'custom-' + Date.now(),
+    type:    'custom',
+    title,
+    body,
+    url,
+    enabled: true,
+    days:    [...customSelectedDays],
+    time
+  };
+
+  HQNotif.upsert(entry);
+  document.getElementById('custom-title').value = '';
+  document.getElementById('custom-body').value  = '';
+  renderCustomList();
+  showToast('✅ Custom notification added');
+}
+
+function deleteCustom(id) {
+  HQNotif.remove(id);
+  renderCustomList();
+  showToast('🗑 Removed');
+}
+
+function renderCustomList() {
+  const list    = document.getElementById('custom-list');
+  const customs = HQNotif.getAll().filter(s => s.type === 'custom');
+  if (!customs.length) {
+    list.innerHTML = '<div class="empty">No custom notifications yet</div>';
+    return;
+  }
+  list.innerHTML = customs.map(s => `
+    <div class="custom-item">
+      <div class="custom-item-body">
+        <div class="custom-item-title">${s.title}</div>
+        <div class="custom-item-meta">
+          ${s.time} · ${s.days.map(d => DAYS[d]).join(', ')}
+          ${s.body ? ' · ' + s.body.slice(0, 40) + (s.body.length > 40 ? '…' : '') : ''}
+        </div>
+      </div>
+      <button class="del-btn" onclick="deleteCustom('${s.id}')" aria-label="Close" title="Close">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ── Sync UI with stored config ─────────────── */
+function syncUI() {
+  const all = HQNotif.getAll();
+  ['checkin-morning','checkin-evening','braindump-nudge','daybuilder-morning'].forEach(id => {
+    const s   = all.find(x => x.id === id);
+    const tog = document.getElementById('tog-' + id);
+    const tim = document.getElementById('time-' + id);
+    const crd = document.getElementById('card-' + id);
+    if (!s || !tog) return;
+    tog.checked = s.enabled;
+    if (tim) tim.value = s.time;
+    if (crd) crd.classList.toggle('enabled', s.enabled);
+    if (s.days) cardDays[id] = [...s.days];
+    buildDayChips('days-' + id, id, false);
+  });
+
+  // events toggle
+  const evTog = document.getElementById('tog-events');
+  if (evTog) evTog.checked = window.HQStore.get('audhd-hq-notif-events', '0') === '1';
+
+  // custom day chips
+  buildDayChips('custom-days-row', null, true);
+  renderCustomList();
+}
+
+/* ── Init ───────────────────────────────────── */
+renderPermBanner();
+syncUI();
+refreshUpcomingList(); // P4: populate source-registry event list
+</script>
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

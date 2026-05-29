@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📅 Day View — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+
+<script>
+// Determine initial tab from URL hash: #plan = Day Builder, default = Timeline
+window.DAY_VIEW_TAB = (location.hash === '#plan') ? 'plan' : 'live';
+window.HQ_CURRENT_PAGE = window.DAY_VIEW_TAB === 'plan' ? 'daybuilder' : 'timeline';
+
+window.HQ_PAGE_CONFIG = {
+  centerHTML: `<div id="dv-tab-toggle" class="dv-tab-bar">
+    <button class="dv-tab" id="tab-live" onclick="switchTab('live')" aria-label="Live tab">📅 Live</button>
+    <button class="dv-tab" id="tab-plan" onclick="switchTab('plan')" aria-label="Plan tab">🗓 Plan</button>
+  </div>`,
+  // Action button is dynamic — set per tab after init
+  actionBtn: null,
+};
+</script>
+
+<!-- Shared: Day Builder CSS -->
+<link rel="stylesheet" href="pages/day-builder.css">
+<link rel="stylesheet" href="pages/day-view.css">
+<!-- Timeline CSS inline (avoids extra file dep) -->
+<!-- H-13: Inline styles extracted to day-view.css -->
+</head>
+<body>
+
+<div id="toast-el" class="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     TIME BRAIN STRIP
+     ═══════════════════════════════════════════ -->
+<div class="time-brain-strip">
+  <a href="day-view.html"         class="tbs-btn active" data-tbs="timeline">📅 Today</a>
+  <a href="day-view.html#plan"    class="tbs-btn" data-tbs="daybuilder" onclick="switchTab('plan');return false;">🗓 Day Plan</a>
+  <a href="weekly-planner.html"   class="tbs-btn" data-tbs="weekly">📆 Week</a>
+  <a href="monthly-planner.html"  class="tbs-btn" data-tbs="monthly">🗓️ Month</a>
+  <a href="recurring-events.html" class="tbs-btn" data-tbs="recurring">🔁 Recurring</a>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FRICTION MODAL (Live tab — timeline actions)
+     ═══════════════════════════════════════════ -->
+<div id="friction-modal" class="modal-bg" onclick="if(event.target===this)closeFrictionModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="fm-title">📋 Edit Item</div>
+      <button class="modal-x" onclick="closeFrictionModal()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.55;background:var(--card2);border-radius:8px;padding:9px 11px" id="fm-detail"></div>
+      <div id="fm-task-opts">
+        <div class="friction-opt sel" id="fo-done" onclick="selF(this,'done')">
+          <span style="font-size:16px">✅</span>
+          <div><div style="font-weight:700">Mark done</div><div style="font-size:10px;color:var(--muted)">Complete this task</div></div>
+        </div>
+        <div class="friction-opt" id="fo-defer" onclick="selF(this,'defer')">
+          <span style="font-size:16px">🔄</span>
+          <div><div style="font-weight:700">Defer</div><div style="font-size:10px;color:var(--muted)">Kick back to Weekly inbox — logged</div></div>
+        </div>
+        <div class="friction-opt" id="fo-reopen" onclick="selF(this,'reopen')" style="display:none">
+          <span style="font-size:16px">↩️</span>
+          <div><div style="font-weight:700">Reopen</div><div style="font-size:10px;color:var(--muted)">Mark as not done yet</div></div>
+        </div>
+      </div>
+      <div id="fm-appt-opts" style="display:none">
+        <div class="friction-opt sel" id="fo-appt-done" onclick="selF(this,'appt-done')">
+          <span style="font-size:16px">✅</span>
+          <div><div style="font-weight:700">Mark complete</div><div style="font-size:10px;color:var(--muted)">Appointment happened</div></div>
+        </div>
+        <div class="friction-opt" id="fo-appt-reschedule" onclick="selF(this,'appt-reschedule')">
+          <span style="font-size:16px">📅</span>
+          <div><div style="font-weight:700">Reschedule</div><div style="font-size:10px;color:var(--muted)">Move to another date — reason required</div></div>
+        </div>
+        <div class="friction-opt" id="fo-appt-cancel" onclick="selF(this,'appt-cancel')">
+          <span style="font-size:16px">✕</span>
+          <div><div style="font-weight:700">Cancel</div><div style="font-size:10px;color:var(--muted)">Mark cancelled — reason required</div></div>
+        </div>
+      </div>
+      <div id="fm-reason-wrap" style="display:none;margin-top:8px">
+        <div class="fg"><label class="fl">Reason *</label><input id="fm-reason" class="fin" placeholder="Why?"></div>
+      </div>
+      <div id="fm-newdate-wrap" style="display:none">
+        <div class="fg"><label class="fl">New Date</label><input id="fm-newdate" class="fin" type="date" aria-label="Fm Newdate"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeFrictionModal()" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="confirmFriction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DAY BUILDER MODALS (Plan tab)
+     ═══════════════════════════════════════════ -->
+
+<!-- DEVIATION MODAL -->
+<div id="dev-modal" class="modal-bg" onclick="if(event.target===this)closeModal('dev-modal')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="dev-modal-title">⚠️ Breaking a Core Routine Item</div>
+      <button class="modal-x" onclick="closeModal('dev-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint-warn">🔒 Locked item. Removing it will be logged. Be honest with yourself.</div>
+      <div class="fg"><label class="fl">Reason for removing</label><input id="dev-reason" class="fin" placeholder="Why are you removing this?"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('dev-modal')">Cancel — keep it</button>
+      <button class="btn-red" onclick="confirmDeviation()">⚠️ Log &amp; Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div id="task-modal" class="modal-bg" onclick="if(event.target===this)closeModal('task-modal')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">➕ Add Custom Task</div>
+      <button class="modal-x" onclick="closeModal('task-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Task Name</label><input id="tm-name" class="fin" placeholder="What needs doing?"></div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Emoji</label><input id="tm-em" class="fin" placeholder="✅" maxlength="4" style="font-size:18px;text-align:center" value="✅"></div>
+        <div class="fg"><label class="fl">Duration (min)</label><input id="tm-dur" class="fin" type="number" min="5" step="5" placeholder="30"></div>
+      </div>
+      <div class="frow-2">
+        <div class="fg">
+          <label class="fl">Category</label>
+          <select id="tm-cat" class="fin" aria-label="Category">
+            <option value="work">💼 Work</option><option value="home">🏠 Home</option>
+            <option value="self">🧠 Self-care</option><option value="social">💬 Social</option>
+            <option value="health">🏥 Health</option><option value="finance">💰 Finance</option>
+            <option value="transit">🚌 Transit</option><option value="adulting">📋 Adulting</option>
+          </select>
+        </div>
+        <div class="fg" style="justify-content:flex-end;padding-top:14px">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="checkbox" id="tm-routine" style="width:15px;height:15px;cursor:pointer">
+            <span>🔄 Save as Routine</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('task-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveCustomTask()">+ Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLACE-AT-TIME MODAL -->
+<div id="place-modal" class="modal-bg" onclick="if(event.target===this)closeModal('place-modal')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="pm-title">📌 Place Task</div>
+      <button class="modal-x" onclick="closeModal('place-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="pm-preset-banner" style="display:none;align-items:center;gap:9px;background:rgba(var(--primary-rgb),.09);border:1.5px solid rgba(var(--primary-rgb),.25);border-radius:9px;padding:9px 12px;margin-bottom:12px">
+        <span style="font-size:18px">📌</span>
+        <span id="pm-preset-banner-label" style="font-size:12px;font-weight:800;color:var(--purple)"></span>
+      </div>
+      <div id="pm-custom-fields">
+        <div class="fg"><label class="fl">Task Name</label><input id="pm-name" class="fin" placeholder="What are you scheduling?"></div>
+        <div class="frow-2">
+          <div class="fg"><label class="fl">Emoji</label><input id="pm-em" class="fin" placeholder="📌" maxlength="4" style="font-size:17px;text-align:center" value="📌"></div>
+          <div class="fg">
+            <label class="fl">Category</label>
+            <select id="pm-cat" class="fin" aria-label="Category">
+              <option value="work">💼 Work</option><option value="home">🏠 Home</option>
+              <option value="self">🧠 Self-care</option><option value="social">💬 Social</option>
+              <option value="health">🏥 Health</option><option value="finance">💰 Finance</option>
+              <option value="transit">🚌 Transit</option><option value="adulting">📋 Adulting</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">⏰ Start Time</label><input id="pm-time" class="fin" type="time" step="60" oninput="pmSyncEnd()" aria-label="Pm Time"></div>
+        <div class="fg"><label class="fl">⏱ Duration (min)</label><input id="pm-dur" class="fin" type="number" min="1" step="5" placeholder="30" oninput="pmSyncEnd()"></div>
+      </div>
+      <div class="fg" style="margin-top:4px">
+        <label class="fl">⏹️ End Time <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:9px">— or set this instead of duration</span></label>
+        <input id="pm-end" class="fin" type="time" step="60" oninput="pmSyncDur()" aria-label="Pm End">
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">💡 Edit any field — the others update automatically.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('place-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="confirmPlace()">📌 Place</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PLACED MODAL -->
+<div id="edit-placed-modal" class="modal-bg" onclick="if(event.target===this)closeModal('edit-placed-modal')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="ep-modal-title">✏️ Edit Task</div>
+      <button class="modal-x" onclick="closeModal('edit-placed-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Task Name</label><input id="ep-name" class="fin" placeholder="Task name"></div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Emoji</label><input id="ep-em" class="fin" maxlength="4" style="font-size:17px;text-align:center" aria-label="Ep Em"></div>
+        <div class="fg">
+          <label class="fl">Category</label>
+          <select id="ep-cat" class="fin" aria-label="Category">
+            <option value="work">💼 Work</option><option value="home">🏠 Home</option>
+            <option value="self">🧠 Self-care</option><option value="social">💬 Social</option>
+            <option value="health">🏥 Health</option><option value="finance">💰 Finance</option>
+            <option value="transit">🚌 Transit</option><option value="adulting">📋 Adulting</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">⏰ Start Time</label><input id="ep-time" class="fin" type="time" step="60" oninput="epSyncEnd()" aria-label="Ep Time"></div>
+        <div class="fg"><label class="fl">⏱ Duration (min)</label><input id="ep-dur" class="fin" type="number" min="1" step="5" oninput="epSyncEnd()" aria-label="Ep Dur"></div>
+      </div>
+      <div class="fg" style="margin-top:4px">
+        <label class="fl">⏹️ End Time <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:9px">— or set this instead of duration</span></label>
+        <input id="ep-end" class="fin" type="time" step="60" oninput="epSyncDur()" aria-label="Ep End">
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn-red" onclick="deleteEditPlaced()" aria-label="Delete">🗑 Remove</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-g" onclick="closeModal('edit-placed-modal')" aria-label="Cancel">Cancel</button>
+        <button class="btn-p" onclick="saveEditPlaced()" aria-label="Save">💾 Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LIVE TAB (Timeline)
+     ═══════════════════════════════════════════ -->
+<div id="dv-live-panel">
+  <div class="tl-main">
+
+    <!-- Progress -->
+    <div class="prog-card">
+      <div class="prog-row">
+        <div class="prog-label">Day Progress</div>
+        <div class="prog-count" id="prog-count">— / —</div>
+      </div>
+      <div class="rb-track md"><div class="rb-fill" id="prog-bar" style="width:0%"></div></div>
+      <div id="prog-detail" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--muted)"></div>
+    </div>
+
+    <!-- Top band -->
+    <div class="top-band" id="top-band"></div>
+
+    <!-- Non-negs strip -->
+    <div class="nn-strip" id="nn-strip" style="display:none">
+      <div class="nn-strip-hd">
+        <div class="nn-strip-title">💎 Non-Negotiables</div>
+        <div class="nn-strip-prog" id="nn-prog">0/0</div>
+      </div>
+      <div class="nn-row" id="nn-row"></div>
+    </div>
+
+    <!-- Health strip -->
+    <div class="health-strip" id="health-strip" style="display:none">
+      <div class="hs-hd">
+        <div class="hs-title">🩺 Health Today</div>
+        <a href="health-tracker.html" style="font-size:10px;color:var(--pink);font-weight:700;text-decoration:none">Open →</a>
+      </div>
+      <div id="health-data"></div>
+    </div>
+
+    <!-- All-day events banner -->
+    <div id="allday-banner" style="display:none"></div>
+
+    <!-- Timeline -->
+    <div class="timeline" id="timeline">
+      <div class="tl-ruler"></div>
+    </div>
+
+    <!-- Unscheduled tasks -->
+    <div class="unsched-section" id="unsched-section" style="display:none">
+      <div class="unsched-hd">No fixed time</div>
+      <div id="unsched-list"></div>
+    </div>
+
+  </div>
+</div><!-- /dv-live-panel -->
+
+<!-- ═══════════════════════════════════════════
+     PLAN TAB (Day Builder)
+     ═══════════════════════════════════════════ -->
+<div id="dv-plan-panel">
+  <div class="layout">
+    <div class="sidebar">
+
+      <div class="stats-box">
+        <div class="stats-lbl">🗓 Day Stats</div>
+        <div class="stats-strip">
+          <div class="ss-item"><div class="ss-n" id="st-placed" style="color:var(--purple)">0</div><div class="ss-l">Placed</div></div>
+          <div class="ss-item"><div class="ss-n" id="st-hrs" style="color:var(--teal)">0h</div><div class="ss-l">Sched.</div></div>
+          <div class="ss-item"><div class="ss-n" id="st-free" style="color:var(--green)">—</div><div class="ss-l">Free</div></div>
+        </div>
+        <div class="pct-row"><span>Day filled</span><span id="st-pct">0%</span></div>
+        <div class="rb-track"><div class="rb-fill" id="st-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="side-card open" id="sc-myroute">
+        <div class="side-hd" onclick="toggleSide('sc-myroute')">
+          <span style="font-size:14px">🔄</span>
+          <div class="side-title">My Routine</div>
+          <div class="side-ar">▾</div>
+        </div>
+        <div class="side-body">
+          <div id="my-routine-presets"></div>
+          <div id="my-routine-empty" style="font-size:10px;color:var(--muted);font-style:italic;padding:3px 0">No routine items yet. Add one below and check "Save as Routine".</div>
+        </div>
+      </div>
+
+      <div class="side-card" id="sc-templates">
+        <div class="side-hd" onclick="toggleSide('sc-templates')">
+          <span style="font-size:14px">📋</span>
+          <div class="side-title">Day Templates</div>
+          <div class="side-ar">▾</div>
+        </div>
+        <div class="side-body" id="sc-templates-body">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:8px">One-tap apply — builds your schedule from a preset day type. Replaces your current schedule.</div>
+          <div id="template-list"></div>
+        </div>
+      </div>
+
+      <div class="side-card open" id="sc-tasks">
+        <div class="side-hd" onclick="toggleSide('sc-tasks')">
+          <span style="font-size:14px">✅</span>
+          <div class="side-title">Tasks &amp; Presets</div>
+          <div class="side-ar">▾</div>
+        </div>
+        <div class="side-body">
+          <div class="cat-filters" id="cat-filters"></div>
+          <div id="task-presets"></div>
+          <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border)">
+            <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Quick Add</div>
+            <div class="at-row">
+              <input id="quick-task-name" class="at-in" placeholder="Task name...">
+              <select id="quick-task-cat" class="at-sel" aria-label="Quick Task Cat">
+                <option value="work">💼</option><option value="home">🏠</option>
+                <option value="self">🧠</option><option value="social">💬</option>
+                <option value="health">🏥</option><option value="finance">💰</option>
+                <option value="transit">🚌</option><option value="adulting">📋</option>
+              </select>
+            </div>
+            <div class="at-row">
+              <input id="quick-task-dur" class="at-in" type="number" min="5" step="5" placeholder="min" style="max-width:80px">
+              <button class="at-btn" onclick="quickAddTask()" aria-label="Add item">+ Add</button>
+              <button class="at-btn ghost" onclick="openModal('task-modal')">···</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <div>
+      <div class="sel-indicator" id="sel-indicator">
+        <span id="sel-indicator-text">Click a slot to place</span>
+        <button class="sel-indicator-clear" onclick="clearSelection()">✕ clear</button>
+      </div>
+      <div id="week-pull-strip" style="display:none"></div>
+      <div class="hint">💡 <strong>Select a preset</strong> then click any time on the schedule. <strong>Drag</strong> directly for quick placement — a snap line shows where it lands. <strong>Click any placed item</strong> to edit time, duration, or details. Apply a <strong>Day Template</strong> to build your full day in one tap.</div>
+      <div class="schedule">
+        <div class="sched-hd">
+          <div class="sched-title" id="sched-title">🗓 Schedule</div>
+          <button class="clear-btn" onclick="clearCustomTasks()">↺ Clear custom</button>
+          <button class="clear-btn danger" onclick="clearAll()">Clear all</button>
+        </div>
+        <!-- P5: pinned items panel (pin-daybuilder behavior) -->
+        <div id="db-pinned-panel" style="display:none;padding:10px 12px 4px;border-bottom:1px solid var(--border)"></div>
+        <div id="schedule-grid"></div>
+      </div>
+      <div id="dev-log-panel" class="dev-log" style="display:none">
+        <div class="dl-hd">
+          <span style="font-size:16px">⚠️</span>
+          <div class="dl-title">Deviation Log</div>
+          <button class="dl-close" onclick="document.getElementById('dev-log-panel').style.display='none'" aria-label="Close" title="Close">✕</button>
+        </div>
+        <div id="dev-log-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /layout -->
+</div><!-- /dv-plan-panel -->
+
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+
+<!-- ═══════════════════════════════════════════
+     TAB CONTROLLER
+     ═══════════════════════════════════════════ -->
+<script>
+var _currentTab = window.DAY_VIEW_TAB || 'live';
+
+function switchTab(tab) {
+  _currentTab = tab;
+  history.replaceState(null, '', tab === 'plan' ? '#plan' : '#');
+
+  // Update topbar tab buttons
+  document.getElementById('tab-live').classList.toggle('active', tab === 'live');
+  document.getElementById('tab-plan').classList.toggle('active', tab === 'plan');
+
+  // Update Time Brain strip active state
+  document.querySelectorAll('.tbs-btn').forEach(function(b) {
+    var tbs = b.getAttribute('data-tbs');
+    b.classList.toggle('active',
+      (tab === 'live' && tbs === 'timeline') ||
+      (tab === 'plan' && tbs === 'daybuilder')
+    );
+  });
+
+  // Show/hide panels
+  document.getElementById('dv-live-panel').classList.toggle('active', tab === 'live');
+  document.getElementById('dv-plan-panel').classList.toggle('active', tab === 'plan');
+
+  // Update topbar action button label/behavior
+  var actionBtn = document.querySelector('.topbar-action-btn, [data-topbar-action]');
+  if (actionBtn) {
+    if (tab === 'plan') {
+      actionBtn.textContent = 'Today';
+      actionBtn.onclick = function() { goToday(); };
+      // Also update date nav in topbar center if present
+      var cen = document.getElementById('hq-topbar-center');
+      if (cen) cen.style.display = '';
+    } else {
+      actionBtn.textContent = '';
+      actionBtn.onclick = null;
+    }
+  }
+
+  // Trigger renders on first switch to plan tab
+  if (tab === 'plan' && typeof renderAll === 'function') {
+    renderAll();
+  }
+  if (tab === 'live' && typeof tlRender === 'function') {
+    tlRender();
+  }
+}
+
+// Init tabs on load
+document.addEventListener('DOMContentLoaded', function() {
+  var tab = _currentTab;
+  document.getElementById('dv-live-panel').classList.toggle('active', tab === 'live');
+  document.getElementById('dv-plan-panel').classList.toggle('active', tab === 'plan');
+  document.getElementById('tab-live').classList.toggle('active', tab === 'live');
+  document.getElementById('tab-plan').classList.toggle('active', tab === 'plan');
+});
+</script>
+
+<!-- ═══════════════════════════════════════════
+     DAY VIEW JS — unified timeline + builder module
+     [C3] Replaces: timeline.js + inline bridge + day-builder.js
+     All aliases (tlRender, tlLoad, tlCloseModal, tlEsc), toast
+     bridging, and hashchange handling are internal to day-view.js.
+     ═══════════════════════════════════════════ -->
+<script src="pages/day-view.js"></script>
+<script src="core/hq-notifications.js"></script>
+<!-- removed duplicate core/hq-notifications.js -->
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

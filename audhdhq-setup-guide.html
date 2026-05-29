@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#120f24">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<title>🧠 AuDHD HQ — Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"><script src="core/hq-keys.js"></script>
+<script src="core/hq-store.js"></script>
+<script src="core/hq-migrate.js"></script>
+<script src="core/hq-ready.js"></script>
+<script src="core/hq-deploy-gate.js"></script>
+<link rel="stylesheet" href="pages/audhdhq-setup-guide.css">
+</head>
+<body>
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth();
+</script>
+
+<!-- PRINT BAR (screen only) -->
+<div class="print-bar">
+  <span class="print-bar-title">🧠 AuDHD HQ — Setup Guide</span>
+  <button class="print-btn" onclick="window.print()">🖨️ Save as PDF</button>
+</div>
+
+<div class="doc">
+
+  <!-- ── HEADER ── -->
+  <div class="doc-header">
+    <div class="doc-eyebrow">Welcome to AuDHD HQ</div>
+    <h1 class="doc-title">Your brain has a<br><em>new home base.</em></h1>
+    <p class="doc-tagline">A plain-language guide to getting started — what AuDHD HQ is, how your data works, and the first five things to do.</p>
+    <div class="doc-version">audhd-hq.web.app · Setup Guide v2 · Phase 6 complete</div>
+  </div>
+
+  <!-- ── WHAT IS IT ── -->
+  <div class="section">
+    <div class="section-label">01 · What is AuDHD HQ</div>
+    <h2 class="section-title">An external brain, built for how you actually work.</h2>
+    <div class="section-body">
+      <p>AuDHD HQ is a personal productivity and life-management system designed specifically for people who are autistic, have ADHD, or both. It's not a generic to-do app with extra steps — it's built from the ground up around how AuDHD brains actually operate: non-linear, context-sensitive, prone to overwhelm, and deeply capable when given the right scaffolding.</p>
+      <p>Everything lives in one place: your schedule, your money, your health patterns, your mood, your tasks, your recipes, your social scripts, your coping tools. The idea is that when your brain can't hold it all, the app holds it for you.</p>
+    </div>
+
+    <div class="callout purple" style="margin-top: 20px;">
+      <span class="callout-ico">💜</span>
+      <div class="callout-text">AuDHD HQ uses language that reflects the actual AuDHD experience. You'll see things like "Survival Mode," "Shutting down," and "Can't start" — not because it pathologizes these states, but because naming them accurately is how you find the right tool at the right moment.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── PRIVACY ── -->
+  <div class="section">
+    <div class="section-label">02 · Your Data &amp; Privacy</div>
+    <h2 class="section-title">Your data never leaves your device.</h2>
+    <div class="section-body">
+      <p>Before you start entering anything personal, here's the short version: <strong style="color:var(--text)">AuDHD HQ does not have a server.</strong> Nothing you type is sent anywhere. There's no account, no sync, no cloud, no database. All your data lives entirely in your own browser on your own device.</p>
+    </div>
+
+    <div class="privacy-grid">
+      <div class="priv-card green-border">
+        <div class="priv-card-ico">🏠</div>
+        <div class="priv-card-title">localStorage — Your data, on your device</div>
+        <div class="priv-card-body">When you save anything in AuDHD HQ — a check-in, a budget entry, a walk log — it's written to a part of your browser called <strong>localStorage</strong>. Think of it like a notepad that your browser keeps on your computer or phone. The app can read it back whenever you open the app. Nothing goes to a server.</div>
+      </div>
+      <div class="priv-card blue-border">
+        <div class="priv-card-ico">📄</div>
+        <div class="priv-card-title">JSON exports — Your portable backup</div>
+        <div class="priv-card-body">You can download all your data at any time as a <strong>.json file</strong> — a plain text file that's readable by computers (and humans, if you squint). This is your backup. Keep it somewhere safe like a USB drive or cloud folder. You can import it back in at any time to restore everything.</div>
+      </div>
+    </div>
+
+    <div class="callout green" style="margin-top: 16px;">
+      <span class="callout-ico">✅</span>
+      <div class="callout-text"><strong>What this means in practice:</strong> If you clear your browser's site data, or switch to a different browser or device, your AuDHD HQ data won't automatically follow you. That's why regular exports are important — they're your safety net.</div>
+    </div>
+
+    <h3 style="font-size:17px; font-weight:700; color:var(--text); margin: 22px 0 12px;">The two things worth understanding</h3>
+
+    <table class="kv-table">
+      <thead>
+        <tr>
+          <th>Thing</th>
+          <th>What it is</th>
+          <th>What to do</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>localStorage</td>
+          <td>Where your data lives in real time. It's always there when you open the app on the same browser. Browser dev tools can view it, but nobody else can access it remotely.</td>
+          <td>Just use the app normally — your data saves automatically as you go. No manual save button required.</td>
+        </tr>
+        <tr>
+          <td>.json export</td>
+          <td>A downloadable snapshot of everything. One file, all your data. It's human-readable text (though it looks technical). You can open it in Notepad if you're curious.</td>
+          <td>Go to <strong>Data Sync → Export All Data</strong> and save the file somewhere outside your browser. Do this regularly — especially before switching devices or clearing browser data.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout gold" style="margin-top: 16px;">
+      <span class="callout-ico">⚠️</span>
+      <div class="callout-text"><strong>One important heads-up:</strong> Each browser and each device has its own separate localStorage. Data saved in Chrome doesn't automatically appear in Firefox. Data on your laptop doesn't sync to your phone. If you want to use AuDHD HQ across devices, export from one and import into the other using Data Sync.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── GETTING STARTED ── -->
+  <div class="section">
+    <div class="section-label">03 · Getting Started</div>
+    <h2 class="section-title">Five steps to make it yours.</h2>
+    <div class="section-body">
+      <p>You don't have to do everything at once. These five steps are the highest-leverage starting points — the ones that make every other tool work better.</p>
+    </div>
+
+    <div class="steps" style="margin-top: 22px;">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Set your name and theme</div>
+          <div class="step-body">Go to Customize (⚙️) to enter your name. The home screen will greet you with it. You can also pick your preferred colour theme — AuDHD HQ has a time-based morning/afternoon/night theme system that shifts automatically, but you can override it.</div>
+          <span class="step-link">⚙️ customize.html</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Do your first Check-In</div>
+          <div class="step-body">The Check-In is the heartbeat of AuDHD HQ. It logs your mood, energy, body state (split into Physical and Emotional sections), sleep, and workday. In the morning it also shows a quick checklist (meds, teeth, cat, water). The Notes section is a full capture panel — tag anything as a Win, Worry, Note, or Reminder and route it where it needs to go. It takes under two minutes and seeds data that appears on your home screen and in the Health Tracker's trend graphs. Do it once a day — whenever feels natural.</div>
+          <span class="step-link">✅ checkin.html</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Add one task to the Taskboard</div>
+          <div class="step-body">Open the Taskboard and add something real that's on your mind — even a small one. The Taskboard has Daily, Weekly, and Monthly lanes. Your home screen shows your current Priority Stack automatically. This is how the app starts feeling useful rather than just interesting.</div>
+          <span class="step-link">📋 taskboard.html</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Explore what resonates right now</div>
+          <div class="step-body">AuDHD HQ has a lot of tools. Don't try to use all of them. Look at the home screen and notice which ones feel immediately useful. Money Brain? Walking Tracker? Dream Journal? Start with what solves a current problem. The others will wait.</div>
+          <span class="step-link">🏠 index.html</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Export your data once you've added some</div>
+          <div class="step-body">After you've been using the app for a few days and have data you'd be sad to lose, go to Data Sync and download a backup. Pick a folder you'll remember — a cloud folder, USB drive, or dedicated backup spot. Set a reminder to do this every couple of weeks.</div>
+          <span class="step-link">🔄 data-sync.html</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── ALL TOOLS QUICK VIEW ── -->
+  <div class="section">
+    <div class="section-label">04 · All Tools at a Glance</div>
+    <h2 class="section-title">29 tools. One system.</h2>
+    <div class="section-body">
+      <p>Here's a bird's-eye view of every tool in AuDHD HQ. You don't need all of them on day one.</p>
+    </div>
+
+    <h3 style="font-size:13px;font-weight:700;color:var(--text2);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">🌅 Daily</h3>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tool-item-ico">✅</span><div><div class="tool-item-name">Check-In</div><div class="tool-item-desc">Mood, energy, body, quick log</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🫙</span><div><div class="tool-item-name">Thought Jar</div><div class="tool-item-desc">Brain dump, route anywhere</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">📅</span><div><div class="tool-item-name">Timeline</div><div class="tool-item-desc">Today's read-only day view</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🗓</span><div><div class="tool-item-name">DayBuilder</div><div class="tool-item-desc">Visual block schedule</div></div></div>
+    </div>
+
+    <h3 style="font-size:13px;font-weight:700;color:var(--text2);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">🧠 Core Brains</h3>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tool-item-ico">🗂</span><div><div class="tool-item-name">Project Brain</div><div class="tool-item-desc">Projects, milestones, tasks</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">💰</span><div><div class="tool-item-name">Money Brain</div><div class="tool-item-desc">Budget, bills, savings, debt</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🍳</span><div><div class="tool-item-name">Kitchen Brain</div><div class="tool-item-desc">Meals, fridge, recipes</div></div></div>
+    </div>
+
+    <h3 style="font-size:13px;font-weight:700;color:var(--text2);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">🗂 Planning + Organizing</h3>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tool-item-ico">📋</span><div><div class="tool-item-name">Taskboard</div><div class="tool-item-desc">Daily, weekly, monthly lanes</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🗓️</span><div><div class="tool-item-name">Monthly Planner</div><div class="tool-item-desc">Goals, cascade, appointments</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">📆</span><div><div class="tool-item-name">Weekly Planner</div><div class="tool-item-desc">Week view, inbox pull, review</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🔁</span><div><div class="tool-item-name">Routines + Prepwork</div><div class="tool-item-desc">Morning/night/end-of-day routines</div></div></div>
+    </div>
+
+    <h3 style="font-size:13px;font-weight:700;color:var(--text2);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">❤️ Health + Wellness</h3>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tool-item-ico">🩺</span><div><div class="tool-item-name">Health Tracker</div><div class="tool-item-desc">Period, headaches, sleep, meds, conditions setup</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">💭</span><div><div class="tool-item-name">Dream Journal</div><div class="tool-item-desc">Log, symbols, pattern analysis</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">👟</span><div><div class="tool-item-name">Walking Tracker</div><div class="tool-item-desc">Miles log, pace engine, intensity zones, streaks</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🔥</span><div><div class="tool-item-name">Firebird Protocol</div><div class="tool-item-desc">Coping, breathing, grounding</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🛟</span><div><div class="tool-item-name">Survival Mode</div><div class="tool-item-desc">Floor tasks. For hard days.</div></div></div>
+    </div>
+
+    <h3 style="font-size:13px;font-weight:700;color:var(--text2);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">⭐ Specialty Tools</h3>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tool-item-ico">📑</span><div><div class="tool-item-name">Life Admin Brain</div><div class="tool-item-desc">Docs, contacts, deadlines</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">💬</span><div><div class="tool-item-name">Social Brain</div><div class="tool-item-desc">People, scripts, energy tracking</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">💡</span><div><div class="tool-item-name">Idea Studio</div><div class="tool-item-desc">Interests, hyperfocus, ideas</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🧹</span><div><div class="tool-item-name">Deep Clean</div><div class="tool-item-desc">Room-by-room protocol</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🌍</span><div><div class="tool-item-name">Global Data</div><div class="tool-item-desc">Stats across all modules</div></div></div>
+    </div>
+
+    <h3 style="font-size:13px;font-weight:700;color:var(--text2);margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">⚙️ Settings + Utilities</h3>
+    <div class="tool-list">
+      <div class="tool-item"><span class="tool-item-ico">⚙️</span><div><div class="tool-item-name">Customize</div><div class="tool-item-desc">Tags, reminders, preferences</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🔄</span><div><div class="tool-item-name">Data Sync</div><div class="tool-item-desc">Export, import, backup</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">📦</span><div><div class="tool-item-name">Box Tracker</div><div class="tool-item-desc">Physical item locations (page at box-tracker.html · not in main nav)</div></div></div>
+      <div class="tool-item"><span class="tool-item-ico">🔔</span><div><div class="tool-item-name">Notifications</div><div class="tool-item-desc">Reminder management</div></div></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── FIRST WEEK CHECKLIST ── -->
+  <div class="section">
+    <div class="section-label">05 · First Week Checklist</div>
+    <h2 class="section-title">Tiny wins, not a full deployment.</h2>
+    <div class="section-body">
+      <p>Check these off as you go. You don't have to do them in order, and you don't have to do them all in the first week. Just whenever.</p>
+    </div>
+
+    <ul class="checklist" id="checklist">
+      <li id="ci-1"><div class="check-box" onclick="toggleCheck('ci-1')"></div><span class="check-label">Set my name in Customize ⚙️</span></li>
+      <li id="ci-2"><div class="check-box" onclick="toggleCheck('ci-2')"></div><span class="check-label">Completed my first Check-In ✅</span></li>
+      <li id="ci-3"><div class="check-box" onclick="toggleCheck('ci-3')"></div><span class="check-label">Added a task to Taskboard 📋</span></li>
+      <li id="ci-4"><div class="check-box" onclick="toggleCheck('ci-4')"></div><span class="check-label">Explored the home screen and picked two tools to try this week</span></li>
+      <li id="ci-5"><div class="check-box" onclick="toggleCheck('ci-5')"></div><span class="check-label">Done a Check-In three days in a row (the habit that makes everything else work)</span></li>
+      <li id="ci-6"><div class="check-box" onclick="toggleCheck('ci-6')"></div><span class="check-label">Exported a data backup from Data Sync 🔄</span></li>
+      <li id="ci-7"><div class="check-box" onclick="toggleCheck('ci-7')"></div><span class="check-label">Set up Health Tracker — added conditions, medications, and at least one provider in the Setup tab 🩺</span></li>
+      <li id="ci-8"><div class="check-box" onclick="toggleCheck('ci-8')"></div><span class="check-label">Saved the feature guide to refer back to</span></li>
+      <li id="ci-9"><div class="check-box" onclick="toggleCheck('ci-9')"></div><span class="check-label">Used Survival Mode or Firebird Protocol when I actually needed it (not just to look)</span></li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── FOOTER ── -->
+  <div style="text-align:center; padding-top: 8px;">
+    <div style="font-size:28px; margin-bottom: 10px;">🧠</div>
+    <div style="font-family:'DM Serif Display',serif; font-size:18px; color:var(--text); margin-bottom:8px;">You don't have to do this perfectly.</div>
+    <div style="font-size:13px; color:var(--muted); max-width: 400px; margin: 0 auto; line-height:1.6;">AuDHD HQ was built to meet you where you are — including on the days when you can barely open the laptop. Use what helps. Skip what doesn't. Come back to the rest.</div>
+    <div style="margin-top: 20px; font-size:11px; color:var(--muted);">audhd-hq.web.app · See the Feature Guide for detailed how-tos on every tool</div>
+  </div>
+
+</div><!-- /doc -->
+
+<script>
+  // Migrate old key → audhd-hq-setup-guide-checks
+  (function() {
+    try {
+      const safe = window.HQSafe;
+      const old = localStorage.getItem('hq-setup-guide-checks');
+      if (old !== null && (safe ? safe.store.get(HQKeys.SETUP_GUIDE_CHECKS, null) === null : localStorage.getItem(HQKeys.SETUP_GUIDE_CHECKS) === null)) {
+        if (safe) { safe.store.set(HQKeys.SETUP_GUIDE_CHECKS, old); }
+        else { localStorage.setItem(HQKeys.SETUP_GUIDE_CHECKS, old); }
+        localStorage.removeItem('hq-setup-guide-checks');
+      }
+    } catch(e) {}
+  })();
+
+  function toggleCheck(id) {
+    const li = document.getElementById(id);
+    const box = li.querySelector('.check-box');
+    const isDone = box.classList.toggle('done');
+    if (isDone) {
+      box.textContent = '✓';
+      li.classList.add('done-item');
+    } else {
+      box.textContent = '';
+      li.classList.remove('done-item');
+    }
+    // persist via HQSafe if available, else raw localStorage
+    try {
+      const safe = window.HQSafe;
+      const raw = safe ? safe.store.get(HQKeys.SETUP_GUIDE_CHECKS, {}) : JSON.parse(localStorage.getItem(HQKeys.SETUP_GUIDE_CHECKS) || '{}');
+      const state = (raw && typeof raw === 'object') ? raw : {};
+      state[id] = isDone;
+      if (safe) { safe.store.set(HQKeys.SETUP_GUIDE_CHECKS, state); }
+      else { localStorage.setItem(HQKeys.SETUP_GUIDE_CHECKS, JSON.stringify(state)); }
+    } catch(e) {}
+  }
+
+  // Restore checklist state
+  (function() {
+    try {
+      const _sgRaw = window.HQSafe ? window.HQSafe.store.get(HQKeys.SETUP_GUIDE_CHECKS, {}) : JSON.parse(localStorage.getItem(HQKeys.SETUP_GUIDE_CHECKS) || '{}');
+      const state = (_sgRaw && typeof _sgRaw === 'object') ? _sgRaw : {};
+      Object.keys(state).forEach(id => {
+        if (state[id]) toggleCheck(id);
+      });
+    } catch(e) {}
+  })();
+</script>
+
+</body>
+</html>

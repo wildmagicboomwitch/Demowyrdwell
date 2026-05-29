@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔐 Login — AuDHD HQ</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#120f24">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="pages/login.css">
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-header">
+    <div class="login-icon">🔐</div>
+    <h1 class="login-title">Welcome Back</h1>
+    <p class="login-subtitle">Sign in to your AuDHD HQ account</p>
+  </div>
+
+  <div class="login-form">
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input
+          class="form-input"
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          required
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input
+          class="form-input"
+          type="password"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          required
+          autocomplete="current-password"
+        >
+        <a href="#" class="forgot-password-link" id="forgotPasswordLink">Forgot password?</a>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span class="loading-spinner"></span>
+          Sign In
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="divider">or</div>
+
+  <div class="login-footer">
+    <p class="login-footer-text">Don't have an account?</p>
+    <a href="create-account.html" class="create-account-link">Create Account</a>
+  </div>
+</div>
+
+<script type="module">
+  import { auth } from './core/firebase-config.js';
+  import { signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+
+  const form = document.getElementById('loginForm');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const loginBtn = document.getElementById('loginBtn');
+  const errorMessage = document.getElementById('errorMessage');
+  const successMessage = document.getElementById('successMessage');
+
+  // Where to send the user after login (from ?returnTo= param, defaults to index)
+  function getReturnUrl() {
+    const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+    if (returnTo) {
+      try {
+        const decoded = decodeURIComponent(returnTo);
+        // Only allow same-origin relative paths for safety
+        if (decoded.startsWith('/') || decoded.startsWith('./') || !decoded.includes('://')) {
+          return decoded;
+        }
+      } catch {}
+    }
+    return 'index.html';
+  }
+
+  // Check if already logged in via Firebase (not just localStorage)
+  function checkAuthState() {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      if (user) {
+        // Firebase confirms session is live — update localStorage and redirect
+        localStorage.setItem('audhd-hq-user-uid', user.uid);
+        window.location.href = getReturnUrl();
+      }
+      // If no user, stay on login page (do nothing)
+    });
+  }
+
+  // Show error message
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+    successMessage.classList.remove('show');
+    loginBtn.disabled = false;
+    loginBtn.classList.remove('loading');
+    loginBtn.textContent = 'Sign In';
+  }
+
+  // Show success message
+  function showSuccess(message) {
+    successMessage.textContent = message;
+    successMessage.classList.add('show');
+    errorMessage.classList.remove('show');
+  }
+
+  // Clear messages
+  function clearMessages() {
+    errorMessage.classList.remove('show');
+    successMessage.classList.remove('show');
+  }
+
+  // Translate Firebase error
+  function translateError(error) {
+    const code = error.code;
+
+    if (code === 'auth/invalid-email') {
+      return 'Please enter a valid email address.';
+    }
+    if (code === 'auth/user-not-found') {
+      return 'No account found with this email. Try creating one instead.';
+    }
+    if (code === 'auth/wrong-password') {
+      return 'Incorrect password. Please try again.';
+    }
+    if (code === 'auth/invalid-credential') {
+      return 'Invalid email or password.';
+    }
+    if (code === 'auth/too-many-requests') {
+      return 'Too many failed login attempts. Please try again later.';
+    }
+    if (code === 'auth/user-disabled') {
+      return 'This account has been disabled.';
+    }
+
+    return error.message || 'Login failed. Please try again.';
+  }
+
+  // Handle login
+  async function handleLogin(e) {
+    e.preventDefault();
+    clearMessages();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    // Validate
+    if (!email || !password) {
+      showError('Please enter both email and password.');
+      return;
+    }
+
+    // Disable button and show loading
+    loginBtn.disabled = true;
+    loginBtn.classList.add('loading');
+    loginBtn.textContent = '';
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      // Store UID
+      localStorage.setItem('audhd-hq-user-uid', uid);
+
+      showSuccess('✓ Login successful! Redirecting...');
+
+      // Redirect after short delay — respects returnTo param
+      setTimeout(() => {
+        window.location.href = getReturnUrl();
+      }, 800);
+    } catch (error) {
+      showError(translateError(error));
+    }
+  }
+
+  // Event listeners
+  form.addEventListener('submit', handleLogin);
+  emailInput.addEventListener('focus', clearMessages);
+  passwordInput.addEventListener('focus', clearMessages);
+
+  // Forgot password
+  document.getElementById('forgotPasswordLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = emailInput.value.trim();
+    if (!email) {
+      showError('Enter your email address above, then click "Forgot password?"');
+      emailInput.focus();
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showSuccess(`✓ Reset email sent to ${email}. Check your inbox (and spam folder).`);
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        showError('No account found with that email address.');
+      } else if (err.code === 'auth/invalid-email') {
+        showError('Please enter a valid email address.');
+      } else {
+        showError('Could not send reset email. Please try again.');
+      }
+    }
+  });
+
+  // Check auth on page load
+  checkAuthState();
+</script>
+
+</body>
+</html>

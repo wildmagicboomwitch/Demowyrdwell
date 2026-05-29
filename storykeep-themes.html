@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>StoryKeep — Collected Palettes</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Lora', serif;
+            background: #06040E;
+            color: #ddd8f8;
+            padding: 18px 14px 56px;
+            min-height: 100vh;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+            /* Subtle dot-grid — evokes graph paper, notebook pages */
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 9999;
+                background-image: radial-gradient(circle, rgba(180,160,255,.028) 1px, transparent 0);
+                background-size: 18px 18px;
+            }
+
+        /* ── PAGE HEADER ── */
+        .pg-hd {
+            margin-bottom: 6px;
+        }
+
+            .pg-hd h1 {
+                font-family: 'Playfair Display', serif;
+                font-size: 26px;
+                font-weight: 700;
+                letter-spacing: .02em;
+                line-height: 1.2;
+                background: linear-gradient(90deg,#FF00C0,#FF4040,#FFB000,#00FF90,#00E8FF,#B800FF);
+                background-size: 300% 100%;
+                animation: spectrumshift 7s linear infinite;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+        @keyframes spectrumshift {
+            0% {
+                background-position: 0% 50%
+            }
+
+            100% {
+                background-position: 300% 50%
+            }
+        }
+
+        .pg-sub {
+            font-size: 13px;
+            color: #9888e8;
+            margin-top: 6px;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            font-style: italic;
+            font-family: 'Lora', serif;
+            letter-spacing: .01em;
+        }
+
+        /* ── FILTER ROW ── */
+        .filter-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+
+        .f-btn {
+            padding: 5px 14px;
+            border-radius: 2px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(255,255,255,.05);
+            color: rgba(220,216,255,.75);
+            transition: background .2s, border-color .2s, color .2s;
+            font-family: 'Lora', serif;
+            letter-spacing: .04em;
+            line-height: 1.4;
+        }
+
+            .f-btn:hover {
+                background: rgba(255,255,255,.10);
+                color: #fff;
+                border-color: rgba(255,255,255,.30);
+            }
+
+            .f-btn:focus-visible {
+                outline: 2px solid #9888e8;
+                outline-offset: 2px;
+            }
+
+            .f-btn.on {
+                background: rgba(255,255,255,.11);
+                border-color: rgba(255,255,255,.28);
+                color: #fff;
+            }
+
+        /* ── THEME SECTIONS ── */
+        .theme-section {
+            margin-bottom: 36px;
+        }
+
+            .theme-section.hidden {
+                display: none;
+            }
+
+        .theme-hd {
+            margin-bottom: 10px;
+        }
+
+        .theme-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.3;
+        }
+
+        /* Diamond marker */
+        .theme-dot {
+            width: 7px;
+            height: 7px;
+            transform: rotate(45deg);
+            flex-shrink: 0;
+            margin: 0 2px;
+        }
+
+        .theme-sources {
+            font-size: 11px;
+            color: #7068C0;
+            margin-top: 5px;
+            font-style: italic;
+            font-family: 'Lora', serif;
+            letter-spacing: .01em;
+            line-height: 1.55;
+        }
+
+        .pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .mode-lbl {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: #6858B8;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Lora', serif;
+        }
+
+            .mode-lbl::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: rgba(160,140,255,.12);
+            }
+
+        /* ── MOCK SHELL ── */
+        /* The mock is an intentionally miniaturised UI preview.
+           Fonts below are as large as practical at this scale. */
+        .mock {
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--bdr);
+            background: var(--bg);
+            font-family: 'Lora', serif;
+        }
+
+        .m-top {
+            background: var(--srf);
+            border-bottom: 2px solid var(--bdr);
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .m-ham {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            background: var(--crd);
+            border: 1px solid var(--bdr);
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--t2);
+            flex-shrink: 0;
+        }
+
+        .m-title {
+            flex: 1;
+            font-size: 8.5px;
+            font-weight: 600;
+            color: var(--tx);
+            letter-spacing: .06em;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .m-clock {
+            font-size: 8.5px;
+            color: var(--mu);
+            font-family: 'Lora', serif;
+            font-style: italic;
+        }
+
+        .m-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 2px;
+            background: var(--crd);
+            border: 1px solid var(--bdr);
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--t2);
+        }
+
+        .m-body {
+            background: var(--bg);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .m-sec {
+            font-size: 7.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .10em;
+            color: var(--mu);
+            padding-bottom: 3px;
+            border-bottom: 1px solid var(--bdr);
+            font-family: 'Lora', serif;
+        }
+
+        .m-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .m-ni {
+            padding: 4px 6px;
+            border-radius: 2px;
+            font-size: 9px;
+            color: var(--t2);
+            border-left: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1;
+            font-family: 'Lora', serif;
+        }
+
+            .m-ni.on {
+                background: var(--ac-t);
+                color: var(--ac);
+                border-left-color: var(--ac);
+                font-style: italic;
+            }
+
+        .m-card {
+            background: var(--crd);
+            border: 1px solid var(--bdr);
+            border-radius: 2px;
+            padding: 7px 8px;
+        }
+
+        .m-card-hd {
+            font-size: 9.5px;
+            font-weight: 600;
+            color: var(--tx);
+            margin-bottom: 3px;
+            font-family: 'Playfair Display', serif;
+            letter-spacing: .02em;
+        }
+
+        .m-card-txt {
+            font-size: 9px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 5px;
+            font-style: italic;
+            font-family: 'Lora', serif;
+        }
+
+        .m-prog {
+            height: 4px;
+            background: var(--bdr);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .m-prog-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--ac);
+        }
+
+        .w70 {
+            width: 70%;
+        }
+        /* Theme spectrum bar — always palette-independent */
+        .rb {
+            width: 100%;
+            background: linear-gradient(90deg,#ff6b9d 0%,#ff876c 15%,#f4ca00 30%,#8bb698 45%,#4ecdc4 60%,#645eb7 75%,#ff6b9d 100%);
+        }
+
+        .m-btns {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        .m-btn {
+            padding: 3px 8px;
+            border-radius: 2px;
+            font-size: 8px;
+            font-weight: 500;
+            cursor: default;
+            border: 1px solid transparent;
+            font-family: 'Lora', serif;
+            line-height: 1.4;
+            letter-spacing: .03em;
+        }
+
+        .b-ac {
+            background: var(--ac);
+            color: #fff;
+        }
+
+        .b-out {
+            background: transparent;
+            border-color: var(--bdr);
+            color: var(--t2);
+        }
+
+        .b-err {
+            background: var(--rd);
+            color: #fff;
+        }
+
+        .b-ok {
+            background: var(--gn);
+            color: #fff;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .m-stat-n {
+            font-size: 15px;
+            line-height: 1;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+        }
+
+        .m-stat-l {
+            font-size: 7.5px;
+            color: var(--mu);
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-family: 'Lora', serif;
+            font-style: italic;
+        }
+
+        .m-tags {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        .m-tag {
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 7px;
+            font-weight: 600;
+            border: 1px solid;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-family: 'Lora', serif;
+        }
+
+        .tg-ac {
+            color: var(--ac);
+            border-color: var(--ac);
+            background: var(--ac-t);
+        }
+
+        .tg-gn {
+            color: var(--gn);
+            border-color: var(--gn);
+            background: var(--gn-t);
+        }
+
+        .tg-rd {
+            color: var(--rd);
+            border-color: var(--rd);
+            background: var(--rd-t);
+        }
+
+        .tg-gd {
+            color: var(--gd);
+            border-color: var(--gd);
+            background: var(--gd-t);
+        }
+
+        .tg-tl {
+            color: var(--tl);
+            border-color: var(--tl);
+            background: var(--tl-t);
+        }
+
+        .m-tog-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .m-tog {
+            width: 24px;
+            height: 12px;
+            border-radius: 6px;
+            background: var(--ac);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+            .m-tog::after {
+                content: '';
+                position: absolute;
+                right: 2px;
+                top: 2px;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #fff;
+            }
+
+            .m-tog.off {
+                background: var(--bdr);
+            }
+
+                .m-tog.off::after {
+                    right: auto;
+                    left: 2px;
+                }
+
+        .m-tog-lbl {
+            font-size: 9px;
+            color: var(--t2);
+            font-family: 'Lora', serif;
+            font-style: italic;
+        }
+
+        .m-fabs {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .m-fab {
+            width: 26px;
+            height: 26px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.30);
+        }
+
+        .fb-ac {
+            background: var(--ac);
+        }
+
+        .fb-rd {
+            background: var(--rd);
+        }
+
+        .fb-tl {
+            background: var(--tl);
+        }
+
+        .m-fabs-lbl {
+            font-size: 8px;
+            color: var(--mu);
+            flex: 1;
+            font-family: 'Lora', serif;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .m-swatches {
+            display: flex;
+            gap: 3px;
+        }
+
+        .m-sw {
+            height: 10px;
+            flex: 1;
+            border-radius: 2px;
+        }
+
+        /* ── NOTE BOX ── */
+        /* Accessibility: minimum 11px, generous line-height, sufficient contrast */
+        .note-box {
+            margin-top: 9px;
+            padding: 12px 14px;
+            border-radius: 3px;
+            font-size: 11px;
+            line-height: 1.82;
+            font-family: 'Lora', serif;
+        }
+
+        @media (max-width: 480px) {
+            .pair {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="pg-hd">
+        <h1>StoryKeep — Collected Palettes</h1>
+        <p class="pg-sub">11 colour families · light &amp; dark each · all design tokens mapped through a shared CSS variable layer</p>
+    </header>
+
+    <nav class="filter-row" id="filters" aria-label="Filter palettes"></nav>
+    <main id="themes-container"></main>
+
+    <script>
+        // ─── PALETTE DATA ─────────────────────────────────────────────
+        // ─── PALETTE DATA ─────────────────────────────────────────────
+        // Names updated to StoryKeep — an editorial, literary, archival ethos.
+        const themes = [
+            {
+                id: '1', emoji: '🔮', name: 'The Lilac Hours', sub: 'the purple art · lilac sorcery',
+                aD: '#C070F0',
+                src: 'Drawn from: tulip garden · lilac bush · forest spirits · #7020A8, #C070F0, #2A6A20',
+                nBg: 'rgba(192,112,240,.12)', nBdr: 'rgba(192,112,240,.35)', nTxt: '#9060C0', nStr: '#D090FF',
+                note: 'An archival palette — plum rooted in earth rather than cold ether. Forest green channels the living world for filed states; wine-dark marks what must end. Dark mode rests in the velvet void of deep midnight violet — the space between thoughts where decisions are made. Best for everyday practice and long reading sessions.',
+                light: { bg: '#EDE6FA', srf: '#E0D4F8', crd: '#F5F0FF', bdr: '#C090E0', tx: '#1A0830', t2: '#5A2878', mu: '#8040B0', ac: '#7020A8', gn: '#2A6A20', rd: '#B02040', gd: '#A06800', tl: '#1A6888', sw: ['#7020A8', '#2A6A20', '#B02040', '#A06800', '#1A6888'] },
+                dark: { bg: '#0A0418', srf: '#140828', crd: '#1E1040', bdr: '#4020A0', tx: '#F0EAFF', t2: '#D0A8FF', mu: '#9060C8', ac: '#C070F0', gn: '#80D020', rd: '#FF4878', gd: '#F0B800', tl: '#40B0F0', sw: ['#C070F0', '#80D020', '#FF4878', '#F0B800', '#40B0F0'] }
+            },
+            {
+                id: '2', emoji: '🔥', name: 'Amber Tide', sub: 'the fire realm · ember tide',
+                aD: '#FF8020',
+                src: 'Drawn from: Boston Harbor at dusk · steel blue sky · warm sand and ember glow · #D05800, #FF8020, #2870C8',
+                nBg: 'rgba(255,128,32,.12)', nBdr: 'rgba(255,128,32,.35)', nTxt: '#A06030', nStr: '#FF9840',
+                note: 'Warmth of deep flame pressed against a navy horizon. Burnt orange rises against sandy cream glowing like cooling ash. Dark mode carries true ember dark: not purple-blue, but the navy void where fire meets the edge of cold. The contrast between warm and cool is the palette\'s entire argument. Good for high-focus writing sessions.',
+                light: { bg: '#FDF0E0', srf: '#FAE4C8', crd: '#FFFAF4', bdr: '#F0B870', tx: '#1C0800', t2: '#7A3010', mu: '#A06030', ac: '#D05800', gn: '#207A30', rd: '#C02010', gd: '#B87000', tl: '#2870C8', sw: ['#D05800', '#207A30', '#C02010', '#B87000', '#2870C8'] },
+                dark: { bg: '#040810', srf: '#081420', crd: '#0E2030', bdr: '#183870', tx: '#FFF8EC', t2: '#C0D8F8', mu: '#4878C0', ac: '#FF8020', gn: '#30D040', rd: '#FF3010', gd: '#FFB000', tl: '#50C0F0', sw: ['#FF8020', '#30D040', '#FF3010', '#FFB000', '#50C0F0'] }
+            },
+            {
+                id: '3', emoji: '🩸', name: 'The Crimson Turn', sub: 'blood-carved · scarlet fate',
+                aD: '#E8000A',
+                src: 'Drawn from: red maple leaves · crimson canopy · amber sun · dark bark · #0E0805, #960C1D',
+                nBg: 'rgba(232,0,10,.10)', nBdr: 'rgba(232,0,10,.32)', nTxt: '#980010', nStr: '#FF3030',
+                note: 'Carved into blood-red maple — not orange, not brown, but the colour of the mark itself. Dark background: charred-wood warm-black. Scarlet is primary action; amber the secondary signal. Chartreuse for success is intentionally striking. Light mode bleeds rose-blush, completely distinct from the cobalt depth of Still Life, Cobalt.',
+                light: { bg: '#FDE8E8', srf: '#FACFCF', crd: '#FFF5F5', bdr: '#F08080', tx: '#1A0000', t2: '#700010', mu: '#A03030', ac: '#C80008', gn: '#286010', rd: '#960006', gd: '#B86800', tl: '#186858', sw: ['#C80008', '#286010', '#960006', '#B86800', '#186858'] },
+                dark: { bg: '#0E0400', srf: '#1C0600', crd: '#2C0800', bdr: '#780010', tx: '#FFF0F0', t2: '#FF9090', mu: '#C03030', ac: '#FF1020', gn: '#90D000', rd: '#FF0030', gd: '#FFA000', tl: '#20C878', sw: ['#FF1020', '#90D000', '#FF0030', '#FFA000', '#20C878'] }
+            },
+            {
+                id: '4', emoji: '🌳', name: 'The Quiet Garden', sub: 'the world tree · root &amp; bough',
+                aD: '#90C800',
+                src: 'Drawn from: cherry blossom canopy · olive bark · stone grey · crimson wine · #4A6800, #90C800',
+                nBg: 'rgba(144,200,0,.12)', nBdr: 'rgba(144,200,0,.35)', nTxt: '#608000', nStr: '#B0F020',
+                note: 'The most understated palette — almost wabi-sabi in its restraint. Light mode barely whispers in olive against morning mist. Dark mode sinks into deep forest green-black, root-dark and still as ancient timber. Wine for wounds; softer than pure red, as old bark is softer than a blade. A palette for those who read slowly.',
+                light: { bg: '#EEF8E8', srf: '#DDF4D4', crd: '#F6FFF2', bdr: '#98D870', tx: '#0A1808', t2: '#285030', mu: '#5A8040', ac: '#4A6800', gn: '#1A7840', rd: '#8C1838', gd: '#8A7000', tl: '#2A8070', sw: ['#4A6800', '#1A7840', '#8C1838', '#8A7000', '#2A8070'] },
+                dark: { bg: '#040A00', srf: '#0A1804', crd: '#102808', bdr: '#205010', tx: '#E8FDE8', t2: '#90E088', mu: '#4A9040', ac: '#90C800', gn: '#20C860', rd: '#F03878', gd: '#D0C000', tl: '#10B898', sw: ['#90C800', '#20C860', '#F03878', '#D0C000', '#10B898'] }
+            },
+            {
+                id: '5', emoji: '🌲', name: 'Ivy & Mortar', sub: 'the deep wood · ivy &amp; stone',
+                aD: '#30C870',
+                src: 'Drawn from: ivy-covered Boston building · red-brick courtyard · steel-blue sky · #D3DCE3, #91AFC9',
+                nBg: 'rgba(48,200,112,.12)', nBdr: 'rgba(48,200,112,.35)', nTxt: '#308060', nStr: '#50F898',
+                note: 'Nature reclaiming the built world. Forest green is the primary thread; brick-earth marks urgency. Light mode: cool green-tinted white like filtered canopy light. Dark mode: forest-void black with steel blue glimpsed through branches above. The palette for quiet, sustained work — the kind that doesn\'t announce itself.',
+                light: { bg: '#E4F4EA', srf: '#CCEBD6', crd: '#F0FFF5', bdr: '#78D0A0', tx: '#041408', t2: '#184830', mu: '#3A8858', ac: '#1A6830', gn: '#1A8840', rd: '#A82018', gd: '#908000', tl: '#2080A0', sw: ['#1A6830', '#1A8840', '#A82018', '#908000', '#2080A0'] },
+                dark: { bg: '#020A04', srf: '#071408', crd: '#0E2010', bdr: '#104A20', tx: '#D8FAE4', t2: '#60E898', mu: '#309858', ac: '#30C870', gn: '#20E8A0', rd: '#FF4830', gd: '#F0B800', tl: '#30D0E8', sw: ['#30C870', '#20E8A0', '#FF4830', '#F0B800', '#30D0E8'] }
+            },
+            {
+                id: '6', emoji: '⚔️', name: 'Dogwood Dusk', sub: 'love &amp; war · blush &amp; blade',
+                aD: '#F060C8',
+                src: 'Drawn from: pink dogwood tree · dark branches · stone earth · #CCA9BB, #7C2040, #4A6220',
+                nBg: 'rgba(240,96,200,.12)', nBdr: 'rgba(240,96,200,.35)', nTxt: '#A03888', nStr: '#FF80E0',
+                note: 'Soft as a pressed flower, fierce as a held boundary. Berry-rose as primary; olive grounds the warmth. Dark mode: deep purple-plum, the colour of sacred nights and the space between oaths. The palette for dreaming, reflection, and things written for no one but yourself. Night Pages feel most at home here.',
+                light: { bg: '#FAE8F5', srf: '#F5D4EE', crd: '#FFF5FC', bdr: '#E888C8', tx: '#200018', t2: '#701850', mu: '#B040A0', ac: '#A01880', gn: '#3A7010', rd: '#9A0840', gd: '#905000', tl: '#207880', sw: ['#A01880', '#3A7010', '#9A0840', '#905000', '#207878'] },
+                dark: { bg: '#0C0410', srf: '#1A0820', crd: '#280E34', bdr: '#581050', tx: '#FFE8FF', t2: '#F090E0', mu: '#C050B0', ac: '#F060C8', gn: '#90E010', rd: '#FF2878', gd: '#F0C800', tl: '#40D0F0', sw: ['#F060C8', '#90E010', '#FF2878', '#F0C800', '#40D0F0'] }
+            },
+            {
+                id: '7', emoji: '🌈', name: 'Neon Winter', sub: 'the rainbow bridge · the shimmering arc',
+                aD: '#00E8FF',
+                src: 'Drawn from: Boston winter light installation · electric cyan · neon magenta · deep city night · #CDD6FA',
+                nBg: 'rgba(0,232,255,.10)', nBdr: 'rgba(0,232,255,.32)', nTxt: '#00A8C0', nStr: '#40FFFF',
+                note: 'Pure screen void — the space between worlds where the bridge burns. Electric cyan is the arc; neon magenta where it cracks at the edge. Light mode: crisp winter sky with accents that pull the eye to the visible. Dark mode: the black between stars, watched from a great height. This is a screen, not a page — and it knows it.',
+                light: { bg: '#F0FAFF', srf: '#DCFAFF', crd: '#FFFFFF', bdr: '#60D8F0', tx: '#000818', t2: '#004858', mu: '#208898', ac: '#0080A0', gn: '#007868', rd: '#C000A0', gd: '#5000C8', tl: '#0050C0', sw: ['#0080A0', '#007868', '#C000A0', '#5000C8', '#0050C0'] },
+                dark: { bg: '#000010', srf: '#000820', crd: '#001030', bdr: '#002888', tx: '#E8FFFF', t2: '#80F8FF', mu: '#2090A8', ac: '#00E8FF', gn: '#00FF90', rd: '#FF00C0', gd: '#B800FF', tl: '#2060FF', sw: ['#00E8FF', '#00FF90', '#FF00C0', '#B800FF', '#2060FF'] }
+            },
+            {
+                id: '8', emoji: '🌀', name: 'The Harbor Watch', sub: 'the fate well · ink tide &amp; bronze',
+                aD: '#A3662B',
+                src: 'Drawn from: Custom House tower at night · #01011A ink sky · #002D64 deep navy · #A3662B amber bronze · #348192 harbour teal · #01598C steel blue',
+                nBg: 'rgba(163,102,43,.10)', nBdr: 'rgba(163,102,43,.32)', nTxt: '#7A5020', nStr: '#C07A30',
+                note: 'Pulled faithfully from a real night sky: ink-navy backdrop, amber-bronze lamplight, harbour teal on the water. The palette that most rewards long reading — bronze on near-black is warm and easy on the eye. Nautical and restrained. Completely unlike Neon Winter\'s screen-void energy; this one knows the smell of salt air.',
+                light: { bg: '#E8EEF8', srf: '#D0DCEE', crd: '#F4F8FF', bdr: '#7898C8', tx: '#010818', t2: '#082040', mu: '#406888', ac: '#7A5020', gn: '#286860', rd: '#8A1808', gd: '#8A5010', tl: '#348192', sw: ['#7A5020', '#286860', '#8A1808', '#8A5010', '#348192'] },
+                dark: { bg: '#01011A', srf: '#010828', crd: '#020E38', bdr: '#002D64', tx: '#D8E8F8', t2: '#88B8D8', mu: '#406888', ac: '#A3662B', gn: '#348192', rd: '#C83018', gd: '#A36028', tl: '#01598C', sw: ['#A3662B', '#348192', '#C83018', '#A36028', '#01598C'] }
+            },
+            {
+                id: '9', emoji: '🌑', name: 'Still Life, Cobalt', sub: 'the void before · primordial dark',
+                aD: '#1468C8',
+                src: 'Drawn from: studio portrait with plants · cobalt blue glass · warm sienna russet · #010005 deep shadow',
+                nBg: 'rgba(20,104,200,.10)', nBdr: 'rgba(20,104,200,.32)', nTxt: '#205890', nStr: '#4090E8',
+                note: 'Cobalt blue pressed into near-pure shadow. Warm sienna cuts through the dark like the first light into silence, before the narrative begins. Cool steel-blue washes the light mode like quiet before sound. Dark mode rests at the threshold itself: #010005 — the deepest ground in the collection. For those who need the room to be very still.',
+                light: { bg: '#E0ECFA', srf: '#C8DCFA', crd: '#F0F6FF', bdr: '#6098D8', tx: '#040A18', t2: '#102858', mu: '#3870B0', ac: '#0A58B0', gn: '#2A7820', rd: '#A82010', gd: '#C07020', tl: '#C85828', sw: ['#0A58B0', '#2A7820', '#A82010', '#C07020', '#C85828'] },
+                dark: { bg: '#010005', srf: '#050818', crd: '#0A1030', bdr: '#102070', tx: '#E8F0FF', t2: '#80B0FF', mu: '#3860C0', ac: '#1468C8', gn: '#60D830', rd: '#FF4820', gd: '#FF9840', tl: '#E07048', sw: ['#1468C8', '#60D830', '#FF4820', '#FF9840', '#E07048'] }
+            },
+            {
+                id: '10', emoji: '🌷', name: 'Garden of Hours', sub: 'goddess of spring oaths · vow &amp; bloom',
+                aD: '#7888F8',
+                src: 'Drawn from: mixed tulip garden · periwinkle hyacinths · orange-coral tulips · #5F6897, #D04028',
+                nBg: 'rgba(95,104,151,.12)', nBdr: 'rgba(95,104,151,.35)', nTxt: '#5058A8', nStr: '#9098F8',
+                note: 'Split like a promise held in two hands — periwinkle on one side, coral breaking on the other. Cool pledge, warm consequence. Light mode: subtle lavender-tinted white like spring dawn. Dark mode: periwinkle lifting toward sky-lavender. The most quietly classical palette; a covenant between cool and warm, neither betraying the other.',
+                light: { bg: '#EDE8FA', srf: '#DED5F8', crd: '#F5F2FF', bdr: '#A890E8', tx: '#100820', t2: '#481870', mu: '#8058C0', ac: '#4838B8', gn: '#287848', rd: '#E02018', gd: '#D06000', tl: '#2068B0', sw: ['#4838B8', '#287848', '#E02018', '#D06000', '#2068B0'] },
+                dark: { bg: '#080610', srf: '#100C1C', crd: '#181430', bdr: '#382870', tx: '#EEE8FF', t2: '#C0A8FF', mu: '#7058C8', ac: '#7888F8', gn: '#30C848', rd: '#FF4020', gd: '#FFB020', tl: '#30C0F8', sw: ['#7888F8', '#30C848', '#FF4020', '#FFB020', '#30C0F8'] }
+            },
+            {
+                id: '11', emoji: '🌊', name: 'The Teal & the Tide', sub: 'god of sea &amp; shore · tide &amp; return',
+                aD: '#FF7030',
+                src: 'Drawn from: harbour teal water · warm orange light · sandy driftwood · #2A6980, #F37C47, #DFA782',
+                nBg: 'rgba(0,150,160,.12)', nBdr: 'rgba(0,150,160,.35)', nTxt: '#208898', nStr: '#30D0E0',
+                note: 'The only palette where the accent shifts with the tide — deep teal in light mode, warm orange in dark, mirroring the character of something equally at home in sea and sky. Teal holds vigil across both modes as the secondary role. Light mode is the most open and clear of the set. The most context-aware design in the collection.',
+                light: { bg: '#DCF8F6', srf: '#BCEEED', crd: '#EEFFFE', bdr: '#50C8C0', tx: '#020E0C', t2: '#083830', mu: '#3A9090', ac: '#007880', gn: '#1A8050', rd: '#D02808', gd: '#C07000', tl: '#0898A8', sw: ['#007880', '#1A8050', '#D02808', '#C07000', '#0898A8'] },
+                dark: { bg: '#010606', srf: '#030E0E', crd: '#061818', bdr: '#0A4848', tx: '#C8FFFC', t2: '#40F0E0', mu: '#289898', ac: '#FF7030', gn: '#20E898', rd: '#FF2818', gd: '#FFB000', tl: '#00C8E0', sw: ['#FF7030', '#20E898', '#FF2818', '#FFB000', '#00C8E0'] }
+            }
+        ];
+
+        // ─── UTILITIES ────────────────────────────────────────────────
+        function hexRgb(h) {
+                if (!h || h.length < 4) return '128,128,128';
+                if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+                return `${parseInt(h.slice(1, 3), 16)},${parseInt(h.slice(3, 5), 16)},${parseInt(h.slice(5, 7), 16)}`;
+            }
+
+        function styleStr(c) {
+                const t = (hex, a) => `rgba(${hexRgb(hex)},${a})`;
+                return [
+                    `--bg:${c.bg}`, `--srf:${c.srf}`, `--crd:${c.crd}`, `--bdr:${c.bdr}`,
+                    `--tx:${c.tx}`, `--t2:${c.t2}`, `--mu:${c.mu}`,
+                    `--ac:${c.ac}`, `--gn:${c.gn}`, `--rd:${c.rd}`, `--gd:${c.gd}`, `--tl:${c.tl}`,
+                    `--ac-t:${t(c.ac, .20)}`, `--gn-t:${t(c.gn, .18)}`,
+                    `--rd-t:${t(c.rd, .18)}`, `--gd-t:${t(c.gd, .18)}`, `--tl-t:${t(c.tl, .18)}`
+                ].join(';');
+            }
+
+        // ─── MOCK TEMPLATE ────────────────────────────────────────────
+        // All UI copy uses StoryKeep module naming conventions.
+        function mockHTML(c, label) {
+                const swatches = (c.sw || [c.ac, c.gn, c.rd, c.gd, c.tl])
+                    .map(s => `<div class="m-sw" style="background:${s}" title="${s}"></div>`).join('');
+                return `
+          <div class="mode-wrap">
+            <div class="mode-lbl">${label}</div>
+            <div class="mock" style="${styleStr(c)}">
+              <div class="m-top">
+                <div class="m-ham">≡</div>
+                <div class="m-title">Today's Page</div>
+                <div class="m-clock">evening</div>
+                <div class="m-icon">⚙</div>
+              </div>
+              <div class="m-body">
+                <div class="m-sec">§ Navigate</div>
+                <div class="m-nav">
+                  <div class="m-ni on"><span>📖</span>Today's Page</div>
+                  <div class="m-ni"><span>🌙</span>Night Pages</div>
+                  <div class="m-ni"><span>🗃</span>The Vault</div>
+                </div>
+                <div class="m-sec">§ Current Chapter</div>
+                <div class="m-card">
+                  <div class="m-card-hd">Review the Ledger</div>
+                  <div class="m-card-txt">Due this evening · on track</div>
+                  <div class="m-prog"><div class="m-prog-fill w70"></div></div>
+                  <div class="m-btns">
+                    <button class="m-btn b-ac">Done</button>
+                    <button class="m-btn b-out">Later</button>
+                    <button class="m-btn b-err">Archive</button>
+                  </div>
+                </div>
+                <div class="two-col">
+                  <div class="m-card"><div class="m-stat-n" style="color:var(--ac)">3</div><div class="m-stat-l">entries left</div></div>
+                  <div class="m-card"><div class="m-stat-n" style="color:var(--gn)">7</div><div class="m-stat-l">day streak</div></div>
+                </div>
+                <div class="m-sec">§ Labels</div>
+                <div class="m-tags">
+                  <span class="m-tag tg-ac">draft</span>
+                  <span class="m-tag tg-gn">filed</span>
+                  <span class="m-tag tg-rd">urgent</span>
+                  <span class="m-tag tg-gd">pending</span>
+                  <span class="m-tag tg-tl">later</span>
+                </div>
+                <div class="m-card">
+                  <div class="m-tog-row" style="margin-bottom:5px"><div class="m-tog"></div><span class="m-tog-lbl">Annotations on</span></div>
+                  <div class="m-tog-row"><div class="m-tog off"></div><span class="m-tog-lbl">Compact view</span></div>
+                </div>
+                <div class="m-sec">Theme spectrum (fixed · palette-independent)</div>
+                <div class="m-prog"><div class="m-prog-fill rb"></div></div>
+                <div class="m-fabs">
+                  <div class="m-fab fb-ac">✎</div>
+                  <div class="m-fab fb-rd">!</div>
+                  <div class="m-fab fb-tl">✓</div>
+                  <span class="m-fabs-lbl">Actions</span>
+                </div>
+                <div class="m-sec">Palette roles (accent · growth · warning · gold · teal)</div>
+                <div class="m-swatches">${swatches}</div>
+              </div>
+            </div>
+          </div>`;
+            }
+
+        // ─── RENDER FILTER BUTTONS ────────────────────────────────────
+        const filterRow = document.getElementById('filters');
+
+        const allBtn = document.createElement('button');
+        allBtn.className = 'f-btn on';
+        allBtn.textContent = 'All Palettes';
+        allBtn.dataset.t = 'all';
+        allBtn.setAttribute('aria-pressed', 'true');
+        allBtn.setAttribute('aria-label', 'Show all palettes');
+        allBtn.onclick = () => filter('all', allBtn);
+        filterRow.appendChild(allBtn);
+
+        themes.forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'f-btn';
+            btn.textContent = `${t.emoji} ${t.name}`;
+            btn.dataset.t = t.id;
+            btn.setAttribute('aria-pressed', 'false');
+            btn.setAttribute('aria-label', `Show ${t.name} palette`);
+            btn.style.cssText = `--ac:${t.aD}`;
+            btn.onclick = () => filter(t.id, btn);
+            btn.addEventListener('click', function () {
+                this.style.background = `rgba(${hexRgb(t.aD)},.18)`;
+                this.style.borderColor = `rgba(${hexRgb(t.aD)},.5)`;
+                this.style.color = t.aD;
+            });
+            filterRow.appendChild(btn);
+        });
+
+        // ─── RENDER THEME SECTIONS ────────────────────────────────────
+        const container = document.getElementById('themes-container');
+
+        themes.forEach(t => {
+            const section = document.createElement('section');
+            section.className = 'theme-section';
+            section.dataset.theme = t.id;
+            section.setAttribute('aria-label', `${t.name} palette`);
+
+            section.innerHTML = `
+            <div class="theme-hd">
+              <div class="theme-name" style="color:${t.aD}">
+                <span class="theme-dot" style="background:${t.aD}" aria-hidden="true"></span>
+                ${t.emoji} ${t.name} — ${t.sub}
+              </div>
+              <div class="theme-sources">${t.src}</div>
+            </div>
+            <div class="pair">
+              ${mockHTML(t.light, '☀ Light')}
+              ${mockHTML(t.dark, '🌑 Dark')}
+            </div>
+            <div class="note-box" style="background:${t.nBg};border:1px solid ${t.nBdr};color:${t.nTxt}">
+              <strong style="color:${t.nStr}">${t.name} —</strong>
+              ${t.note}
+            </div>`;
+
+            container.appendChild(section);
+        });
+
+        // ─── PALETTE INDEX TABLE ──────────────────────────────────────
+        const table = document.createElement('div');
+        table.style.cssText = 'margin-top:32px;padding:14px 16px;background:rgba(140,120,255,.06);border:1px solid rgba(140,120,255,.14);border-radius:3px;';
+        table.setAttribute('role', 'region');
+        table.setAttribute('aria-label', 'Palette index');
+        table.innerHTML = `
+          <div style="font-size:12px;font-family:'Lora',serif;font-weight:600;color:#8870d8;margin-bottom:12px;letter-spacing:.04em;">§ Palette Index — accent · night ground · day ground · character</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${themes.map(t => `
+              <div style="display:flex;align-items:center;gap:10px;font-size:11px;font-family:'Lora',serif;">
+                <div style="width:8px;height:8px;transform:rotate(45deg);background:${t.aD};flex-shrink:0;margin:0 2px" aria-hidden="true"></div>
+                <span style="color:${t.aD};font-weight:600;min-width:130px;font-family:'Playfair Display',serif;letter-spacing:.03em;">${t.emoji} ${t.name}</span>
+                <div style="width:28px;height:13px;border-radius:2px;background:${t.dark.bg};border:1px solid rgba(255,255,255,.10);flex-shrink:0" title="Night ground: ${t.dark.bg}"></div>
+                <div style="width:28px;height:13px;border-radius:2px;background:${t.light.bg};border:1px solid rgba(0,0,0,.10);flex-shrink:0" title="Day ground: ${t.light.bg}"></div>
+                <span style="color:#7868B0;flex:1;font-style:italic;">${t.sub}</span>
+              </div>`).join('')}
+          </div>
+          <div style="margin-top:11px;font-size:10px;color:#5A50A0;font-family:'Lora',serif;letter-spacing:.04em;font-style:italic;">§ night ground · day ground · character</div>`;
+        container.appendChild(table);
+
+        // ─── FILTER FUNCTION ──────────────────────────────────────────
+        function filter(t, clickedBtn) {
+            document.querySelectorAll('.f-btn').forEach(b => {
+                b.classList.remove('on');
+                b.setAttribute('aria-pressed', 'false');
+                b.style.background = '';
+                b.style.borderColor = '';
+                b.style.color = '';
+            });
+            clickedBtn.classList.add('on');
+            clickedBtn.setAttribute('aria-pressed', 'true');
+            if (t === 'all') {
+                clickedBtn.style.background = 'rgba(255,255,255,.11)';
+                clickedBtn.style.borderColor = 'rgba(255,255,255,.28)';
+                clickedBtn.style.color = '#fff';
+            }
+            document.querySelectorAll('.theme-section').forEach(s => {
+                const hidden = t !== 'all' && s.dataset.theme !== t;
+                s.classList.toggle('hidden', hidden);
+                s.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+            });
+        }
+    </script>
+</body>
+</html>

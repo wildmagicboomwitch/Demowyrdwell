@@ -1,0 +1,14 @@
+{
+  "name": "audhdhq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AuDHD HQ — PWA. No build step; all source files deploy as-is.",
+  "scripts": {
+    "predeploy": "node bump-cache-version.js",
+    "deploy": "firebase deploy --only hosting",
+    "deploy:dry": "node bump-cache-version.js --dry && echo '[deploy:dry] SW + version bump previewed. Run npm run deploy to ship.'"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

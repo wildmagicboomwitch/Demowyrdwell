@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔄 Data Sync — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="pages/data-sync.css">
+</head>
+<body>
+
+<!-- ═══ SIDENAV ═══════════════════════════════════════ -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- ═══ TOPBAR ═══════════════════════════════════════ -->
+<!-- Topbar injected by hq-core.js -->
+
+<!-- ═══ PAGE HEADER ═══════════════════════════════════ -->
+<div class="page-header">
+  <div class="ph-tag">Settings · No FABs</div>
+  <div class="ph-title">🔄 Data Sync</div>
+  <div class="ph-sub">Export a full backup or restore from a previous backup. Dev Mode unlocks stream exports, selective sync, key manager &amp; advanced tools.</div>
+</div>
+
+<!-- ═══ MAIN CONTENT ═══════════════════════════════════ -->
+<div class="main-content" style="margin-top:14px">
+
+  <!-- ═══════════════════════════════════════════════════
+       PUBLIC ZONE — always visible, no auth required
+  ════════════════════════════════════════════════════ -->
+
+  <!-- ── Full Export ── -->
+  <div class="section pub-card pub-card-export">
+    <div class="sec-head">
+      <div class="sec-ico">📤</div>
+      <div class="sec-title-wrap">
+        <div class="sec-title">Export Full Backup</div>
+        <div class="sec-sub">Downloads all audhd-hq-* keys as a single JSON file. Use when migrating devices or making a manual backup.</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="exportAll()" aria-label="Import">⬇️ Download Full Backup</button>
+      <button class="btn btn-secondary" onclick="copyAll()" aria-label="Copy">📋 Copy to Clipboard</button>
+    </div>
+    <div id="export-status" class="status-msg"></div>
+    <div id="export-stats" style="font-size:10px;color:var(--text-muted);margin-top:6px"></div>
+  </div>
+
+  <!-- ── Full Import (Merge) ── -->
+  <div class="section pub-card pub-card-import">
+    <div class="sec-head">
+      <div class="sec-ico">📥</div>
+      <div class="sec-title-wrap">
+        <div class="sec-title">Import / Restore (Full Backup)</div>
+        <div class="sec-sub">Load a JSON backup and merge it with existing data. Incoming values overwrite matching keys — nothing is deleted.</div>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">📁 Load File</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="loadImportFile(this)" aria-label="Import full backup JSON file">
+    </div>
+    <textarea class="json-box" id="import-box" placeholder='Paste JSON backup here…&#10;&#10;Expected format:&#10;{&#10;  "audhd-hq-theme": {...},&#10;  "audhd-hq-boxes": [...],&#10;  ...&#10;}'></textarea>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-green" onclick="importData(false)" aria-label="Complete">✅ Import (Merge)</button>
+      <!-- Hidden until dev auth — revealed by applyDevAccess() -->
+      <button class="btn btn-danger" id="import-replace-btn" onclick="importData(true)" hidden aria-label="Replace all — overwrites data">⚠️ Import (Replace All)</button>
+    </div>
+    <div id="import-status" class="status-msg"></div>
+    <div class="import-summary" id="import-summary"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       DEV AUTH STRIP
+  ════════════════════════════════════════════════════ -->
+  <div class="dev-auth-strip">
+    <div class="dev-auth-inner">
+      <button id="dev-signin-btn" class="btn btn-secondary btn-sm dev-signin-btn" onclick="window.devSignIn && window.devSignIn()">🔐 Unlock Dev Mode</button>
+      <span id="dev-badge" class="dev-badge" hidden>🟢 Dev Mode Active</span>
+      <button id="dev-signout-btn" class="btn btn-secondary btn-sm dev-signout-btn" onclick="window.devSignOut && window.devSignOut()" hidden>↩ Sign Out</button>
+    </div>
+    <div class="dev-auth-note" id="dev-auth-note">Advanced sync tools — admin only</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       DEV ZONE — hidden until Firebase confirms admin email
+  ════════════════════════════════════════════════════ -->
+  <div id="dev-zone" hidden>
+
+    <!-- ── Dual Stream Grid ── -->
+    <div class="stream-grid">
+
+      <!-- ⚙️ Settings Stream -->
+      <div class="stream-card stream-settings">
+        <div class="stream-card-header">
+          <div class="stream-ico">⚙️</div>
+          <div>
+            <div class="stream-title">Settings &amp; Config</div>
+            <div class="stream-sub">Tags, theme, display prefs, nav slots, shortcuts, module setup</div>
+          </div>
+        </div>
+        <div class="stream-stats" id="settings-stream-stats">— keys · — KB</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="exportSettings()" aria-label="Import">⬇️ Export Settings</button>
+          <button class="btn btn-secondary btn-sm" onclick="copySettings()" aria-label="Copy">📋 Copy</button>
+        </div>
+        <div id="settings-export-status" class="status-msg"></div>
+
+        <div class="stream-divider"></div>
+
+        <!-- Settings Import -->
+        <div class="stream-import-head">📥 Restore Settings</div>
+        <div class="stream-import-note">Overwrites config keys. Never touches your data.</div>
+        <div class="btn-row" style="margin-bottom:8px">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('settings-import-file').click()">📁 Load File</button>
+          <input type="file" id="settings-import-file" accept=".json" style="display:none" onchange="loadSettingsImportFile(this)" aria-label="Import settings JSON file">
+        </div>
+        <textarea class="json-box json-box-sm" id="settings-import-box" placeholder='Paste settings backup here…&#10;&#10;Expected:&#10;{ "audhd-hq-theme": {…}, "audhd-hq-tags": […], … }'></textarea>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-green btn-sm" onclick="importSettings()" aria-label="Complete">✅ Import Settings</button>
+        </div>
+        <div id="settings-import-status" class="status-msg"></div>
+        <div class="import-summary" id="settings-import-summary"></div>
+      </div>
+
+      <!-- 📦 User Data Stream -->
+      <div class="stream-card stream-data">
+        <div class="stream-card-header">
+          <div class="stream-ico">📦</div>
+          <div>
+            <div class="stream-title">User Data</div>
+            <div class="stream-sub">Check-ins, health, tasks, journals, planners, finance, kitchen, walking</div>
+          </div>
+        </div>
+        <div class="stream-stats" id="data-stream-stats">— keys · — KB</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="exportUserData()" aria-label="Import">⬇️ Export My Data</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyUserData()" aria-label="Copy">📋 Copy</button>
+        </div>
+        <div id="data-export-status" class="status-msg"></div>
+
+        <div class="stream-divider"></div>
+
+        <!-- Data Import -->
+        <div class="stream-import-head">📥 Restore Data</div>
+        <div class="stream-import-note">Merges with existing data. Incoming values overwrite matching keys.</div>
+        <div class="btn-row" style="margin-bottom:8px">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('data-import-file').click()">📁 Load File</button>
+          <input type="file" id="data-import-file" accept=".json" style="display:none" onchange="loadDataImportFile(this)" aria-label="Import data JSON file">
+        </div>
+        <textarea class="json-box json-box-sm" id="data-import-box" placeholder='Paste user data backup here…&#10;&#10;Expected:&#10;{ "audhd-hq-checkin-log": […], … }'></textarea>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-green btn-sm" onclick="importUserData()" aria-label="Complete">✅ Import Data</button>
+        </div>
+        <div id="data-import-status" class="status-msg"></div>
+        <div class="import-summary" id="data-import-summary"></div>
+      </div>
+
+    </div><!-- /stream-grid -->
+
+    <!-- ── Auto-Backup ── -->
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-ico">🔁</div>
+        <div class="sec-title-wrap">
+          <div class="sec-title">Auto-Backup</div>
+          <div class="sec-sub">When enabled, a backup file downloads automatically whenever HQ saves data. Settings and data stream on separate toggles.</div>
+        </div>
+      </div>
+      <div class="ab-toggles">
+        <label class="ab-toggle-row">
+          <input type="checkbox" id="ab-settings-toggle" onchange="toggleAutoBackup('settings', this)">
+          <span class="ab-toggle-label">
+            <span class="ab-toggle-ico">⚙️</span>
+            <span>
+              <span class="ab-toggle-name">Auto-backup Settings</span>
+              <span class="ab-toggle-sub">Downloads <code>audhdhq-settings-YYYY-MM-DD.json</code> on config saves</span>
+            </span>
+          </span>
+        </label>
+        <label class="ab-toggle-row">
+          <input type="checkbox" id="ab-data-toggle" onchange="toggleAutoBackup('data', this)">
+          <span class="ab-toggle-label">
+            <span class="ab-toggle-ico">📦</span>
+            <span>
+              <span class="ab-toggle-name">Auto-backup Data</span>
+              <span class="ab-toggle-sub">Downloads <code>audhdhq-data-YYYY-MM-DD.json</code> on data saves</span>
+            </span>
+          </span>
+        </label>
+      </div>
+      <div id="autobackup-status" class="status-msg"></div>
+    </div>
+
+    <!-- ── Selective Export ── -->
+    <details class="section section-collapsible">
+      <summary class="sec-summary">
+        <span class="sec-ico">🎯</span>
+        <span class="sec-summary-text">
+          <span class="sec-title">Selective Export</span>
+          <span class="sec-sub">Pick specific keys to export. Each key shows its stream type (⚙️ cfg / 📦 data).</span>
+        </span>
+        <span class="sec-chevron">▾</span>
+      </summary>
+      <div class="sec-inner">
+        <div class="select-row">
+          <label><input type="checkbox" onchange="toggleSelectAll(this)"> Select All</label>
+          <span id="sel-count" style="font-size:10px;color:var(--text-muted)">0 selected</span>
+        </div>
+        <div class="storage-wrap">
+          <table class="kt">
+            <thead>
+              <tr>
+                <th style="width:28px"></th>
+                <th>Key</th>
+                <th>Module</th>
+                <th>Stream</th>
+                <th>Size</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="sel-tbody"></tbody>
+          </table>
+        </div>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-primary" onclick="exportSelected()" aria-label="Import">⬇️ Download Selected</button>
+          <button class="btn btn-secondary" onclick="copySelected()" aria-label="Copy">📋 Copy Selected</button>
+        </div>
+        <div id="sel-status" class="status-msg"></div>
+      </div>
+    </details>
+
+    <!-- ── Provider Data Export ── -->
+    <details class="section section-collapsible">
+      <summary class="sec-summary">
+        <span class="sec-ico">🏥</span>
+        <span class="sec-summary-text">
+          <span class="sec-title">Provider Data Export</span>
+          <span class="sec-sub">Generate a clinical summary to share with a doctor or therapist.</span>
+        </span>
+        <span class="sec-chevron">▾</span>
+      </summary>
+      <div class="sec-inner">
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px" id="ds-range-btns">
+          <button class="btn btn-secondary ds-range-btn on" data-days="14" onclick="setDSRange(14,this)">Last 2 weeks</button>
+          <button class="btn btn-secondary ds-range-btn" data-days="30" onclick="setDSRange(30,this)">Last month</button>
+          <button class="btn btn-secondary ds-range-btn" data-days="90" onclick="setDSRange(90,this)">Last 3 months</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px">
+          <label style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border:1px solid var(--border-col);border-radius:7px;cursor:pointer"><input type="checkbox" id="ds-mental" checked style="accent-color:var(--purple)"> 🧠 Mental / Emotional</label>
+          <label style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border:1px solid var(--border-col);border-radius:7px;cursor:pointer"><input type="checkbox" id="ds-physical" checked style="accent-color:var(--purple)"> 🏥 Physical</label>
+          <label style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border:1px solid var(--border-col);border-radius:7px;cursor:pointer"><input type="checkbox" id="ds-clinical" checked style="accent-color:var(--purple)"> 💊 Clinical</label>
+          <label style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border:1px solid var(--border-col);border-radius:7px;cursor:pointer"><input type="checkbox" id="ds-success" style="accent-color:var(--purple)"> 📊 Function + Success</label>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:5px">📝 Additional notes for provider</label>
+          <textarea id="ds-notes" style="width:100%;background:var(--bg);border:1px solid var(--border-col);border-radius:8px;color:var(--text);padding:8px 10px;font-size:12px;font-family:inherit;resize:vertical;min-height:60px;box-sizing:border-box" placeholder="Any context you want to include…"></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="generateDSProviderReport('copy')" aria-label="Copy">📋 Copy as text</button>
+          <button class="btn btn-secondary" onclick="generateDSProviderReport('print')" aria-label="Save as PDF">🖨 Print / PDF</button>
+        </div>
+        <div id="ds-provider-status" class="status-msg"></div>
+      </div>
+    </details>
+
+    <!-- ── Key Manager ── -->
+    <details class="section section-collapsible">
+      <summary class="sec-summary">
+        <span class="sec-ico">🗂</span>
+        <span class="sec-summary-text">
+          <span class="sec-title">Key Manager</span>
+          <span class="sec-sub">View and individually clear any audhd-hq-* key. Destructive — no undo without a backup!</span>
+        </span>
+        <span class="sec-chevron">▾</span>
+      </summary>
+      <div class="sec-inner">
+        <div class="storage-wrap">
+          <table class="kt">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Module</th>
+                <th>Stream</th>
+                <th>Size</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="mgr-tbody"></tbody>
+          </table>
+        </div>
+        <div id="mgr-status" class="status-msg"></div>
+      </div>
+    </details>
+
+    <!-- ── Danger Zone ── -->
+    <div class="section" style="border-color:rgba(var(--red-rgb),.3)">
+      <div class="sec-head">
+        <div class="sec-ico">💣</div>
+        <div class="sec-title-wrap">
+          <div class="sec-title">Danger Zone</div>
+          <div class="sec-sub">⚠️ These actions are permanent. Export a backup first!</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-danger" onclick="clearFlags()">🚩 Clear All Flags</button>
+        <button class="btn btn-danger" onclick="clearCheckinLog()" aria-label="Complete">✅ Clear Check-In Log</button>
+        <button class="btn btn-danger" onclick="clearAllHQ()">💥 Wipe ALL HQ Data</button>
+      </div>
+      <div id="danger-status" class="status-msg"></div>
+    </div>
+
+    <!-- ── PWA + Service Worker ── -->
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-ico">📱</div>
+        <div class="sec-title-wrap">
+          <div class="sec-title">PWA / Service Worker</div>
+          <div class="sec-sub">Manage the installed cache for offline use. Force-refresh after deploying file updates.</div>
+        </div>
+      </div>
+      <div id="pwa-info" style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="checkSW()" aria-label="Search">🔍 Check SW Status</button>
+        <button class="btn btn-secondary" onclick="updateSW()" aria-label="Refresh">🔄 Force SW Update</button>
+        <button class="btn btn-danger btn-sm" onclick="unregisterSW()" aria-label="Delete">🗑 Unregister SW</button>
+      </div>
+      <div id="sw-status" class="status-msg"></div>
+    </div>
+
+  </div><!-- /dev-zone -->
+
+</div><!-- /main-content -->
+
+<!-- ═══ SCRIPTS ═══════════════════════════════════════ -->
+<script>window.HQ_CURRENT_PAGE = 'sync';</script>
+
+<!-- Dev Auth Gate — non-blocking Firebase check. Replaces old requireAuth gate.
+     Uses the Firebase app already initialized by hq-auth.js (imported below via hq-core.js).
+     Only reveals #dev-zone when signed in as audhd.hq.admin@gmail.com. -->
+<script type="module">
+  const DEV_EMAIL = 'audhd.hq.admin@gmail.com';
+
+  function applyDevAccess(isAdmin) {
+    const devZone      = document.getElementById('dev-zone');
+    const signinBtn    = document.getElementById('dev-signin-btn');
+    const signoutBtn   = document.getElementById('dev-signout-btn');
+    const devBadge     = document.getElementById('dev-badge');
+    const devNote      = document.getElementById('dev-auth-note');
+    const replaceBtn   = document.getElementById('import-replace-btn');
+
+    if (devZone)    devZone.hidden    = !isAdmin;
+    if (signinBtn)  signinBtn.hidden  =  isAdmin;
+    if (signoutBtn) signoutBtn.hidden = !isAdmin;
+    if (devBadge)   devBadge.hidden   = !isAdmin;
+    if (replaceBtn) replaceBtn.hidden = !isAdmin;
+    if (devNote)    devNote.textContent = isAdmin
+      ? 'Signed in as ' + DEV_EMAIL
+      : 'Advanced sync tools — admin only';
+  }
+
+  (async () => {
+    try {
+      // Re-use the Firebase app that hq-auth.js already initialized.
+      // If the app wasn't initialized yet this will throw — caught below.
+      const { getApp }           = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut }
+        = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+
+      const auth = getAuth(getApp());
+
+      // Reactively apply access whenever auth state changes
+      onAuthStateChanged(auth, (user) => {
+        applyDevAccess(!!(user && user.email === DEV_EMAIL));
+      });
+
+      window.devSignIn = async () => {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ login_hint: DEV_EMAIL });
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (e) {
+          console.error('[data-sync] Dev sign-in failed:', e.code, e.message);
+          const note = document.getElementById('dev-auth-note');
+          if (note) note.textContent = '⚠️ Sign-in failed: ' + (e.message || e.code);
+        }
+      };
+
+      window.devSignOut = async () => {
+        try { await signOut(auth); } catch (e) { console.error('[data-sync] Sign-out error:', e); }
+      };
+
+    } catch (e) {
+      // Firebase app not found (page loaded without hq-auth.js, or offline).
+      // Dev strip stays visible in sign-in state; basic public functions work normally.
+      console.warn('[data-sync] Firebase dev auth unavailable — basic mode only.', e.message);
+      const note = document.getElementById('dev-auth-note');
+      if (note) note.textContent = 'Dev auth unavailable — check Firebase setup';
+    }
+  })();
+</script>
+
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/data-sync.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

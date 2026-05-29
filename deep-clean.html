@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🧹 Deep Clean — AuDHD HQ</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json"/>
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="stylesheet" href="pages/deep-clean.css">
+</head>
+<body>
+
+<!-- Topbar injected by hq-core.js -->
+<div> </div>
+
+<!-- M-10: Standardized back nav -->
+<div style="padding:10px 14px 0">
+  <a href="index.html" class="hq-back-btn">← HQ</a>
+</div>
+
+<!-- ═══ APP CONTAINER ══════════════════════════════════ -->
+<div id="app-container">
+  <div id="root"></div>
+</div><!-- /app-container -->
+
+<!-- Bottom nav injected by hq-core.js -->
+<!-- Sidenav injected by hq-core.js -->
+
+
+<!-- ═══ HQ SYSTEM JS ══════════════════════════════════ -->
+<script>window.HQ_CURRENT_PAGE = 'deepclean';</script>
+
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth();
+</script>
+
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+
+<!-- React 18 UMD — no Babel needed, compiled JS loads as normal script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<!-- HQ Rooms + Flow config is read directly by buildEffectiveRooms() via HQStore on mount -->
+<script src="pages/deep-clean.compiled.js"></script>
+
+
+
+<!-- ═══ PWA SERVICE WORKER ════════════════════════════ -->
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

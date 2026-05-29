@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔁 Routines + Prepwork — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- ── Early theme init: prevents flash before hq-core.js DOMContentLoaded ── -->
+
+<link rel="stylesheet" href="pages/routines-prepwork.css">
+</head>
+<body>
+
+<!-- ═══ TOPBAR ═══════════════════════════════════════ -->
+<!-- Topbar injected by hq-core.js -->
+
+<!-- ═══ MAIN CONTENT ════════════════════════════════ -->
+<div class="page-header">
+  <div class="page-title">🔁 Routines + Prepwork</div>
+  <div class="page-date" id="hq-date"></div>
+</div>
+
+<!-- ═══ TAB BAR ═════════════════════════════════════ -->
+<div class="rp-tabs">
+  <button class="rp-tab active" id="tab-routines"  onclick="rpTab('routines',this)">🔁 Routines</button>
+  <button class="rp-tab"        id="tab-prepwork"  onclick="rpTab('prepwork',this)" aria-label="Copy">📋 Prepwork</button>
+  <button class="rp-tab"        id="tab-history"   onclick="rpTab('history',this)">📊 Log History</button>
+  <button class="rp-tab"        id="tab-habits"    onclick="rpTab('habits',this)">🌱 Habits</button>
+  <button class="rp-tab"        id="tab-setup"     onclick="rpTab('setup',this)" aria-label="Settings">⚙️ Setup</button>
+</div>
+
+<!-- ═══ ROUTINES PANEL ═══════════════════════════════ -->
+<div class="rp-panel" id="rp-routines">
+
+  <!-- Progress strip -->
+  <div class="rp-progress-strip">
+    <div class="rp-prog-label">🔁 Routines</div>
+    <div class="rp-prog-track">
+      <div class="rp-prog-fill" id="r-prog-fill" style="width:0%"></div>
+    </div>
+    <div class="rp-prog-pct" id="r-prog-pct">0%</div>
+  </div>
+
+  <!-- Morning Routine -->
+  <div class="section-label">☀️ Morning Routine</div>
+  <div class="rp-item-list" id="r-morning-list"></div>
+
+  <!-- Evening Routine -->
+  <div class="section-label">🌙 Evening Routine</div>
+  <div class="rp-item-list" id="r-evening-list"></div>
+
+  <!-- Anytime / Flexible -->
+  <div class="section-label">🔄 Anytime / Flexible</div>
+  <div class="rp-item-list" id="r-anytime-list"></div>
+
+  <!-- Add Routine Item -->
+  <div class="section-label">➕ Add Routine Item</div>
+  <div class="rp-add-form">
+    <input  class="rp-add-input"  id="r-new-title"  type="text" placeholder="Routine step…">
+    <select class="rp-add-select" id="r-new-tag" aria-label="R New Tag">
+      <option value="morning">☀️ Morning</option>
+      <option value="evening">🌙 Evening</option>
+      <option value="anytime">🔄 Anytime</option>
+    </select>
+    <button class="rp-add-btn" onclick="addRoutineItem()" aria-label="Add item">Add</button>
+  </div>
+
+</div><!-- end #rp-routines -->
+
+<!-- ═══ PREPWORK PANEL ══════════════════════════════ -->
+<div class="rp-panel" id="rp-prepwork" style="display:none">
+
+  <!-- Progress strip -->
+  <div class="rp-progress-strip">
+    <div class="rp-prog-label">📋 Prepwork</div>
+    <div class="rp-prog-track">
+      <div class="rp-prog-fill" id="p-prog-fill" style="width:0%"></div>
+    </div>
+    <div class="rp-prog-pct" id="p-prog-pct">0%</div>
+  </div>
+
+  <!-- Night-Before Prep -->
+  <div class="section-label">🌙 Night-Before Prep</div>
+  <div class="rp-item-list" id="p-night-list"></div>
+
+  <!-- Morning Setup -->
+  <div class="section-label">☀️ Morning Setup</div>
+  <div class="rp-item-list" id="p-morning-list"></div>
+
+  <!-- End-of-Day Wrap -->
+  <div class="section-label">📦 End-of-Day Wrap</div>
+  <div class="rp-item-list" id="p-eod-list"></div>
+
+  <!-- Add Prepwork Item -->
+  <div class="section-label">➕ Add Prepwork Item</div>
+  <div class="rp-add-form">
+    <input  class="rp-add-input"  id="p-new-title"  type="text" placeholder="Prep task…">
+    <select class="rp-add-select" id="p-new-tag" aria-label="P New Tag">
+      <option value="night">🌙 Night-Before</option>
+      <option value="morning">☀️ Morning Setup</option>
+      <option value="eod">📦 EOD Wrap</option>
+    </select>
+    <input class="rp-add-input" id="p-new-link" type="text" placeholder="Links to routine step ID (optional)" style="max-width:200px; font-size:10px;">
+    <button class="rp-add-btn" onclick="addPrepItem()" aria-label="Add item">Add</button>
+  </div>
+
+</div><!-- end #rp-prepwork -->
+
+<!-- ═══ HISTORY PANEL ════════════════════════════════ -->
+<div class="rp-panel" id="rp-history" style="display:none">
+  <div class="section-label" style="margin-top:6px">📊 Completion Log — Last 14 Days</div>
+  <div id="rp-history-list">
+    <div style="font-size:12px;color:var(--text-muted);padding:20px 0 0;text-align:center">
+      No log entries yet — use Save + End Day to start tracking.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HABITS PANEL ══════════════════════════════════ -->
+<div class="rp-panel" id="rp-habits" style="display:none">
+
+  <!-- Habits consistency strip -->
+  <div id="habits-consistency-strip" style="display:none;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;margin-bottom:10px">
+    <div style="font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase">Habit consistency</div>
+    <div id="hcs-pct" style="font-size:18px;font-weight:900">—</div>
+    <div id="hcs-avg" style="font-size:10px;color:var(--muted);margin-left:auto"></div>
+  </div>
+
+  <!-- Streak overview strip -->
+  <div class="hab-overview" id="hab-overview">
+    <div style="font-size:12px;color:var(--muted);padding:16px 0;text-align:center">
+      No habits yet — add one below to start tracking.
+    </div>
+  </div>
+
+  <!-- Add habit form -->
+  <div style="font-size:10px;color:var(--text-muted);background:rgba(var(--primary-rgb),.07);border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-bottom:12px;">🛡 Forgiveness streak: one missed day per window doesn't break your streak. Consistency over perfection.</div>
+<div class="section-label" style="margin-top:16px">➕ New Habit</div>
+  <div class="hab-add-form">
+    <input type="text" id="hab-name-in" class="hab-input" placeholder="Habit name (e.g. Drink 2L water)">
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;align-items:center">
+      <input type="text" id="hab-emoji-in" class="hab-input" placeholder="🌱" maxlength="4"
+             style="width:52px;text-align:center;font-size:18px;padding:7px 4px;flex:none">
+      <select id="hab-freq-in" class="hab-input" style="flex:1;min-width:120px" aria-label="Hab Freq In">
+        <option value="daily">Daily</option>
+        <option value="weekdays">Weekdays</option>
+        <option value="3x-week">3× per week</option>
+        <option value="weekly">Weekly</option>
+      </select>
+      <select id="hab-cat-in" class="hab-input" style="flex:1;min-width:100px" aria-label="Hab Cat In">
+        <option value="health">🏥 Health</option>
+        <option value="fitness">💪 Fitness</option>
+        <option value="mindset">🧠 Mindset</option>
+        <option value="home">🏠 Home</option>
+        <option value="work">💼 Work</option>
+        <option value="social">💬 Social</option>
+        <option value="other">💭 Other</option>
+      </select>
+      <button class="rp-add-btn" onclick="addHabit()" aria-label="Add item">+ Add</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ SETUP PANEL ══════════════════════════════════ -->
+<div class="rp-panel" id="rp-setup" style="display:none;padding:12px 12px 100px">
+
+  <div style="font-size:11px;color:var(--text-muted);background:rgba(var(--primary-rgb),.07);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:14px">
+    ⚙️ Configure your routines and prepwork library here. Add, archive, or delete items and adjust their flags without touching the live view.
+  </div>
+
+  <!-- Routine item manager -->
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:4px">🔁 Routine Item Library</div>
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">Add items to the routine library with full config. They appear in the Routines panel immediately.</div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px">
+      <input id="rps-routine-title" class="rp-add-input" placeholder="Routine step…" onkeydown="if(event.key==='Enter')rpSetupAddRoutine()">
+      <button class="rp-add-btn" onclick="rpSetupAddRoutine()" aria-label="Add item">Add</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Time slot</div>
+        <select id="rps-routine-slot" class="rp-add-select" style="width:100%" aria-label="Time slot">
+          <option value="morning">☀️ Morning</option>
+          <option value="evening">🌙 Evening</option>
+          <option value="anytime">🔄 Anytime</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Energy estimate</div>
+        <select id="rps-routine-energy" class="rp-add-select" style="width:100%" aria-label="Energy estimate">
+          <option value="">— Not set —</option>
+          <option value="low">🟢 Low</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+        </select>
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text);cursor:pointer;margin-bottom:10px">
+      <input type="checkbox" id="rps-routine-onetime" style="width:15px;height:15px;accent-color:var(--accent)">
+      Auto-archive after first completion (one-time item)
+    </label>
+    <div id="rps-routine-list" style="font-size:11px;color:var(--text-muted)">Loading…</div>
+  </div>
+
+  <!-- Prepwork item manager -->
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:4px">📋 Prepwork Item Library</div>
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">Add prepwork items with slot and energy config.</div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px">
+      <input id="rps-prep-title" class="rp-add-input" placeholder="Prep task…" onkeydown="if(event.key==='Enter')rpSetupAddPrep()">
+      <button class="rp-add-btn" onclick="rpSetupAddPrep()" aria-label="Add item">Add</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Time slot</div>
+        <select id="rps-prep-slot" class="rp-add-select" style="width:100%" aria-label="Time slot">
+          <option value="night">🌙 Night-Before</option>
+          <option value="morning">☀️ Morning Setup</option>
+          <option value="eod">📦 EOD Wrap</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Energy estimate</div>
+        <select id="rps-prep-energy" class="rp-add-select" style="width:100%" aria-label="Energy estimate">
+          <option value="">— Not set —</option>
+          <option value="low">🟢 Low</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+        </select>
+      </div>
+    </div>
+    <div id="rps-prep-list" style="font-size:11px;color:var(--text-muted)">Loading…</div>
+  </div>
+
+  <!-- Global options -->
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:8px">🛠 Global Options</div>
+    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12px;color:var(--text);margin-bottom:10px">
+      <input type="checkbox" id="rps-auto-archive" onchange="rpSetupSaveOptions()" style="width:16px;height:16px;accent-color:var(--accent);margin-top:2px;flex-shrink:0">
+      <span>Auto-archive all one-time items after first completion<br><span style="font-size:10px;color:var(--text-muted)">One-time items disappear from the daily view once ticked off — they stay in Setup for reference.</span></span>
+    </label>
+    <div style="font-size:9px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Default category for new items</div>
+    <select id="rps-default-cat" class="rp-add-select" style="width:100%" onchange="rpSetupSaveOptions()" aria-label="Default category for new items">
+      <option value="">— No default —</option>
+      <option value="health">🏥 Health</option>
+      <option value="home">🏠 Home</option>
+      <option value="work">💼 Work</option>
+      <option value="self-care">🧖 Self-care</option>
+      <option value="admin">📂 Admin</option>
+    </select>
+  </div>
+
+  <!-- Backup -->
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px">
+    <div style="font-size:12px;font-weight:900;color:var(--text);margin-bottom:8px">💾 Backup Setup Config</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="rpExportSetup()" style="flex:1;padding:9px;background:rgba(var(--primary-rgb),.1);border:1.5px solid rgba(var(--primary-rgb),.3);color:var(--accent);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Import">⬇️ Export JSON</button>
+      <input type="file" id="rps-restore-file" accept=".json" style="display:none" onchange="rpImportSetup(this)" aria-label="Restore routines setup from JSON">
+      <button onclick="document.getElementById('rps-restore-file').click()" style="padding:9px 14px;background:var(--surface);border:1.5px solid var(--border);color:var(--text-muted);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">📂 Restore</button>
+    </div>
+  </div>
+
+</div><!-- /rp-setup -->
+
+<!-- ═══ EOD BAR ══════════════════════════════════════ -->
+<div class="rp-eod-bar">
+  <button class="rp-eod-btn" onclick="rpEndDay()" aria-label="Save">💾 Save + End Day</button>
+  <span class="rp-eod-sub">Logs today · resets for tomorrow</span>
+  <div class="rp-eod-stats">
+    <div class="rp-eod-stat">
+      <div class="rp-eod-stat-num" id="eod-r-count">—</div>
+      <div class="rp-eod-stat-lbl">Routines</div>
+    </div>
+    <div class="rp-eod-stat">
+      <div class="rp-eod-stat-num" id="eod-p-count">—</div>
+      <div class="rp-eod-stat-lbl">Prepwork</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FAB BUTTONS ═══════════════════════════════════ -->
+
+<!-- ═══ BOTTOM NAV ════════════════════════════════════ -->
+<!-- Bottom nav injected by hq-core.js -->
+<!-- ═══ SIDENAV ══════════════════════════════════════ -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- ═══ SCRIPTS ══════════════════════════════════════ -->
+
+<script>window.HQ_CURRENT_PAGE = 'routines';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/routines-prepwork.js"></script>
+<script src="core/hq-notifications.js"></script>
+
+<script>
+/* ── P4: Register routine source with HQNotif ── */
+(function registerRoutinesSource() {
+  if (typeof HQNotif === 'undefined' || !HQNotif.registerSource) return;
+  HQNotif.registerSource('routines-prepwork', function () {
+    try {
+      const data = window.HQStore
+        ? (window.HQStore.get('audhd-hq-routines', null) || window.HQStore.get('audhd-hq-prepwork', {}))
+        : {};
+      const events   = [];
+      const today    = new Date();
+
+      // routines may have a scheduled start time per slot (morning / evening)
+      const SLOT_TIMES = { morning: '08:30', evening: '20:00', night: '21:00', eod: '17:30', anytime: null };
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      items.forEach(function (item) {
+        if (!item || !item.title) return;
+        const slot     = item.slot || item.tag || 'anytime';
+        const timeStr  = (item.time) || SLOT_TIMES[slot];
+        if (!timeStr) return; // no time trigger
+
+        const parts = timeStr.split(':');
+        if (parts.length !== 2) return;
+        const d = new Date(today);
+        d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+
+        const SLOT_EMOJI = { morning: '☀️', evening: '🌙', night: '🌙', eod: '📦', anytime: '🔄' };
+        events.push({
+          title:    (SLOT_EMOJI[slot] || '🔁') + ' ' + item.title,
+          time:     d.toISOString(),
+          type:     'routine',
+          moduleId: 'routines-prepwork'
+        });
+      });
+      return events;
+    } catch (e) {
+      console.warn('[routines-prepwork] registerSource error:', e);
+      return [];
+    }
+  });
+})();
+</script>
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

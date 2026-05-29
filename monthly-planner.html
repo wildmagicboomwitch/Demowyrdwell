@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗓️ Monthly Planner — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<link rel="stylesheet" href="pages/monthly-planner.css">
+</head>
+<body>
+<!-- Nav overlay injected by hq-core.js -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- Topbar injected by hq-core.js -->
+<div> </div>
+<!-- TIME BRAIN STRIP -->
+<div class="time-brain-strip">
+  <a href="day-view.html"         class="tbs-btn" data-tbs="timeline">📅 Today</a>
+  <a href="day-view.html#plan"    class="tbs-btn" data-tbs="daybuilder">🗓 Day Plan</a>
+  <a href="weekly-planner.html"   class="tbs-btn" data-tbs="weekly">📆 Week</a>
+  <a href="monthly-planner.html"  class="tbs-btn active" data-tbs="monthly">🗓️ Month</a>
+  <a href="recurring-events.html" class="tbs-btn" data-tbs="recurring">🔁 Recurring</a>
+</div>
+
+<div class="app-layout"><div class="content" id="content">
+<div id="toast-el" class="toast"></div>
+
+<!-- ITEM MODAL (task / appointment / goal) -->
+<div id="item-modal" class="modal-bg" onclick="if(event.target===this)closeModal('item-modal')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="im-title">➕ Add Item</div>
+      <button class="modal-x" onclick="closeModal('item-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Type selector -->
+      <div class="fg" id="im-type-row">
+        <label class="fl">Type</label>
+        <div class="tag-chips">
+          <button class="tchip on" data-type="task" onclick="selType(this)" aria-label="Complete">✅ Task</button>
+          <button class="tchip" data-type="appointment" onclick="selType(this)">📅 Appointment</button>
+          <button class="tchip" data-type="goal" onclick="selType(this)">🎯 Goal</button>
+        </div>
+      </div>
+
+      <div class="fg"><label class="fl">Title *</label><input id="im-title-in" class="fin" placeholder="What is this?"></div>
+
+      <!-- Category from Tag Engine -->
+      <div class="frow-2">
+        <div class="fg"><label class="fl">Category</label><select id="im-cat" class="fin" aria-label="Category"></select></div>
+        <div class="fg"><label class="fl">Subcategory</label><select id="im-subcat" class="fin" aria-label="Subcategory"><option value="">None</option></select></div>
+      </div>
+
+      <!-- Date fields -->
+      <div class="frow-3" id="im-dates">
+        <div class="fg"><label class="fl">📅 Target Date</label><input id="im-date" class="fin" type="date" aria-label="Im Date"></div>
+        <div class="fg" id="im-time-row"><label class="fl">⏰ Time</label><input id="im-time" class="fin" type="time" aria-label="Im Time"></div>
+        <div class="fg" id="im-dur-row"><label class="fl">⏱️ Duration (min)</label><input id="im-dur" class="fin" type="number" min="0" step="15" placeholder="60"></div>
+      </div>
+
+      <!-- Appointment extras -->
+      <div id="im-appt-extras" style="display:none">
+        <div class="fg"><label class="fl">📍 Location</label><input id="im-loc" class="fin" placeholder="Where?"></div>
+        <div class="sdiv">Prep Tasks</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Add tasks that need to happen before this appointment. They'll be placed in the correct week automatically.</div>
+        <div id="prep-list-builder"></div>
+        <button class="add-trigger" onclick="addPrepRow()">+ Add prep task</button>
+      </div>
+
+      <!-- Goal extras -->
+      <div id="im-goal-extras" style="display:none">
+        <div class="fg" style="margin-top:8px">
+          <label class="fl">Requires Action?</label>
+          <div class="tag-chips">
+            <button class="tchip" id="ra-no" onclick="setRA(false)">Context only — no action needed</button>
+            <button class="tchip on" id="ra-yes" onclick="setRA(true)">▸ Requires action steps</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority & Energy flags -->
+      <div class="frow-2">
+        <div class="fg">
+          <label class="fl">⚡ Priority</label>
+          <select id="im-priority" class="fin" aria-label="⚡ Priority"></select>
+        </div>
+        <div class="fg">
+          <label class="fl">🔋 Energy Cost</label>
+          <select id="im-energy" class="fin" aria-label="🔋 Energy Cost"></select>
+        </div>
+      </div>
+
+      <!-- Custom flags from Tag Engine -->
+      <div class="fg" id="im-custom-flags-wrap">
+        <label class="fl">Custom Flags</label>
+        <div class="tag-chips" id="im-custom-flags"></div>
+      </div>
+
+      <div class="fg"><label class="fl">Notes</label><textarea id="im-notes" class="ftextarea" placeholder="Any context, details, or reminders..."></textarea></div>
+      <input type="hidden" id="im-edit-id">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('item-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveItem()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTION STEP MODAL -->
+<div id="step-modal" class="modal-bg" onclick="if(event.target===this)closeModal('step-modal')">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="stm-title">➕ Add Action Step</div><button class="modal-x" onclick="closeModal('step-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Step Description *</label><input id="stm-text" class="fin" placeholder="What needs to happen?"></div>
+      <div class="frow-2">
+        <div class="fg"><label class="fl">📅 Target Date (optional)</label><input id="stm-date" class="fin" type="date" aria-label="Stm Date"></div>
+        <div class="fg"><label class="fl">Target Week (optional)</label><input id="stm-week" class="fin" type="week" aria-label="Stm Week"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Route to Module (optional)</label>
+        <select id="stm-module" class="fin" aria-label="Route to Module (optional)">
+          <option value="">No routing</option>
+          <option value="health">🏥 Health Tracker</option>
+          <option value="finance">💰 Finance Tracker</option>
+          <option value="planning">📅 Day Builder</option>
+          <option value="brain-dump">💭 Thought Jar</option>
+        </select>
+      </div>
+      <input type="hidden" id="stm-goal-id">
+      <input type="hidden" id="stm-edit-id">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('step-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" onclick="saveStep()" aria-label="Save">💾 Save Step</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEFER / CANCEL MODAL -->
+<div id="defer-modal" class="modal-bg" onclick="if(event.target===this)closeModal('defer-modal')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hd"><div class="modal-title" id="dm-title">🔄 Defer Item</div><button class="modal-x" onclick="closeModal('defer-modal')" aria-label="Close" title="Close">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.55" id="dm-desc"></div>
+      <div class="fg"><label class="fl">Reason (optional)</label><input id="dm-reason" class="fin" placeholder="Why is this being deferred?"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-g" onclick="closeModal('defer-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-p" id="dm-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shell topbar injected by hq-core.js (contains hdr-month-label via HQ_PAGE_CONFIG) -->
+
+<!-- NAV -->
+<div class="nav">
+  <button class="ntab on" onclick="sw('overview',this)" aria-label="Overview tab">📊 Overview</button>
+  <button class="ntab"    onclick="sw('goals',this)" aria-label="Goals tab">🎯 Goals</button>
+  <button class="ntab"    onclick="sw('items',this)" aria-label="Complete">✅ Tasks & Appointments</button>
+  <button class="ntab"    onclick="sw('notes',this)" aria-label="Notes tab">📝 Notes</button>
+  <button class="ntab"    onclick="sw('review',this)" aria-label="Copy">📋 Review</button>
+  <button class="ntab"    onclick="sw('work-schedule',this)" aria-label="Work Schedule tab">💼 Work Schedule</button>
+</div>
+
+<div class="main">
+
+<!-- ======== OVERVIEW ======== -->
+<div id="tab-overview" class="tab on">
+
+  <!-- Calendar strip -->
+  <div class="cal-strip">
+    <div class="cal-strip-hd">
+      <span id="cal-month-lbl">Loading...</span>
+      <span style="font-size:11px;color:var(--muted)">Click a day to see items</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="sc"><div class="sn" id="st-goals" style="color:var(--purple)">0</div><div class="sl">Goals</div></div>
+    <div class="sc"><div class="sn" id="st-tasks" style="color:var(--teal)">0</div><div class="sl">Tasks</div></div>
+    <div class="sc"><div class="sn" id="st-appts" style="color:var(--coral)">0</div><div class="sl">Appointments</div></div>
+    <div class="sc"><div class="sn" id="st-done" style="color:var(--green)">0</div><div class="sl">Done</div></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📈 Month Progress</div><div class="card-sub" id="ov-prog-label">0 / 0 items done</div></div>
+    <div class="rb-track md"><div class="rb-fill" id="ov-prog-bar" style="width:0%"></div></div>
+    <div id="ov-summary" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Inbox — unassigned to any week -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📥 Inbox — Not Yet Scheduled</div>
+      <div class="card-sub" id="inbox-count">0 items</div>
+    </div>
+    <div class="hint" style="margin-bottom:10px">These items are in this month but haven't been assigned to a week yet. Weekly Planner will surface them for you to schedule.</div>
+    <div id="inbox-list"></div>
+    <button class="add-trigger" onclick="openAddItem()">+ Add item to this month</button>
+  </div>
+
+</div>
+
+<!-- ======== GOALS ======== -->
+<div id="tab-goals" class="tab">
+
+  <div class="hint">🎯 Goals provide the direction for this month. They sit at the top of Weekly as context headers. Add action steps to any goal that needs concrete steps — steps cascade into the weekly pile automatically.</div>
+
+  <div class="filter-row" id="goal-filters">
+    <button class="fchip on" onclick="setGoalFilter('all',this)">All</button>
+    <button class="fchip" onclick="setGoalFilter('active',this)">Active</button>
+    <button class="fchip" onclick="setGoalFilter('requires-action',this)">▸ Has steps</button>
+    <button class="fchip" onclick="setGoalFilter('done',this)">✓ Done</button>
+  </div>
+
+  <div id="goals-list"></div>
+  <button class="add-trigger" onclick="openAddItem('goal')">+ Add Goal</button>
+
+</div>
+
+<!-- ======== TASKS & APPOINTMENTS ======== -->
+<div id="tab-items" class="tab">
+
+  <div class="filter-row" id="item-filters">
+    <button class="fchip on" onclick="setItemFilter('all',this)">All</button>
+    <button class="fchip" onclick="setItemFilter('task',this)" aria-label="Complete">✅ Tasks</button>
+    <button class="fchip" onclick="setItemFilter('appointment',this)">📅 Appointments</button>
+    <button class="fchip" onclick="setItemFilter('inbox',this)" aria-label="Import">📥 Inbox</button>
+    <button class="fchip" onclick="setItemFilter('scheduled',this)">📆 Scheduled</button>
+    <button class="fchip" onclick="setItemFilter('done',this)">✓ Done</button>
+  </div>
+
+  <div id="items-list"></div>
+  <button class="add-trigger" onclick="openAddItem()">+ Add Task or Appointment</button>
+
+</div>
+
+<!-- ======== NOTES ======== -->
+<div id="tab-notes" class="tab">
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📝 Month Notes</div><div class="card-sub" id="notes-saved-lbl"></div></div>
+    <textarea id="month-notes-ta" class="month-notes-ta" placeholder="Reflections, context, anything relevant to this month..."></textarea>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="btn-p" onclick="saveNotes()" aria-label="Save">💾 Save Notes</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Past Months</div></div>
+    <div id="past-months-list"></div>
+  </div>
+</div>
+
+<!-- ======== REVIEW ======== -->
+<div id="tab-review" class="tab">
+
+  <!-- Stats summary for the month -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📊 Month Summary</div>
+      <div class="card-sub" id="rv-month-label"></div>
+    </div>
+    <div id="rv-stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px"></div>
+    <div class="rb-track md"><div class="rb-fill" id="rv-prog-bar" style="width:0%"></div></div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px" id="rv-prog-label"></div>
+  </div>
+
+  <!-- Monthly metrics strip (from metrics engine) -->
+  <div id="rv-monthly-metrics" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
+
+  <!-- Goals hit vs missed -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🎯 Goals This Month</div></div>
+    <div id="rv-goals-list"></div>
+  </div>
+
+  <!-- Reflection questions -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">💬 Reflection</div>
+      <div class="card-sub" id="rv-saved-lbl"></div>
+    </div>
+    <div class="review-q" style="margin-bottom:12px">
+      <div class="review-ql">✅ What went well this month?</div>
+      <textarea id="rv-well" class="ftextarea" placeholder="Wins, completed goals, moments that worked…"></textarea>
+    </div>
+    <div class="review-q" style="margin-bottom:12px">
+      <div class="review-ql">⚠️ What was hard or didn't happen?</div>
+      <textarea id="rv-hard" class="ftextarea" placeholder="Friction, missed goals, blockers…"></textarea>
+    </div>
+    <div class="review-q" style="margin-bottom:12px">
+      <div class="review-ql">🔁 One adjustment for next month</div>
+      <textarea id="rv-change" class="ftextarea" placeholder="A single concrete change going forward…"></textarea>
+    </div>
+
+    <!-- Energy rating -->
+    <div class="review-q" style="margin-bottom:12px">
+      <div class="review-ql">⚡ Overall energy this month</div>
+      <div class="tag-chips">
+        <button class="tchip" onclick="selMonthEnergy(this)" data-e="depleted">🪫 Depleted</button>
+        <button class="tchip" onclick="selMonthEnergy(this)" data-e="low">😴 Low</button>
+        <button class="tchip" onclick="selMonthEnergy(this)" data-e="ok">😐 OK</button>
+        <button class="tchip" onclick="selMonthEnergy(this)" data-e="good">😊 Good</button>
+        <button class="tchip" onclick="selMonthEnergy(this)" data-e="high">🚀 High</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap">
+      <button class="btn-p" onclick="saveMonthReview()" aria-label="Save">💾 Save Review</button>
+      <button style="background:var(--surface);border:1.5px solid var(--border);color:var(--text2);border-radius:9px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" onclick="exportMonthReview()" aria-label="Export">📤 Export as text</button>
+    </div>
+  </div>
+
+  <!-- Carry-forward — unfinished items to next month -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">➡️ Carry Forward to Next Month</div>
+      <div class="card-sub" id="rv-carry-count"></div>
+    </div>
+    <div id="rv-carry-list"></div>
+    <button class="btn-p" id="rv-carry-btn" onclick="carryForwardAll()" style="display:none;margin-top:10px;width:100%" aria-label="Forward">
+      ➡️ Push all unfinished to next month
+    </button>
+  </div>
+
+  <!-- Past month reviews -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📜 Past Reviews</div></div>
+    <div id="rv-past-list"></div>
+  </div>
+
+</div>
+
+</div><!-- /main -->
+
+<!-- RECURRING EVENTS MODAL -->
+
+<!-- ======== WORK SCHEDULE IMPORTER ======== -->
+<div id="tab-work-schedule" class="tab">
+  <div style="padding:16px 0">
+
+    <!-- UPLOAD ZONE -->
+    <div id="ws-upload-zone" style="border:2px dashed var(--border-col);border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:16px" onclick="document.getElementById('ws-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent-teal)'" ondragleave="this.style.borderColor='var(--border-col)'" ondrop="wsHandleDrop(event)">
+      <input type="file" id="ws-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="wsLoadFile(this)" aria-label="Import worksheet file">
+      <div style="font-size:32px;margin-bottom:8px">📂</div>
+      <div style="font-weight:800;font-size:14px;color:var(--text-main)">Drop your work schedule here</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">.xlsx · .xls · .csv — or click to browse</div>
+    </div>
+
+    <!-- FILE INFO -->
+    <div id="ws-file-info" style="display:none;background:var(--surface);border:1px solid var(--border-col);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">📄</span>
+      <div style="flex:1"><span id="ws-file-name" style="font-weight:700;color:var(--text-main)"></span><br><span id="ws-file-meta" style="color:var(--text-muted)"></span></div>
+      <button onclick="wsReset()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:2px" aria-label="Close" title="Close">✕</button>
+    </div>
+
+    <!-- COLUMN MAPPER -->
+    <div id="ws-col-mapper" style="display:none">
+      <div style="font-weight:800;font-size:12px;color:var(--accent-teal);letter-spacing:.05em;margin-bottom:10px">📋 MAP YOUR COLUMNS</div>
+      <div style="background:var(--surface);border:1px solid var(--border-col);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Tell us which columns hold which data. Auto-detected values shown — adjust if needed.</div>
+        <div class="ws-map-grid">
+          <div class="ws-map-row">
+            <label class="ws-map-label">📅 Date <span class="ws-req">required</span></label>
+            <select id="ws-col-date" class="fin ws-sel" aria-label="Ws Col Date"></select>
+          </div>
+          <div class="ws-map-row">
+            <label class="ws-map-label">🕐 Start Time <span class="ws-req">required</span></label>
+            <select id="ws-col-start" class="fin ws-sel" aria-label="Ws Col Start"></select>
+          </div>
+          <div class="ws-map-row">
+            <label class="ws-map-label">🕔 End Time <span class="ws-req">required</span></label>
+            <select id="ws-col-end" class="fin ws-sel" aria-label="Ws Col End"></select>
+          </div>
+          <div class="ws-map-row">
+            <label class="ws-map-label">💼 Role / Title</label>
+            <select id="ws-col-role" class="fin ws-sel" aria-label="💼 Role / Title"></select>
+          </div>
+          <div class="ws-map-row">
+            <label class="ws-map-label">📍 Location</label>
+            <select id="ws-col-loc" class="fin ws-sel" aria-label="📍 Location"></select>
+          </div>
+          <div class="ws-map-row">
+            <label class="ws-map-label">📝 Notes</label>
+            <select id="ws-col-notes" class="fin ws-sel" aria-label="📝 Notes"></select>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:700">HEADER ROW #</label>
+          <input type="number" id="ws-header-row" value="1" min="1" max="10" style="width:60px;padding:5px 8px;font-size:12px" aria-label="Ws Header Row">
+          <span style="font-size:10px;color:var(--text-muted)">(row 1 = first row of file)</span>
+        </div>
+      </div>
+      <button class="btn-p" style="width:100%;padding:12px;font-size:13px;font-weight:800" onclick="wsParseShifts()" aria-label="Search">🔍 PREVIEW SHIFTS</button>
+    </div>
+
+    <!-- PREVIEW TABLE -->
+    <div id="ws-preview" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-weight:800;font-size:12px;color:var(--accent-teal);letter-spacing:.05em">👁 PREVIEW</div>
+        <div id="ws-preview-stats" style="font-size:11px;color:var(--text-muted)"></div>
+      </div>
+      <div id="ws-preview-table" style="background:var(--surface);border:1px solid var(--border-col);border-radius:10px;overflow:hidden;margin-bottom:14px;max-height:320px;overflow-y:auto"></div>
+
+      <!-- PUSH TARGETS -->
+      <div style="background:var(--surface);border:1px solid var(--border-col);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:.05em;margin-bottom:10px">📤 PUSH TO</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label class="ws-push-opt"><input type="checkbox" id="ws-push-monthly" checked> <span class="ws-push-label">📅 <strong>Monthly Planner</strong></span> <span class="ws-push-desc">Adds shifts as appointments to the correct month</span></label>
+          <label class="ws-push-opt"><input type="checkbox" id="ws-push-weekly" checked> <span class="ws-push-label">📆 <strong>Weekly Planner</strong></span> <span class="ws-push-desc">Adds to inbox of the correct week</span></label>
+          <label class="ws-push-opt"><input type="checkbox" id="ws-push-daybuilder" checked> <span class="ws-push-label">🗓 <strong>Day Builder</strong></span> <span class="ws-push-desc">Places shift block in the correct hour slot</span></label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn-p" id="ws-import-btn" style="flex:1;padding:14px;font-size:14px;font-weight:900" onclick="wsConfirmImport()" aria-label="Complete">✅ IMPORT SHIFTS</button>
+        <button onclick="wsBackToMapper()" style="padding:10px 14px;background:var(--surface);border:1px solid var(--border-col);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:12px" aria-label="Previous">← Back</button>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="ws-result" style="display:none;text-align:center;padding:24px 0">
+      <div style="font-size:40px;margin-bottom:8px">✅</div>
+      <div id="ws-result-msg" style="font-weight:800;font-size:15px;color:var(--text-main);margin-bottom:6px"></div>
+      <div id="ws-result-sub" style="font-size:11px;color:var(--text-muted);margin-bottom:16px"></div>
+      <button onclick="wsReset()" class="btn-p" style="padding:10px 20px">Import Another File</button>
+    </div>
+
+  </div>
+</div>
+
+
+<div id="recur-modal" class="modal-bg" onclick="if(event.target===this)closeModal('recur-modal')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">🔁 Recurring Events</div>
+      <button class="modal-x" onclick="closeModal('recur-modal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="hint">Add birthdays, anniversaries, and other yearly events. They appear automatically in every year.<br><a href="recurring-events.html" style="color:var(--purple);font-weight:700;font-size:11px">🔁 Manage all recurring events →</a></div>
+      <div id="recur-list" style="margin-bottom:14px"></div>
+      <div class="add-form" id="recur-add-form">
+        <div class="sdiv">Add / Edit Event</div>
+        <div class="frow-2">
+          <div class="fg"><label class="fl">Emoji</label><input id="rf-emoji" class="fin" placeholder="🎂" style="max-width:80px"></div>
+          <div class="fg"><label class="fl">Title *</label><input id="rf-title" class="fin" placeholder="Mum's Birthday"></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Frequency</label>
+          <select id="rf-freq" class="fin" onchange="updateRecurFields()" aria-label="Frequency">
+            <option value="yearly">Yearly</option>
+            <option value="monthly">Monthly</option>
+            <option value="every-other-month">Every Other Month</option>
+            <option value="weekly">Weekly</option>
+            <option value="every-other-week">Every Other Week</option>
+          </select>
+        </div>
+        <div id="rf-date-fields">
+          <div class="frow-2">
+            <div class="fg" id="rf-month-wrap">
+              <label class="fl">Month</label>
+              <select id="rf-month" class="fin" aria-label="Month">
+                <option value="1">January</option><option value="2">February</option>
+                <option value="3">March</option><option value="4">April</option>
+                <option value="5">May</option><option value="6">June</option>
+                <option value="7">July</option><option value="8">August</option>
+                <option value="9">September</option><option value="10">October</option>
+                <option value="11">November</option><option value="12">December</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">Day</label><input id="rf-day" class="fin" type="number" min="1" max="31" placeholder="14"></div>
+          </div>
+        </div>
+        <div id="rf-dow-fields" style="display:none">
+          <div class="frow-2">
+            <div class="fg">
+              <label class="fl">Day of Week</label>
+              <select id="rf-dow" class="fin" aria-label="Day of Week">
+                <option value="0">Sunday</option><option value="1">Monday</option>
+                <option value="2">Tuesday</option><option value="3">Wednesday</option>
+                <option value="4">Thursday</option><option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+            <div class="fg" id="rf-week-offset-wrap" style="display:none">
+              <label class="fl">Week Cycle Start</label>
+              <select id="rf-week-offset" class="fin" aria-label="Week Cycle Start">
+                <option value="0">Even weeks</option>
+                <option value="1">Odd weeks</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      <div class="fg">
+        <label class="fl">All Day?</label>
+          <div class="tag-chips">
+            <button class="tchip" id="rf-allday-no"  onclick="setRecurAllDay(false)">⏰ Has a time slot</button>
+            <button class="tchip on" id="rf-allday-yes" onclick="setRecurAllDay(true)">🗓️ All day — no time</button>
+          </div>
+        </div>
+        <input type="hidden" id="rf-allday" value="true">
+        <div class="fg"><label class="fl">Notes (optional)</label><input id="rf-notes" class="fin" placeholder="e.g. Put bins out the night before"></div>
+        <input type="hidden" id="rf-edit-id">
+        <div class="form-actions">
+          <button class="btn-g" onclick="resetRecurForm()">Clear</button>
+          <button class="btn-p" onclick="saveRecurring()" aria-label="Save">💾 Save Event</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div></div><!-- /content /app-layout -->
+
+<!-- Bottom nav injected by hq-core.js -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+window.HQ_CURRENT_PAGE = 'monthly';
+window.HQ_PAGE_CONFIG = {
+  centerHTML: '<div style="display:flex;align-items:center;gap:6px">' +
+    '<button class="hdr-nav" onclick="moveMonth(-1)" style="font-size:18px;width:32px;height:32px;background:none;border:none;color:var(--text2);cursor:pointer;border-radius:6px;font-weight:900" aria-label="Previous" title="Previous"></button>' +
+    '<span id="hdr-month-label" style="font-size:14px;font-weight:800;min-width:120px;text-align:center">— ——</span>' +
+    '<button class="hdr-nav" onclick="moveMonth(1)" style="font-size:18px;width:32px;height:32px;background:none;border:none;color:var(--text2);cursor:pointer;border-radius:6px;font-weight:900" aria-label="Next" title="Next"></button>' +
+    '</div>',
+  actionBtn: { label: 'Today', onclick: 'goToday()' }
+};
+</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="core/hq-monthly-data.js"></script>
+<script src="pages/monthly-planner.js"></script>
+<script src="core/hq-notifications.js"></script>
+
+<script>
+/* ── P4: Register appointment/deadline source with HQNotif ── */
+(function registerMonthlySource() {
+  if (typeof HQNotif === 'undefined' || !HQNotif.registerSource) return;
+  HQNotif.registerSource('monthly-planner', function () {
+    try {
+      const monthly = window.HQStore ? window.HQStore.get(HQKeys.MONTHLY, {}) : {};
+      const events  = [];
+      const now     = Date.now();
+      const cutoff  = now + 24 * 60 * 60 * 1000; // 24h window
+
+      // Iterate month keys (format: YYYY-MM)
+      Object.values(monthly).forEach(function (monthData) {
+        if (!monthData) return;
+        const items = monthData.items || [];
+        items.forEach(function (item) {
+          if (!item || item.done) return;
+          // Build ISO time from date + optional time
+          let iso = null;
+          if (item.date) {
+            const d = new Date(item.date + (item.time ? 'T' + item.time : 'T00:00'));
+            if (!isNaN(d.getTime())) iso = d.toISOString();
+          }
+          if (!iso) return;
+          const t = new Date(iso).getTime();
+          if (t < now || t > cutoff) return; // outside 24h window
+
+          const typeMap = { appointment: 'appointment', task: 'deadline', goal: 'deadline' };
+          events.push({
+            title:    (item.type === 'appointment' ? '📅 ' : '✅ ') + (item.title || 'Untitled'),
+            time:     iso,
+            type:     typeMap[item.type] || 'event',
+            moduleId: 'monthly-planner'
+          });
+        });
+      });
+      return events;
+    } catch (e) {
+      console.warn('[monthly-planner] registerSource error:', e);
+      return [];
+    }
+  });
+})();
+</script>
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

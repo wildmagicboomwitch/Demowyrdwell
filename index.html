@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 AuDHD HQ — Life Command</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167x167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+<link rel="shortcut icon" href="icons/favicon.ico">
+<meta name="theme-color" content="#120f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<link rel="stylesheet" href="pages/index.css">
+</head>
+<body class="hq-page-index">
+<div class="main-content">
+
+  <!-- ═══ HERO ═══════════════════════════════════════════════════════ -->
+  <div class="hero" id="hero">
+    <div class="hero-gradient-layer" id="heroGradient" style="background:var(--hero-gradient)"></div>
+    <div class="hero-content">
+      <div class="hero-date" id="hq-date"></div>
+      <div class="hero-greeting">
+        Good <em id="greetingWord">morning</em>, <span id="greetingName"></span>. <span id="greetingEmoji">☀️</span>
+      </div>      	
+
+      <!-- VIBE STRIP: energy state + cognitive load -->
+      <div class="vibe-strip" id="vibe-strip" style="display:none">
+        <span class="vibe-pill energy-unknown" id="vibe-energy">⚡ —</span>
+        <span class="vibe-pill" id="vibe-load"><span class="load-dot"></span> — load</span>
+        <span class="vibe-pill energy-unknown" id="vibe-emo-load" style="display:none" title="Worry + Vent entries in last 7 days">🧠 — load</span>
+        <span class="vibe-pill energy-unknown" id="vibe-wins" style="display:none" title="Wins logged this month">🏆 —</span>
+      </div>
+
+      <!-- DAILY CAPACITY BAR -->
+      <div class="capacity-wrap" id="capacity-wrap" style="display:none">
+        <div class="capacity-lbl">
+          <span>🌡 Today's capacity</span>
+          <span id="capacity-label-right">—</span>
+        </div>
+        <div class="capacity-track">
+          <div class="capacity-fill cap-green" id="capacity-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- DAILY AFFIRMATION -->
+
+      <!-- METRICS TREND STRIP -->
+      <div id="metrics-strip" style="display:none;margin-top:8px;padding:8px 11px;background:rgba(var(--primary-rgb),.08);border:1px solid rgba(var(--primary-rgb),.2);border-radius:9px;font-size:10px;font-weight:700;color:var(--text2);gap:10px;flex-wrap:wrap;align-items:center">
+        <span id="mts-week"></span>
+        <span id="mts-streak" style="color:var(--green)"></span>
+        <span id="mts-tasks" style="color:var(--purple)"></span>
+        <span id="mts-walk" style="color:var(--orange)"></span>
+      </div>
+
+      <div class="hero-affirmation" id="hero-affirmation"></div>
+
+      <div class="hero-tools-label">TOOLS</div>
+      <div class="hero-tools">
+        <a href="day-view.html" class="hero-tool-btn" aria-label="Timeline Today's plan">
+          <span class="hero-tool-ico">📅</span>
+          <span class="hero-tool-lbl">Timeline</span>
+          <span class="hero-tool-sub">Today's plan</span>
+        </a>
+        <a href="day-view.html#plan" class="hero-tool-btn" aria-label="DayBuilder Block planner">
+          <span class="hero-tool-ico">🗓</span>
+          <span class="hero-tool-lbl">DayBuilder</span>
+          <span class="hero-tool-sub">Block planner</span>
+        </a>
+
+        <a href="money-brain.html" class="hero-tool-btn" aria-label="Money Brain Budget &amp; bills">
+          <span class="hero-tool-ico">💰</span>
+          <span class="hero-tool-lbl">Money Brain</span>
+          <span class="hero-tool-sub">Budget &amp; bills</span>
+        </a>
+        <a href="kitchen-brain.html" class="hero-tool-btn" aria-label="Kitchen Brain Meals &amp; fridge">
+          <span class="hero-tool-ico">🍳</span>
+          <span class="hero-tool-lbl">Kitchen Brain</span>
+          <span class="hero-tool-sub">Meals &amp; fridge</span>
+        </a>
+      </div>
+    </div>
+    <div class="hero-curve"></div>
+  </div>
+
+  <!-- ═══ QUICK ACCESS ═══════════════════════════════════════════ -->
+<div class="quick-access-wrap">
+  <div class="h2-section-label">⚡ Quick Access</div>
+
+  <div class="h2-quick-tiles" id="qa-tiles">
+    <a href="global-tracker.html" class="h2-tile" aria-label="Global Data">
+      <span class="h2-tile-ico">🌍</span>
+      <span class="h2-tile-lbl">Global Data</span>
+    </a>
+
+    <a href="brain-dump.html" class="h2-tile" id="dump-tile" aria-label="Thought Jar">
+      <span class="h2-tile-ico">🫙</span>
+      <span class="h2-tile-lbl">Thought Jar</span>
+      <span class="tile-badge" id="dump-badge"></span>
+    </a>
+
+    <a href="checkin.html" class="h2-tile" aria-label="Check-In">
+      <span class="h2-tile-ico">✅</span>
+      <span class="h2-tile-lbl">Check-In</span>
+    </a>
+  </div>
+
+  <a href="checkin.html" class="reminder-pulse hidden" id="reminder-banner"></a>
+</div>
+
+
+  <!-- ═══ ALERTS — Unified Alert Zone ════════════════════════════ -->
+  <!-- surface-index urgent flags + surface-checkin items, co-located but visually distinct -->
+  <div class="alerts-wrap">
+    <div class="alerts-box">
+      <div class="alerts-header">
+        <span>🚨 Alerts</span>
+        <div class="alerts-counts" id="alerts-counts"></div>
+      </div>
+      <!-- Section A: surface-index flagged urgent items -->
+      <div class="alerts-scroll" id="alerts-scroll">
+        <div style="text-align:center;font-size:11px;color:var(--muted);padding:14px">✅ All clear!</div>
+      </div>
+      <!-- Section B: surface-checkin items (co-located, distinct stripe) -->
+      <div id="alerts-checkin-wrap" style="display:none;border-top:1px solid var(--border)">
+        <div class="alerts-subheader">
+          <span>✅ Flagged for Check-In</span>
+          <span id="alerts-checkin-count" style="font-size:10px;color:var(--muted)"></span>
+          <a href="checkin.html" style="margin-left:auto;font-size:10px;font-weight:700;color:var(--purple);text-decoration:none" aria-label="Open Check-In">Open Check-In →</a>
+        </div>
+        <div id="alerts-checkin-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+
+<!-- ═══ UPCOMING EVENTS ═══════════════════════════════════════ -->
+<div class="upcoming-wrap">
+  <div class="alerts-box">
+    <div class="alerts-header">
+      <span>📌 Upcoming</span>
+    </div>
+    <div class="alerts-scroll" id="upcoming-scroll">
+      <div class="empty-state">Nothing upcoming</div>
+    </div>
+  </div>
+</div>
+
+  <!-- ═══ WALKING STRIP ════════════════════════════════════════════ -->
+  <div class="walk-wrap">
+    <a href="walking-tracker.html" class="walk-strip" aria-label="0 mi 2026 Goal · 0% of 3,100 mi Open">
+      <div class="walk-miles" id="walk-miles">0 mi</div>
+      <div class="walk-info">
+        <div class="walk-goal-lbl">2026 Goal · <span id="walk-pct">0%</span> of <span id="walk-goal">3,100</span> mi</div>
+        <div class="rb-track md"><div class="rb-fill" id="walk-bar" style="width:0%"></div></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px" id="walk-needed"></div>
+      </div>
+      <div class="walk-link">Open →</div>
+    </a>
+  </div>
+
+
+  <!-- ═══ CARD SECTIONS ════════════════════════════════════════════ -->
+  <div class="card-section">
+    <div class="section-label">🌅 Daily</div>
+    <div class="card-grid">
+      <a href="routines-prepwork.html" class="card-item" aria-label="Prepwork + Routines Night prep, morning routines, ">
+        <span class="card-ico">🔁</span>
+        <div class="card-info"><div class="card-title">Prepwork + Routines</div><div class="card-desc">Night prep, morning routines, end-of-day</div></div>
+      </a>
+      <a href="checkin.html" class="card-item hero-linked" aria-label="Check-In Mood, energy, body, quick log">
+        <span class="card-ico">✅</span>
+        <div class="card-info"><div class="card-title">Check-In</div><div class="card-desc">Mood, energy, body, quick log</div></div>
+      </a>
+      <a href="brain-dump.html" class="card-item hero-linked" aria-label="Thought Jar Capture anything, route it anywhere">
+        <span class="card-ico">🫙</span>
+        <div class="card-info"><div class="card-title">Thought Jar</div><div class="card-desc">Capture anything, route it anywhere</div></div>
+      </a>
+      <a href="day-view.html" class="card-item hero-linked" aria-label="Today's Timeline Read-only day view">
+        <span class="card-ico">📅</span>
+        <div class="card-info"><div class="card-title">Today's Timeline</div><div class="card-desc">Read-only day view</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <div class="section-label">🧠 Core Brains</div>
+    <div class="card-grid">
+      <a href="project-brain.html" class="card-item" aria-label="Project Brain Projects, milestones, tasks, ideas">
+        <span class="card-ico">🗂</span>
+        <div class="card-info"><div class="card-title">Project Brain</div><div class="card-desc">Projects, milestones, tasks, ideas</div></div>
+      </a>
+      <a href="money-brain.html" class="card-item hero-linked" aria-label="Money Brain Budget, bills, savings">
+        <span class="card-ico">💰</span>
+        <div class="card-info"><div class="card-title">Money Brain</div><div class="card-desc">Budget, bills, savings</div></div>
+      </a>
+      <a href="kitchen-brain.html" class="card-item hero-linked" aria-label="Kitchen Brain Meals, fridge, recipes">
+        <span class="card-ico">🍳</span>
+        <div class="card-info"><div class="card-title">Kitchen Brain</div><div class="card-desc">Meals, fridge, recipes</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <div class="section-label">🗂 Planning + Organizing</div>
+    <div class="card-grid">
+      <a href="taskboard.html" class="card-item" aria-label="Taskboards Daily, weekly, monthly lanes">
+        <span class="card-ico">📋</span>
+        <div class="card-info"><div class="card-title">Taskboards</div><div class="card-desc">Daily, weekly, monthly lanes</div></div>
+      </a>
+      <a href="monthly-planner.html" class="card-item" aria-label="Monthly Planner Goals, cascade, appointments">
+        <span class="card-ico">🗓️</span>
+        <div class="card-info"><div class="card-title">Monthly Planner</div><div class="card-desc">Goals, cascade, appointments</div></div>
+      </a>
+      <a href="weekly-planner.html" class="card-item" aria-label="Weekly Planner Week view, inbox pull, review">
+        <span class="card-ico">📆</span>
+        <div class="card-info"><div class="card-title">Weekly Planner</div><div class="card-desc">Week view, inbox pull, review</div></div>
+      </a>
+
+      <a href="day-view.html#plan" class="card-item hero-linked" aria-label="DayBuilder Visual block schedule">
+        <span class="card-ico">🗓</span>
+        <div class="card-info"><div class="card-title">DayBuilder</div><div class="card-desc">Visual block schedule</div></div>
+      </a>
+
+
+    </div>
+  </div>
+
+  <div class="card-section">
+    <div class="section-label">❤️ Health + Wellness</div>
+    <div class="card-grid">
+      <a href="health-tracker.html" class="card-item" aria-label="Health Tracker Period, headaches, sleep, symptoms">
+        <span class="card-ico">🩺</span>
+        <div class="card-info"><div class="card-title">Health Tracker</div><div class="card-desc">Period, headaches, sleep, symptoms</div></div>
+      </a>
+      <a href="dream-journal.html" class="card-item" aria-label="Dream Journal Log, symbols, pattern analysis">
+        <span class="card-ico">💭</span>
+        <div class="card-info"><div class="card-title">Dream Journal</div><div class="card-desc">Log, symbols, pattern analysis</div></div>
+      </a>
+      <a href="walking-tracker.html" class="card-item" aria-label="Walking Tracker Miles log, heatmap, 2026 goal">
+        <span class="card-ico">👟</span>
+        <div class="card-info"><div class="card-title">Walking Tracker</div><div class="card-desc">Miles log, heatmap, 2026 goal</div></div>
+      </a>
+      <a href="firebird-protocol.html" class="card-item" aria-label="Firebird Protocol Coping, breathing, grounding">
+        <span class="card-ico">🔥</span>
+        <div class="card-info"><div class="card-title">Firebird Protocol</div><div class="card-desc">Coping, breathing, grounding</div></div>
+      </a>
+      <a href="survival-mode.html" class="card-item" aria-label="Survival Mode Floor tasks. For hard days.">
+        <span class="card-ico">🛟</span>
+        <div class="card-info"><div class="card-title">Survival Mode</div><div class="card-desc">Floor tasks. For hard days.</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="card-section">
+    <div class="section-label">⭐ Specialty Tools, Historical data</div>
+    <div class="card-grid">
+      <a href="life-admin.html" class="card-item" aria-label="Life Admin Brain Docs, contacts, deadlines, call p">
+        <span class="card-ico">📑</span>
+        <div class="card-info"><div class="card-title">Life Admin Brain</div><div class="card-desc">Docs, contacts, deadlines, call prep</div></div>
+      </a>
+      <a href="social-brain.html" class="card-item" aria-label="Social Brain People, scripts, energy tracking">
+        <span class="card-ico">💬</span>
+        <div class="card-info"><div class="card-title">Social Brain</div><div class="card-desc">People, scripts, energy tracking</div></div>
+      </a>
+      <a href="idea-studio.html" class="card-item" aria-label="Idea Studio Interests, hyperfocus, ideas, rabbit h">
+        <span class="card-ico">💡</span>
+        <div class="card-info"><div class="card-title">Idea Studio</div><div class="card-desc">Interests, hyperfocus, ideas, rabbit holes</div></div>
+      </a>
+      <a href="deep-clean.html" class="card-item" aria-label="Deep Clean Room-by-room protocol + scheduler">
+        <span class="card-ico">🧹</span>
+        <div class="card-info"><div class="card-title">Deep Clean</div><div class="card-desc">Room-by-room protocol + scheduler</div></div>
+      </a>
+
+      <a href="global-tracker.html" class="card-item" aria-label="Global Data Stats across all modules">
+        <span class="card-ico">🌍</span>
+        <div class="card-info"><div class="card-title">Global Data</div><div class="card-desc">Stats across all modules</div></div>
+      </a>
+
+      <a href="tool-vault.html" class="card-item" aria-label="Tool Vault Utilities, converters &amp; quick tools">
+        <span class="card-ico">🔧</span>
+        <div class="card-info"><div class="card-title">Tool Vault</div><div class="card-desc">Utilities, converters &amp; quick tools</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="show-all-wrap">
+    <button class="show-all-btn" id="show-all-btn" onclick="toggleShowAll()" aria-label="Show all tools">🔽 Show all tools</button>
+  </div>
+
+  <div class="card-section">
+    <div class="section-label">⚙️ Settings</div>
+    <div class="card-grid">
+      <a href="customize.html" class="card-item" aria-label="Customize Tags, reminders, preferences">
+        <span class="card-ico">⚙️</span>
+        <div class="card-info"><div class="card-title">Customize</div><div class="card-desc">Tags, reminders, preferences</div></div>
+      </a>
+      <a href="data-sync.html" class="card-item" aria-label="Data Sync Export, import, backup">
+        <span class="card-ico">🔄</span>
+        <div class="card-info"><div class="card-title">Data Sync</div><div class="card-desc">Export, import, backup</div></div>
+      </a>
+      <a href="iconforge.html" class="card-item" aria-label="IconForge Emoji &amp; icon collections">
+        <span class="card-ico">🎨</span>
+        <div class="card-info"><div class="card-title">IconForge</div><div class="card-desc">Emoji &amp; icon collections</div></div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 13: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+<script>window.HQ_PAGE_CONFIG={centerHTML:''};window.HQ_CURRENT_PAGE='index';</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/index.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+
+<!--==VOTEBANNER==--!>
+<div class="bvb-wrap" id="bvb-root">
+  <div class="bvb-banner" role="region" aria-label="Brand vote notification">
+    <div class="bvb-top">
+      <span class="bvb-icon" aria-hidden="true">📜</span>
+      <div class="bvb-text">
+        <p class="bvb-label">🗳️ Your vote is needed</p>
+        <p class="bvb-msg">Help name this thing. Three finalists — <strong>WyrdWell</strong>, <strong>ChaosCraft</strong>, or <strong>StoryKeep</strong>. Takes 60 seconds.</p>
+      </div>
+      <button class="bvb-dismiss" id="bvb-close" aria-label="Dismiss permanently">✕</button>
+    </div>
+    <div class="bvb-actions">
+      <a class="bvb-btn-vote" href="https://audhd-hq.web.app/vote/brand_vote.html" target="_blank" id="bvb-vote" aria-label="Cast My Vote">
+        ✦ Cast My Vote
+      </a>
+      <button class="bvb-btn-later" id="bvb-later" aria-label="Remind me later">Remind me later</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Vote banner keys intentionally isolated from HQ data store — ephemeral UI preference only
+  var KEY_VOTED  = 'audhd_bvb_voted';
+  var KEY_SNOOZE = 'audhd_bvb_snooze';
+  var SNOOZE_MS  = 24 * 60 * 60 * 1000;
+  var root       = document.getElementById('bvb-root');
+
+  function hideBanner() { if (root) root.style.display = 'none'; }
+
+  if (localStorage.getItem(KEY_VOTED) === '1') { hideBanner(); return; }
+
+  var snoozeUntil = parseInt(localStorage.getItem(KEY_SNOOZE) || '0', 10);
+  if (Date.now() < snoozeUntil) { hideBanner(); return; }
+
+  document.getElementById('bvb-close').addEventListener('click', function () {
+    localStorage.setItem(KEY_VOTED, '1');
+    hideBanner();
+  });
+
+  document.getElementById('bvb-vote').addEventListener('click', function () {
+    localStorage.setItem(KEY_VOTED, '1');
+    setTimeout(hideBanner, 300);
+  });
+
+  document.getElementById('bvb-later').addEventListener('click', function () {
+    localStorage.setItem(KEY_SNOOZE, Date.now() + SNOOZE_MS);
+    hideBanner();
+  });
+})();
+</script>
+
+<p>Unique icons and emojis courtesy of <a href="https://www.icons8.com/" aria-label="icons8.com">icons8.com</a></p>
+</body>
+</html>

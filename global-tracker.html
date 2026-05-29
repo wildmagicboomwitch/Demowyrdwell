@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 Global Tracker — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#120f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="pages/global-tracker.css">
+</head>
+<body>
+<!-- hq-core.js injects: topbar, sidenav, bottom-nav -->
+
+<nav class="tab-nav">
+  <button class="ntab on"  onclick="sw('overview',this)" aria-label="Overview tab">🌍 Overview</button>
+  <button class="ntab"     onclick="sw('activity',this)" aria-label="Activity tab">⚡ Activity</button>
+  <button class="ntab"     onclick="sw('health',this)" aria-label="Health tab">❤️ Health</button>
+  <button class="ntab"     onclick="sw('projects',this)" aria-label="Projects tab">🗂 Projects</button>
+  <button class="ntab"     onclick="sw('finance',this)" aria-label="Finance &amp; Tasks tab">💰 Finance &amp; Tasks</button>
+  <button class="ntab"     onclick="sw('routines',this)" aria-label="Routines tab">🔁 Routines</button>
+  <button class="ntab"     onclick="sw('ideas',this)" aria-label="Ideas tab">💡 Ideas</button>
+  <button class="ntab"     onclick="sw('social',this)" aria-label="Social tab">💬 Social</button>
+  <button class="ntab"     onclick="sw('metrics',this)" aria-label="Metrics tab">📊 Metrics</button>
+  <button class="ntab"     onclick="sw('reports',this)" aria-label="Reports tab">📝 Reports</button>
+</nav>
+
+<div class="main">
+
+<!-- ════════ 🌍 OVERVIEW ════════ -->
+<div id="tab-overview" class="tab on">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:18px;font-weight:900;color:var(--text)">🌍 Global Data</div>
+    <button class="refresh-btn" onclick="rebuildAll()">↺ Refresh</button>
+  </div>
+
+  <!-- Hero 4-up -->
+  <div class="overview-hero">
+    <div class="oh-card"><div class="oh-ico">⚡</div><div class="oh-val" id="ov-checkin-streak">—</div><div class="oh-lbl">Check-In Streak</div></div>
+    <div class="oh-card"><div class="oh-ico">🚶</div><div class="oh-val" id="ov-walk-miles">—</div><div class="oh-lbl">Miles YTD</div></div>
+    <div class="oh-card"><div class="oh-ico">🗂</div><div class="oh-val" id="ov-projects-active">—</div><div class="oh-lbl">Active Projects</div></div>
+    <div class="oh-card"><div class="oh-ico">📋</div><div class="oh-val" id="ov-tasks-open">—</div><div class="oh-lbl">Open Tasks</div></div>
+  </div>
+
+  <!-- Stat grid -->
+  <div class="sdiv">This Week</div>
+  <div class="stat-grid">
+    <div class="stat-card accent"><div class="stat-val" id="ov-week-checkins">0</div><div class="stat-lbl">Check-Ins</div></div>
+    <div class="stat-card green"><div class="stat-val" id="ov-week-walk">0</div><div class="stat-lbl">Miles</div><div class="stat-sub">walked</div></div>
+    <div class="stat-card teal"><div class="stat-val" id="ov-week-dreams">0</div><div class="stat-lbl">Dreams</div></div>
+    <div class="stat-card orange"><div class="stat-val" id="ov-week-symptoms">0</div><div class="stat-lbl">Symptoms</div></div>
+    <div class="stat-card gold"><div class="stat-val" id="ov-week-tasks-done">0</div><div class="stat-lbl">Tasks Done</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-week-sleep">—</div><div class="stat-lbl">Avg Sleep</div><div class="stat-sub">hrs/night</div></div>
+  </div>
+
+  <!-- Current energy -->
+  <div class="sdiv">Right Now</div>
+  <div class="card">
+    <div class="card-hd">🔋 Current Energy State</div>
+    <div id="ov-energy-now" style="font-size:13px;font-weight:700;color:var(--text2)">—</div>
+    <div id="ov-energy-ts" style="font-size:10px;color:var(--muted);margin-top:4px"></div>
+  </div>
+
+  <!-- Active flags -->
+  <div class="sdiv">Active Alerts</div>
+  <div class="card">
+    <div class="card-hd">🚨 Flagged Items <span id="ov-flag-count" class="card-sub"></span></div>
+    <div id="ov-flags-list"></div>
+  </div>
+
+  <!-- 14-day activity heatmap -->
+  <div class="sdiv">14-Day Activity</div>
+  <div class="card">
+    <div class="card-hd">📅 Daily Activity Heatmap</div>
+    <div id="ov-heatmap"></div>
+  </div>
+</div>
+
+<!-- ════════ ⚡ ACTIVITY ════════ -->
+<div id="tab-activity" class="tab">
+  <div class="range-row">
+    <button class="range-btn on" data-days="7"  onclick="setRange(7,this)">7d</button>
+    <button class="range-btn"    data-days="14" onclick="setRange(14,this)">14d</button>
+    <button class="range-btn"    data-days="30" onclick="setRange(30,this)">30d</button>
+    <button class="range-btn"    data-days="90" onclick="setRange(90,this)">90d</button>
+  </div>
+
+  <!-- Check-In streak -->
+  <div class="card">
+    <div class="card-hd">⚡ Check-In History <span class="card-sub" id="act-streak-lbl"></span></div>
+    <div class="streak-row" id="act-streak-dots"></div>
+    <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;">
+      <div><div style="font-size:18px;font-weight:900;color:var(--text)" id="act-streak-num">0</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Day streak</div></div>
+      <div><div style="font-size:18px;font-weight:900;color:var(--text)" id="act-total-checkins">0</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Total check-ins</div></div>
+      <div><div style="font-size:18px;font-weight:900;color:var(--text)" id="act-avg-mood">—</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Avg mood</div></div>
+      <div><div style="font-size:18px;font-weight:900;color:var(--text)" id="act-avg-energy">—</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Avg energy</div></div>
+    </div>
+  </div>
+
+  <!-- Mood + energy over time -->
+  <div class="card">
+    <div class="card-hd">📊 Mood &amp; Energy Over Time</div>
+    <div class="chart-wrap tall"><canvas id="chartMoodEnergy"></canvas></div>
+  </div>
+
+  <!-- Energy distribution -->
+  <div class="card">
+    <div class="card-hd">🔋 Energy Level Distribution</div>
+    <div class="donut-wrap">
+      <canvas id="chartEnergyDist" width="150" height="150"></canvas>
+      <div class="donut-legend" id="energyDistLegend"></div>
+    </div>
+  </div>
+
+  <!-- Walking over time -->
+  <div class="card">
+    <div class="card-hd">🚶 Walking — Miles per Day</div>
+    <div class="chart-wrap"><canvas id="chartWalking"></canvas></div>
+  </div>
+
+  <!-- Dream frequency -->
+  <div class="card">
+    <div class="card-hd">💭 Dream Journal Frequency</div>
+    <div class="chart-wrap short"><canvas id="chartDreams"></canvas></div>
+  </div>
+
+  <!-- Sleep -->
+  <div class="card">
+    <div class="card-hd">😴 Sleep Hours</div>
+    <div class="chart-wrap"><canvas id="chartSleep"></canvas></div>
+  </div>
+</div>
+
+<!-- ════════ ❤️ HEALTH ════════ -->
+<div id="tab-health" class="tab">
+
+  <!-- Energy log -->
+  <div class="sdiv">Energy Log</div>
+  <div class="card">
+    <div class="card-hd">🔋 Recent Energy States</div>
+    <div id="health-energy-log"></div>
+  </div>
+
+  <!-- Symptoms frequency -->
+  <div class="card">
+    <div class="card-hd">🩺 Top Symptoms (30d)</div>
+    <div id="health-symptoms-bars"></div>
+  </div>
+
+  <!-- Body tags from check-ins -->
+  <div class="card">
+    <div class="card-hd">⚡ Body Tags from Check-Ins (30d)</div>
+    <div id="health-body-tags"></div>
+  </div>
+
+  <!-- Sleep quality chart -->
+  <div class="card">
+    <div class="card-hd">😴 Sleep — Hours &amp; Quality (30d)</div>
+    <div class="chart-wrap"><canvas id="chartHealthSleep"></canvas></div>
+  </div>
+
+  <!-- Dream stats -->
+  <div class="sdiv">Dream Journal</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="hlt-dream-total">0</div><div class="stat-lbl">Total Dreams</div></div>
+    <div class="stat-card teal"><div class="stat-val" id="hlt-dream-lucid">0</div><div class="stat-lbl">Lucid</div></div>
+    <div class="stat-card accent"><div class="stat-val" id="hlt-dream-30d">0</div><div class="stat-lbl">Last 30d</div></div>
+    <div class="stat-card green"><div class="stat-val" id="hlt-dream-avg-qual">—</div><div class="stat-lbl">Avg Quality</div></div>
+  </div>
+
+  <!-- Top dream symbols -->
+  <div class="card">
+    <div class="card-hd">🔮 Top Dream Symbols</div>
+    <div id="health-dream-symbols"></div>
+  </div>
+
+  <!-- Fridge expiry -->
+  <div class="sdiv">Kitchen</div>
+  <div class="card">
+    <div class="card-hd">🧊 Fridge — Expiring Soon</div>
+    <div id="health-fridge-expiry"></div>
+  </div>
+</div>
+
+<!-- ════════ 🗂 PROJECTS ════════ -->
+<div id="tab-projects" class="tab">
+
+  <!-- Project status breakdown -->
+  <div class="sdiv">Status Overview</div>
+  <div class="card">
+    <div class="card-hd">📊 Projects by Status</div>
+    <div class="donut-wrap">
+      <canvas id="chartProjectStatus" width="150" height="150"></canvas>
+      <div class="donut-legend" id="projectStatusLegend"></div>
+    </div>
+  </div>
+
+  <!-- Projects by category -->
+  <div class="card">
+    <div class="card-hd">📁 Projects by Category</div>
+    <div id="proj-cat-bars"></div>
+  </div>
+
+  <!-- Special flags -->
+  <div class="stat-grid">
+    <div class="stat-card gold"><div class="stat-val" id="proj-for-money">0</div><div class="stat-lbl">For Money</div></div>
+    <div class="stat-card teal"><div class="stat-val" id="proj-for-friends">0</div><div class="stat-lbl">For Friends</div></div>
+    <div class="stat-card orange"><div class="stat-val" id="proj-stalled">0</div><div class="stat-lbl">Stalled</div></div>
+    <div class="stat-card accent"><div class="stat-val" id="proj-concepts">0</div><div class="stat-lbl">Concepts</div></div>
+    <div class="stat-card green"><div class="stat-val" id="proj-completed">0</div><div class="stat-lbl">Completed</div></div>
+    <div class="stat-card red"><div class="stat-val" id="proj-high-energy">0</div><div class="stat-lbl">High Drain</div></div>
+  </div>
+
+  <!-- Timeline lengths -->
+  <div class="card">
+    <div class="card-hd">⏱ Timeline Length Distribution</div>
+    <div id="proj-tlen-bars"></div>
+  </div>
+
+  <!-- Recent project activity (log entries) -->
+  <div class="sdiv">Recent Activity</div>
+  <div class="card">
+    <div class="card-hd">📓 Recent How-It's-Going Entries</div>
+    <div id="proj-recent-log"></div>
+  </div>
+
+  <!-- Active project list -->
+  <div class="sdiv">Active Projects</div>
+  <div id="proj-active-list"></div>
+
+  <!-- Stalled list -->
+  <div class="sdiv">Needs Attention</div>
+  <div id="proj-stalled-list"></div>
+</div>
+
+<!-- ════════ 💰 FINANCE + TASKS ════════ -->
+<div id="tab-finance" class="tab">
+
+  <!-- Finance summary -->
+  <div class="sdiv">Money Brain</div>
+  <div class="stat-grid">
+    <div class="stat-card green"><div class="stat-val" id="fin-accounts">0</div><div class="stat-lbl">Accounts</div></div>
+    <div class="stat-card accent"><div class="stat-val" id="fin-transactions">0</div><div class="stat-lbl">Transactions</div></div>
+    <div class="stat-card orange"><div class="stat-val" id="fin-bills">0</div><div class="stat-lbl">Bills</div></div>
+    <div class="stat-card gold"><div class="stat-val" id="fin-budgets">0</div><div class="stat-lbl">Budgets</div></div>
+  </div>
+
+  <!-- Spending by category chart -->
+  <div class="card">
+    <div class="card-hd">💳 Spending by Category</div>
+    <div class="chart-wrap"><canvas id="chartSpending"></canvas></div>
+  </div>
+
+  <!-- Upcoming bills -->
+  <div class="card">
+    <div class="card-hd">📅 Upcoming Bills</div>
+    <div id="fin-upcoming-bills"></div>
+  </div>
+
+  <!-- Taskboard -->
+  <div class="sdiv">Taskboards</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="task-total">0</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-card orange"><div class="stat-val" id="task-open">0</div><div class="stat-lbl">Open</div></div>
+    <div class="stat-card green"><div class="stat-val" id="task-done">0</div><div class="stat-lbl">Done</div></div>
+    <div class="stat-card red"><div class="stat-val" id="task-overdue">0</div><div class="stat-lbl">Overdue</div></div>
+    <div class="stat-card accent"><div class="stat-val" id="task-due-soon">0</div><div class="stat-lbl">Due Soon</div></div>
+    <div class="stat-card gold"><div class="stat-val" id="task-p1">0</div><div class="stat-lbl">P1 Critical</div></div>
+  </div>
+
+  <!-- Tasks by status donut -->
+  <div class="card">
+    <div class="card-hd">📋 Tasks by Status</div>
+    <div class="donut-wrap">
+      <canvas id="chartTaskStatus" width="150" height="150"></canvas>
+      <div class="donut-legend" id="taskStatusLegend"></div>
+    </div>
+  </div>
+
+  <!-- Overdue tasks list -->
+  <div class="card">
+    <div class="card-hd">🔴 Overdue Tasks</div>
+    <div id="fin-overdue-tasks"></div>
+  </div>
+
+  <!-- Walking YTD full strip -->
+  <div class="sdiv">Walking Progress</div>
+  <a href="walking-tracker.html" class="walk-strip">
+    <div class="walk-big" id="fin-walk-miles">0 mi</div>
+    <div class="walk-info">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:5px">Annual Goal · <span id="fin-walk-pct">0%</span> of <span id="fin-walk-goal">3,100</span> mi</div>
+      <div class="rb-track md"><div class="rb-fill" id="fin-walk-bar" style="width:0%"></div></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px" id="fin-walk-needed"></div>
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--green);white-space:nowrap">Open →</div>
+  </a>
+</div>
+
+<!-- ════════ 📊 METRICS ════════ -->
+<div id="tab-metrics" class="tab">
+
+  <!-- Streak hero -->
+  <div class="sdiv">Current Streaks</div>
+  <div class="mtr-hero" id="mtr-streaks-grid"></div>
+
+  <!-- This week vs last week summary -->
+  <div class="card">
+    <div class="card-hd" style="display:flex;align-items:center">
+      <span style="flex:1">⚡ This Week vs Last Week</span>
+      <button class="mtr-score-toggle" onclick="toggleMtrScore(this)">Show score</button>
+    </div>
+    <div id="mtr-score-reveal" class="mtr-score-reveal"></div>
+    <table class="mtr-compare-table" id="mtr-compare-table"></table>
+  </div>
+
+  <!-- Week-by-week charts (12 weeks) -->
+  <div class="card">
+    <div class="card-hd" style="display:flex;align-items:center;gap:9px">
+      <span style="flex:1">📈 Check-in Rate — 12 Weeks</span>
+    </div>
+    <div class="chart-wrap" style="height:140px"><canvas id="mtrChartCI"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">⚡ Energy Average + Stability — 12 Weeks</div>
+    <div class="chart-wrap" style="height:140px"><canvas id="mtrChartEnergy"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd" style="display:flex;align-items:center">
+      <span style="flex:1">✅ Task Completion — 12 Weeks</span>
+      <span style="font-size:9px;color:var(--muted)">Dashed line = 70% target</span>
+    </div>
+    <div class="chart-wrap" style="height:140px;position:relative"><canvas id="mtrChartTasks"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">😴 Sleep — Hours + Quality — 12 Weeks</div>
+    <div class="chart-wrap" style="height:140px"><canvas id="mtrChartSleep"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">🏆 Wins Logged — 12 Weeks</div>
+    <div class="chart-wrap" style="height:120px"><canvas id="mtrChartWins"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">🧠 Headaches + Crashes — 12 Weeks</div>
+    <div class="chart-wrap" style="height:120px"><canvas id="mtrChartHealth"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hd" style="display:flex;align-items:center">
+      <span style="flex:1">🚶 Walking Miles — 12 Weeks</span>
+      <span style="font-size:9px;color:var(--muted)">45mi pass · 60mi success</span>
+    </div>
+    <div class="chart-wrap" style="height:160px;position:relative"><canvas id="mtrChartWalk"></canvas></div>
+  </div>
+
+  <!-- Month-by-month rollup -->
+  <div class="sdiv" style="margin-top:6px">Month-by-Month Comparison</div>
+  <div class="card" style="overflow-x:auto">
+    <table class="mtr-compare-table" id="mtr-monthly-table"></table>
+  </div>
+
+  <!-- Streak dot grids -->
+  <div class="sdiv" style="margin-top:6px">Streak History — 52 Weeks</div>
+  <div class="card" id="mtr-streak-grids"></div>
+
+</div>
+
+<!-- ════════ 📝 REPORTS ════════ -->
+<div id="tab-reports" class="tab">
+
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6;padding:10px 13px;background:rgba(var(--primary-rgb),.07);border:1px solid rgba(var(--primary-rgb),.2);border-left:3px solid var(--purple);border-radius:8px">
+    📝 Generated reports are stored here. Expand any entry to add notes before exporting. Copy as text or open a print-ready view to save as PDF.
+  </div>
+
+  <button onclick="generateAndLogReport()" style="width:100%;padding:11px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:12px">
+    📝 Generate This Week's Report
+  </button>
+
+  <div id="reports-log-list"></div>
+
+</div>
+
+
+<!-- ════════ 🔁 ROUTINES (P10) ════════ -->
+<div id="tab-routines" class="tab"></div>
+
+<!-- ════════ 💡 IDEAS (P10) ════════ -->
+<div id="tab-ideas" class="tab"></div>
+
+<!-- ════════ 💬 SOCIAL (P10) ════════ -->
+<div id="tab-social" class="tab"></div>
+
+</div><!-- /main -->
+
+<script>
+window.HQ_CURRENT_PAGE = 'global';
+</script>
+
+
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+    <!-- ═══════════════════════════════════════════════════════════════
+         Phase C6 Templates — global-tracker.js keyed list renders
+         All templates use data-hq-key (set by HQRenderer) for diffing.
+         No user data should be written via innerHTML inside JS — only
+         HQRenderer.setText / setAttr / setClass touch these nodes.
+    ════════════════════════════════════════════════════════════════ -->
+
+    <!-- Flag list item (ov-flags-list) -->
+    <template id="gt-flag-item-template">
+      <a class="list-row" href="#" style="text-decoration:none;">
+        <span class="flag-emoji"></span>
+        <span class="list-label"></span>
+        <span class="list-meta"></span>
+      </a>
+    </template>
+
+    <!-- Horizontal bar row (symptom bars, body tag bars, dream symbol bars) -->
+    <template id="gt-hbar-row-template">
+      <div class="hbar-row">
+        <div class="hbar-lbl"></div>
+        <div class="hbar-track">
+          <div class="hbar-fill"></div>
+        </div>
+        <div class="hbar-val"></div>
+      </div>
+    </template>
+
+    <!-- Fridge expiry item (health-fridge-expiry) -->
+    <template id="gt-fridge-item-template">
+      <div class="list-row">
+        <span class="list-label"></span>
+        <span class="list-badge"></span>
+      </div>
+    </template>
+
+    <!-- Bill item (fin-upcoming-bills) -->
+    <template id="gt-bill-item-template">
+      <div class="list-row">
+        <span class="list-label"></span>
+        <span class="list-meta"></span>
+        <span class="list-badge"></span>
+      </div>
+    </template>
+
+    <!-- Project recent log item (proj-recent-log) -->
+    <template id="gt-proj-log-item-template">
+      <div class="list-row">
+        <span class="log-emoji"></span>
+        <div style="flex:1;min-width:0;">
+          <div class="log-title" style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div class="log-note" style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        </div>
+        <span class="list-meta"></span>
+      </div>
+    </template>
+
+    <!-- Overdue task item (fin-overdue-tasks) -->
+    <template id="gt-overdue-task-template">
+      <div class="list-row">
+        <span>🔴</span>
+        <span class="list-label"></span>
+        <span class="list-meta"></span>
+        <a href="taskboard.html" style="font-size:9px;color:var(--purple);font-weight:700;text-decoration:none;white-space:nowrap">Open →</a>
+      </div>
+    </template>
+
+    <!-- Legend row (projectStatusLegend, taskStatusLegend) -->
+    <template id="gt-legend-row-template">
+      <div class="dl-row">
+        <div class="dl-dot"></div>
+        <div class="dl-lbl"></div>
+        <div class="dl-val"></div>
+      </div>
+    </template>
+
+    <!-- C10-02: Active project card -->
+    <template id="gt-proj-active-template">
+      <div class="card" style="margin-bottom:8px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="gpa-title" style="font-size:11px;font-weight:800;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          <span class="gpa-money sc sc-brain" style="display:none">💰 Money</span>
+          <span class="gpa-friends sc sc-brain" style="display:none">💌 Friends</span>
+        </div>
+        <div class="progress-track" style="height:5px;background:var(--border);border-radius:4px;overflow:hidden;">
+          <div class="gpa-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ff6b9d,#4ecdc4,#645eb7);border-radius:4px;transition:width .8s;"></div>
+        </div>
+        <div class="gpa-meta" style="font-size:9px;color:var(--muted);margin-top:3px"></div>
+      </div>
+    </template>
+
+    <!-- C10-02: Stalled project card -->
+    <template id="gt-proj-stalled-template">
+      <div class="card" style="margin-bottom:8px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span class="gps-badge sc"></span>
+          <span class="gps-title" style="font-size:11px;font-weight:800;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          <a href="project-brain.html" style="font-size:9px;color:var(--purple);font-weight:700;white-space:nowrap;text-decoration:none;">Open →</a>
+        </div>
+        <div class="gps-barriers" style="font-size:10px;color:var(--muted);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none"></div>
+      </div>
+    </template>
+
+    <!-- C10-02: Streak card -->
+    <template id="gt-streak-template">
+      <div class="mtr-streak">
+        <div class="gst-n mtr-streak-n"></div>
+        <div class="gst-lbl mtr-streak-lbl"></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">week streak</div>
+      </div>
+    </template>
+
+<script src="pages/global-tracker.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

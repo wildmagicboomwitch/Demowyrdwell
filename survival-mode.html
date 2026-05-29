@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡️ Survival Mode — AuDHD HQ</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#1c0e06">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<link rel="stylesheet" href="pages/survival-mode.css">
+</head>
+<body>
+
+<!-- ═══ BOTTOM NAV ══════════════════════════════════════ -->
+<!-- Bottom nav injected by hq-core.js -->
+<!-- ═══ SIDENAV ═════════════════════════════════════════ -->
+<!-- Sidenav injected by hq-core.js -->
+<!-- ═══ TOPBAR ══════════════════════════════════════════ -->
+<!-- Topbar injected by hq-core.js -->
+
+<div id="toast-el" class="toast"></div>
+
+<!-- Summary Modal (outside tabs — fixed overlay) -->
+<div id="summary-modal" onclick="if(event.target===this)closeSummary()">
+  <div class="summary-box">
+    <div class="sum-title">📋 Migraine Session Summary</div>
+    <div class="sum-stat"><div class="sum-key">📅 Date</div><div class="sum-val" id="sum-date">—</div></div>
+    <div class="sum-stat"><div class="sum-key">⏱️ Total Duration</div><div class="sum-val" id="sum-duration">—</div></div>
+    <div class="sum-stat"><div class="sum-key">⚡ Pain Level</div><div class="sum-val" id="sum-sev">Not rated</div></div>
+    <div class="sum-stat"><div class="sum-key">💊 Medication Taken</div><div class="sum-val" id="sum-med">—</div></div>
+    <div class="sum-stat"><div class="sum-key">✅ Steps Completed</div><div class="sum-val" id="sum-steps">—</div></div>
+    <div class="sum-actions">
+      <button class="sum-btn" onclick="closeSummary()" aria-label="Previous">← Back</button>
+      <button class="sum-btn primary" onclick="endSession()" aria-label="Save and close">✓ Save & Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<div class="hdr">
+  
+  <div class="hdr-title" id="hdr-title">🛡️ Survival Mode</div>
+  <div class="hdr-date" id="hdr-date"></div>
+  <div class="streak-pill" id="streak-pill">🔥 <strong id="streak-n">0</strong> day streak</div>
+  <div class="live-clock-pill" id="live-clock">00:00</div>
+  
+</div>
+
+<!-- ===== TABS ===== -->
+<div class="tabs">
+  <button class="tab-btn on" id="tab-surv-btn" onclick="switchTab('surv',this)" aria-label="Survival Mode tab">🛡️ Survival Mode</button>
+  <button class="tab-btn mig-tab" id="tab-mig-btn" onclick="switchTab('mig',this)" aria-label="Migraine Protocol tab">🧠 Migraine Protocol</button>
+</div>
+
+<!-- ================= TAB: SURVIVAL MODE ================= -->
+<div id="tab-surv" class="tab-pane on">
+<div class="surv-main">
+
+  <div class="aff">
+    <div class="aff-main" id="aff-text">Today is a hard day. That's allowed. <strong>Four things. That's it. Everything else can wait.</strong></div>
+  </div>
+
+  <!-- Energy context banner — populated from audhd-hq-energy-state -->
+  <div id="energy-ctx-banner" class="energy-ctx"></div>
+
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <div class="progress-label">Floor Complete</div>
+      <div class="progress-count"><span id="done-count">0</span><span style="font-size:14px;color:var(--muted)">/<span id="floor-total">4</span></span></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="all-done" id="all-done">
+    <div class="all-done-icon">🛡️</div>
+    <div class="all-done-title">You did enough today.</div>
+    <div class="all-done-sub">Meds. Food. Water. Cat.<br>That's the floor. You hit it.<br><strong style="color:var(--green)">That counts. That always counts.</strong></div>
+  </div>
+
+  <div id="tasks"></div>
+
+  <div class="off-card">
+    <div class="off-title">🗂️ Permission slip — these are off today</div>
+    <div class="off-item"><span class="off-icon">✅</span><span>Tasks & to-do list — completely deferred</span></div>
+    <div class="off-item"><span class="off-icon">🏃</span><span>Walking goal — not today</span></div>
+    <div class="off-item"><span class="off-icon">🧹</span><span>Cleaning & tidying — it will wait</span></div>
+    <div class="off-item"><span class="off-icon">💰</span><span>Finance checks — skip it</span></div>
+    <div class="off-item"><span class="off-icon">📋</span><span>Planning, reviewing, optimizing — none of that</span></div>
+    <div class="off-item"><span class="off-icon">📱</span><span>Responding to non-urgent messages — when you're ready</span></div>
+    <div class="off-item"><span class="off-icon">🧠</span><span>Feeling guilty about any of this — not allowed</span></div>
+  </div>
+
+  <!-- ═══ JUST 5 MINUTES TIMER ══════════════════════════════════ -->
+  <div class="fivemin-card">
+    <div class="fivemin-title">⚡ Just 5 Minutes</div>
+    <div class="fivemin-sub">You only have to start. Set the timer. When it goes off, you're free to stop. You usually won't.</div>
+    <div class="fivemin-display" id="fivemin-display">5:00</div>
+    <div class="fivemin-btns">
+      <button class="fivemin-btn start" id="fivemin-start" onclick="fiveminStart()" aria-label="Forward">▶ Start</button>
+      <button class="fivemin-btn stop" id="fivemin-stop" onclick="fiveminStop()" style="display:none" aria-label="Stop timer">■ Stop</button>
+    </div>
+    <div class="fivemin-permission" id="fivemin-permission">✅ 5 minutes done. You're allowed to stop. The door is open.</div>
+  </div>
+
+  <!-- ═══ DOPAMINE MENU ════════════════════════════════════════════ -->
+  <div class="dopamine-card">
+    <div class="dopamine-title">🌈 Dopamine Menu</div>
+    <div class="dopamine-sub">Quick hits. Choose one when you need a reset. Tap to select.</div>
+    <div class="dopamine-grid" id="dopamine-grid"></div>
+    <div class="dopamine-add-row">
+      <input type="text" id="dopamine-input" placeholder="Add your own (e.g. 🎵 Favourite song)" maxlength="60">
+      <button class="dopamine-add-btn" onclick="addDopamineItem()" aria-label="Add item">+ Add</button>
+    </div>
+  </div>
+
+  <!-- ═══ LIGHT & SOUND AUDIT ═══════════════════════════════════════ -->
+  <div class="audit-card">
+    <div class="audit-title">🔆 Light & Sound Audit</div>
+    <div class="audit-sub">Small sensory frictions cause "unexplained" executive dysfunction. Check these before starting anything hard.</div>
+    <div id="audit-list"></div>
+    <button class="audit-reset" onclick="resetAudit()" aria-label="Reset all">↺ Reset all</button>
+  </div>
+
+  <div class="note-card">
+    <div class="note-label">📝 One optional note</div>
+    <textarea id="day-note" class="note-ta" placeholder="How are you doing? Anything you want to remember about today..."></textarea>
+    <button class="note-save" onclick="saveNote()">Save note</button>
+  </div>
+
+  <div class="hist-strip">
+    <div class="hist-strip-title">Last 30 Days — Survival Mode Days</div>
+    <div class="hist-dots" id="hist-dots"></div>
+  </div>
+
+  <div class="reset-wrap">
+    <button class="reset-btn" onclick="resetDay()" aria-label="Reset all">↺ Reset today's checks</button>
+  </div>
+
+</div>
+</div><!-- /tab-surv -->
+
+<!-- ================= TAB: MIGRAINE PROTOCOL ================= -->
+<div id="tab-mig" class="tab-pane">
+<div class="mig-main">
+
+  <!-- IDLE STATE -->
+  <div id="mig-idle">
+    <div class="mig-idle">
+      <div class="idle-icon">🧠</div>
+      <div class="idle-title">Migraine <span>Protocol</span></div>
+      <div class="idle-sub">When a migraine hits, press activate. The protocol walks you through every step so you don't have to think.</div>
+      <button class="activate-btn" onclick="activateMigraine()">⚡ ACTIVATE</button>
+    </div>
+    <div class="mig-hist">
+      <div class="mig-hist-title">Recent Migraines</div>
+      <div id="mig-hist-list"><div style="text-align:center;color:var(--muted);font-size:13px;padding:16px">No migraines logged yet.</div></div>
+    </div>
+  </div>
+
+  <!-- ACTIVE STATE -->
+  <div id="mig-active" style="display:none">
+
+    <div class="proto-active-hd">
+      <div class="proto-active-title">⚡ Protocol Active</div>
+      <button class="end-btn" onclick="openSummary()">End Session</button>
+    </div>
+
+    <div class="sev-card">
+      <div class="sev-title">⚡ Pain Level Right Now</div>
+      <div class="sev-btns">
+        <button class="sev-btn" data-s="1" onclick="setSev(1)"><span>1–2</span><br>Mild</button>
+        <button class="sev-btn" data-s="2" onclick="setSev(2)"><span>3–4</span><br>Dull</button>
+        <button class="sev-btn" data-s="3" onclick="setSev(3)"><span>5–6</span><br>Moderate</button>
+        <button class="sev-btn" data-s="4" onclick="setSev(4)"><span>7–8</span><br>Bad</button>
+        <button class="sev-btn" data-s="5" onclick="setSev(5)"><span>9–10</span><br>Severe</button>
+      </div>
+    </div>
+
+    <div class="med-reminder">
+      <div class="med-reminder-title">💊 Medication Clock</div>
+      <div class="med-reminder-text">Take medication NOW if you haven't. Note the time — most triptans can't be re-dosed for 2 hours.</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">MEDS TAKEN AT</div>
+          <div class="med-reminder-time" id="med-taken-time">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">NEXT DOSE EARLIEST</div>
+          <div class="med-reminder-time" id="med-next-time">—</div>
+        </div>
+        <button onclick="logMedTime()" style="padding:8px 16px;border-radius:8px;border:1px solid rgba(239,71,111,.4);background:rgba(239,71,111,.1);color:var(--red);font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;font-family:inherit">Log Meds Now</button>
+      </div>
+    </div>
+
+    <div class="steps-title">Your Protocol — Step by Step</div>
+
+    <div class="step-card current" id="step-1">
+      <div class="step-hd" onclick="toggleStep(1)">
+        <div class="step-num"><span>1</span></div>
+        <div class="step-label">💊 Medication</div>
+        <div class="step-time">Do this first</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Take your migraine medication <strong>immediately</strong> — before pain peaks. Triptans and similar medications are most effective early. Don't wait to see if it gets worse.</div>
+        <div class="timer-wrap">
+          <div>
+            <div class="timer-display" id="t1-display">2:00:00</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Until earliest re-dose</div>
+          </div>
+          <div class="timer-label">Counts down from medication time. Do not take a second dose before this reaches zero.</div>
+          <button class="timer-btn start" id="t1-btn" onclick="startMedTimer()">Start</button>
+        </div>
+        <button class="done-btn" onclick="markDone(1)">✓ Done — meds taken</button>
+      </div>
+    </div>
+
+    <div class="step-card" id="step-2">
+      <div class="step-hd" onclick="toggleStep(2)">
+        <div class="step-num"><span>2</span></div>
+        <div class="step-label">🚿 Hot Shower</div>
+        <div class="step-time">~10 min</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Get in the shower now while you still can tolerate movement. Hot water on neck and shoulders can reduce vascular tension. Don't skip this if you're early in the attack — it's harder later.</div>
+        <div class="timer-wrap">
+          <div class="timer-display" id="t2-display">10:00</div>
+          <div class="timer-label">10 min shower timer. Start it and get in.</div>
+          <button class="timer-btn start" id="t2-btn" onclick="startTimer(2,600)">Start</button>
+        </div>
+        <button class="done-btn" onclick="markDone(2)">✓ Shower done</button>
+      </div>
+    </div>
+
+    <div class="step-card" id="step-3">
+      <div class="step-hd" onclick="toggleStep(3)">
+        <div class="step-num"><span>3</span></div>
+        <div class="step-label">☕ Caffeine + Water</div>
+        <div class="step-time">Small amount</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Small amount of caffeine (half a coffee, tea, a caffeinated painkiller) can help constrict blood vessels and boost medication effectiveness. Drink at least one full glass of water with it — dehydration makes migraines worse.</div>
+        <button class="done-btn" onclick="markDone(3)">✓ Caffeine + water done</button>
+      </div>
+    </div>
+
+    <div class="step-card" id="step-4">
+      <div class="step-hd" onclick="toggleStep(4)">
+        <div class="step-num"><span>4</span></div>
+        <div class="step-label">❄️ Cold Compress + Dark Room</div>
+        <div class="step-time">Set up now</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Get your cold compress from the freezer. Blackout curtains closed, lights off, phone face down. Set your phone to Do Not Disturb. No screens — your eyes need darkness. Get everything you need before you lie down.</div>
+        <div style="background:var(--card2);border:1px solid var(--border2);border-radius:9px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Checklist before lying down</div>
+          <div id="setup-checks"></div>
+        </div>
+        <button class="done-btn" onclick="markDone(4)">✓ Dark room set up</button>
+      </div>
+    </div>
+
+    <div class="step-card" id="step-5">
+      <div class="step-hd" onclick="toggleStep(5)">
+        <div class="step-num"><span>5</span></div>
+        <div class="step-label">😴 Rest / Sleep</div>
+        <div class="step-time">As long as needed</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Phone down. Eyes closed. Cold compress on forehead or neck. Sleep is the most effective migraine treatment once you're in it. Don't check messages. Don't plan. The only job right now is to rest.</div>
+        <div class="timer-wrap">
+          <div class="timer-display" id="t5-display">00:00</div>
+          <div class="timer-label" style="flex:1">Rest timer — counts up so you know how long you've been down.</div>
+          <button class="timer-btn start" id="t5-btn" onclick="startTimer(5,-1)">Start</button>
+        </div>
+        <button class="done-btn" onclick="markDone(5)">✓ Rested — I'm up</button>
+      </div>
+    </div>
+
+    <div class="defer-card">
+      <div class="defer-title">🗂️ What Gets Deferred Today</div>
+      <div class="defer-item"><span class="defer-icon">✅</span><span><strong>Tasks & to-dos</strong> — everything non-urgent goes to tomorrow.</span></div>
+      <div class="defer-item"><span class="defer-icon">📞</span><span><strong>Non-urgent calls / messages</strong> — respond when you're up.</span></div>
+      <div class="defer-item"><span class="defer-icon">🏃</span><span><strong>Walking goal</strong> — completely off today. Rest &gt; steps.</span></div>
+      <div class="defer-item"><span class="defer-icon">🧹</span><span><strong>Cleaning / errands</strong> — they will still exist tomorrow.</span></div>
+      <div class="defer-item"><span class="defer-icon">📋</span><span><strong>Planning / review</strong> — do not try to be productive right now.</span></div>
+    </div>
+
+    <div class="recovery-card">
+      <div class="recovery-title">🌱 When You Wake Up — Recovery Phase</div>
+      <div class="rec-item"><span class="rec-icon">💧</span><span>Drink water before anything else. Post-migraine dehydration is real.</span></div>
+      <div class="rec-item"><span class="rec-icon">🍌</span><span>Eat something light and bland before screens. Your stomach is sensitive right now.</span></div>
+      <div class="rec-item"><span class="rec-icon">💡</span><span>Low light only for the first 30 min. Don't jump straight into full brightness.</span></div>
+      <div class="rec-item"><span class="rec-icon">📱</span><span>Check messages sitting down, not standing. Move slowly — postdrome can include dizziness.</span></div>
+      <div class="rec-item"><span class="rec-icon">🧠</span><span>Cognitive fog after a migraine is normal. Don't make important decisions today if you can help it.</span></div>
+      <div class="rec-item"><span class="rec-icon">🏆</span><span>You got through it. Log the migraine in Health Tracker when you're ready.</span></div>
+    </div>
+
+    <div class="notes-card">
+      <div class="notes-label">📝 Notes (optional — for logging later)</div>
+      <textarea id="proto-notes" class="notes-ta" placeholder="Any triggers you noticed, what helped, what didn't..."></textarea>
+    </div>
+
+    <button class="end-session-btn" onclick="openSummary()" aria-label="Copy">📋 End Session & Log</button>
+  </div><!-- /mig-active -->
+
+</div>
+</div><!-- /tab-mig -->
+
+<!-- ═══ FAB BUTTONS ════════════════════════════════════ -->
+
+
+<script>window.HQ_CURRENT_PAGE = 'survival';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/survival-mode.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

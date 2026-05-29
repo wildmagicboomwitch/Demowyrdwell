@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔁 Recurring Events — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+
+<script>
+window.HQ_CURRENT_PAGE = 'recurring';
+window.HQ_PAGE_CONFIG  = {
+  actionBtn: { label: '+ New', onclick: 'openForm()' },
+};
+</script>
+
+<link rel="stylesheet" href="pages/recurring-events.css">
+</head>
+<body>
+<!-- Nav injected by hq-core.js -->
+
+<div id="toast-el" class="toast"></div>
+
+<!-- M-10: Standardized back nav -->
+<div style="padding:10px 14px 2px">
+  <a href="index.html" class="hq-back-btn">← HQ</a>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TIME BRAIN STRIP
+     ═══════════════════════════════════════════ -->
+<div class="time-brain-strip" id="timeBrainStrip">
+  <a href="day-view.html" class="tbs-btn" data-tbs="timeline">📅 Today</a>
+  <a href="day-view.html#plan" class="tbs-btn" data-tbs="daybuilder">🗓 Day Plan</a>
+  <a href="weekly-planner.html"   class="tbs-btn" data-tbs="weekly">📆 Week</a>
+  <a href="monthly-planner.html"  class="tbs-btn" data-tbs="monthly">🗓️ Month</a>
+  <a href="recurring-events.html" class="tbs-btn active" data-tbs="recurring">🔁 Recurring</a>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADD / EDIT MODAL
+     ═══════════════════════════════════════════ -->
+<div id="recur-modal" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal recur-modal-inner">
+    <div class="modal-hd">
+      <div class="modal-title" id="modal-title-lbl">➕ New Recurring Event</div>
+      <button class="modal-x" onclick="closeModal()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body" id="recur-form-body">
+
+      <!-- Row 1: Emoji + Title -->
+      <div class="frow-2">
+        <div class="fg" style="max-width:90px">
+          <label class="fl">Emoji</label>
+          <input id="rf-emoji" class="fin emoji-input" placeholder="🔁" maxlength="4">
+        </div>
+        <div class="fg">
+          <label class="fl">Title <span class="req">*</span></label>
+          <input id="rf-title" class="fin" placeholder="e.g. Doctor appointment">
+        </div>
+      </div>
+
+      <!-- Row 2: Category + Subcategory -->
+      <div class="frow-2">
+        <div class="fg">
+          <label class="fl">Category</label>
+          <select id="rf-cat" class="fin" onchange="updateSubcatOptions()" aria-label="Category">
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Subcategory</label>
+          <select id="rf-subcat" class="fin" aria-label="Subcategory">
+            <option value="">— None —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 3: Frequency -->
+      <div class="fg">
+        <label class="fl">Frequency <span class="req">*</span></label>
+        <div class="freq-chips" id="freq-chips">
+          <button class="fchip on" data-freq="FREQ=DAILY" onclick="selFreq(this)">Daily</button>
+          <button class="fchip" data-freq="FREQ=WEEKLY;BYDAY=MO" onclick="selFreq(this)">Weekly</button>
+          <button class="fchip" data-freq="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO" onclick="selFreq(this)">Every 2 Weeks</button>
+          <button class="fchip" data-freq="FREQ=MONTHLY;BYMONTHDAY=1" onclick="selFreq(this)">Monthly</button>
+          <button class="fchip" data-freq="FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=1" onclick="selFreq(this)">Yearly</button>
+          <button class="fchip" data-freq="custom" onclick="selFreq(this)">Custom…</button>
+        </div>
+        <input id="rf-rrule" type="hidden" value="FREQ=DAILY">
+      </div>
+
+      <!-- Frequency detail panel — changes based on selection -->
+      <div id="freq-detail-panel" class="freq-panel"></div>
+
+      <!-- Row 4: Start Date + Times -->
+      <div class="frow-2">
+        <div class="fg">
+          <label class="fl">Start Date <span class="req">*</span></label>
+          <input id="rf-startdate" class="fin" type="date" aria-label="Rf Startdate">
+        </div>
+        <div class="fg">
+          <label class="fl">All Day?</label>
+          <div class="tag-chips" style="margin-top:4px">
+            <button class="tchip on" id="rf-allday-yes" onclick="setAllDay(true)">🗓️ All day</button>
+            <button class="tchip"    id="rf-allday-no"  onclick="setAllDay(false)">⏰ Has time</button>
+          </div>
+          <input type="hidden" id="rf-allday" value="true">
+        </div>
+      </div>
+
+      <div id="rf-time-wrap" style="display:none">
+        <div class="frow-2">
+          <div class="fg">
+            <label class="fl">Start Time</label>
+            <input id="rf-starttime" class="fin" type="time" aria-label="Rf Starttime">
+          </div>
+          <div class="fg">
+            <label class="fl">End Time</label>
+            <input id="rf-endtime" class="fin" type="time" aria-label="Rf Endtime">
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 5: Notes + Cost -->
+      <div class="fg">
+        <label class="fl">Notes (optional)</label>
+        <input id="rf-notes" class="fin" placeholder="e.g. Bring insurance card">
+      </div>
+
+      <div class="fg">
+        <label class="fl">Cost (optional)</label>
+        <input id="rf-cost" class="fin" type="number" min="0" step="0.01" placeholder="0.00">
+        <div class="hint">Used when linking to Money Brain in a future phase.</div>
+      </div>
+
+      <!-- Row 6: Module links — staged for Phase 6 -->
+      <div class="fg">
+        <label class="fl">🔗 Module Links <span class="phase-badge">Phase 6</span></label>
+        <div class="link-grid">
+          <label class="link-item disabled">
+            <input type="checkbox" id="rl-health"  disabled>
+            <span class="link-icon">🏥</span> Health Tracker
+          </label>
+          <label class="link-item disabled">
+            <input type="checkbox" id="rl-admin"   disabled>
+            <span class="link-icon">📋</span> Admin Brain
+          </label>
+          <label class="link-item disabled">
+            <input type="checkbox" id="rl-money"   disabled>
+            <span class="link-icon">💰</span> Money Brain
+          </label>
+          <label class="link-item disabled">
+            <input type="checkbox" id="rl-checkin" disabled>
+            <span class="link-icon">✅</span> Surface in Check-In
+          </label>
+        </div>
+        <div class="hint phase-hint">Cross-module writes activate in Phase 6 (module Setup tabs). Define your events now — linking will wire up automatically.</div>
+      </div>
+
+      <input type="hidden" id="rf-edit-id">
+
+      <div class="form-actions">
+        <button class="btn-g" onclick="resetForm()">Clear</button>
+        <button class="btn-p" onclick="saveEvent()" aria-label="Save">💾 Save Event</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DELETE CONFIRM MODAL
+     ═══════════════════════════════════════════ -->
+<div id="del-modal" class="modal-bg" onclick="if(event.target===this)closeDelModal()">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-hd">
+      <div class="modal-title">🗑️ Delete Event?</div>
+      <button class="modal-x" onclick="closeDelModal()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="del-confirm-text" style="margin:0 0 18px;color:var(--text2);line-height:1.5"></p>
+      <div class="form-actions">
+        <button class="btn-g" onclick="closeDelModal()" aria-label="Cancel">Cancel</button>
+        <button class="btn-del" id="del-confirm-btn" aria-label="Delete">🗑️ Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════ -->
+<div class="app-layout">
+  <div class="content" id="content">
+
+    <!-- Filter / Search bar -->
+    <div class="re-toolbar">
+      <input id="re-search" class="fin re-search" placeholder="🔍 Search events…" oninput="renderList()">
+      <div class="freq-filter-chips" id="freq-filter-chips">
+        <button class="ffc on" data-filter="all"    onclick="setFilter('all',this)">All</button>
+        <button class="ffc"    data-filter="DAILY"  onclick="setFilter('DAILY',this)">Daily</button>
+        <button class="ffc"    data-filter="WEEKLY" onclick="setFilter('WEEKLY',this)">Weekly</button>
+        <button class="ffc"    data-filter="MONTHLY"onclick="setFilter('MONTHLY',this)">Monthly</button>
+        <button class="ffc"    data-filter="YEARLY" onclick="setFilter('YEARLY',this)">Yearly</button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="re-stats" id="re-stats"></div>
+
+    <!-- Event list -->
+    <div id="re-list"></div>
+
+    <!-- Empty state -->
+    <div id="re-empty" style="display:none" class="re-empty">
+      <div class="re-empty-ic">🔁</div>
+      <div class="re-empty-title">No recurring events yet</div>
+      <div class="re-empty-sub">Doctor appointments, bill payments, birthday reminders — anything that repeats.</div>
+      <button class="btn-p" onclick="openForm()" style="margin-top:16px">➕ Add First Event</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/recurring-events.js"></script>
+<script src="core/hq-notifications.js"></script>
+
+<script>
+/* ── P4: Register recurring event source with HQNotif ── */
+(function registerRecurringSource() {
+  if (typeof HQNotif === 'undefined' || !HQNotif.registerSource) return;
+  HQNotif.registerSource('recurring-events', function () {
+    try {
+      const events = window.HQStore ? window.HQStore.get('audhd-hq-recurring', []) : [];
+      const now    = new Date();
+      const year   = now.getFullYear();
+      const result = [];
+      if (!Array.isArray(events)) return result;
+      events.forEach(function (ev) {
+        if (!ev || !ev.title) return;
+        var nextDate = null;
+        if (ev.frequency === 'yearly' && ev.month && ev.day) {
+          var d = new Date(year, parseInt(ev.month, 10) - 1, parseInt(ev.day, 10));
+          if (d < now) d.setFullYear(year + 1);
+          nextDate = d;
+        } else if (ev.frequency === 'monthly' && ev.day) {
+          var d = new Date(now.getFullYear(), now.getMonth(), parseInt(ev.day, 10));
+          if (d < now) d.setMonth(d.getMonth() + 1);
+          nextDate = d;
+        } else if (ev.frequency === 'weekly' && ev.dow !== undefined) {
+          var d = new Date(now);
+          var diff = (parseInt(ev.dow, 10) - d.getDay() + 7) % 7 || 7;
+          d.setDate(d.getDate() + diff);
+          d.setHours(0, 0, 0, 0);
+          nextDate = d;
+        }
+        if (!nextDate) return;
+        if (ev.time && !ev.allDay) {
+          var parts = ev.time.split(':');
+          if (parts.length === 2) nextDate.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+        } else {
+          nextDate.setHours(9, 0, 0, 0);
+        }
+        var msAway = nextDate.getTime() - Date.now();
+        if (msAway < 0 || msAway > 24 * 60 * 60 * 1000) return;
+        result.push({
+          title:    (ev.emoji || '🔁') + ' ' + ev.title,
+          time:     nextDate.toISOString(),
+          type:     'recurring',
+          moduleId: 'recurring-events'
+        });
+      });
+      return result;
+    } catch (e) {
+      console.warn('[recurring-events] registerSource error:', e);
+      return [];
+    }
+  });
+})();
+</script>
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

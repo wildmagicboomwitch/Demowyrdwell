@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❤️‍🔥 Firebird Protocol — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<link rel="stylesheet" href="pages/firebird-protocol.css">
+</head>
+<body>
+<!-- Sidenav injected by hq-core.js -->
+<div id="toast-el" class="toast"></div>
+
+<!-- Topbar injected by hq-core.js -->
+<div> </div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="ntab on" onclick="sw('start',this)" aria-label="Start Here tab">🐦‍🔥 Start Here</button>
+  <button class="ntab"    onclick="sw('cope',this)" aria-label="Cope tab">🧘 Cope</button>
+  <button class="ntab"    onclick="sw('breathe',this)" aria-label="Breathe tab">🌬️ Breathe</button>
+  <button class="ntab"    onclick="sw('rising',this)" aria-label="Rising tab">✨ Rising</button>
+  <button class="ntab"    onclick="sw('simplify',this)" aria-label="Simplify tab">💡 Simplify</button>
+  <button class="ntab fire-tab" onclick="sw('ignite',this)" aria-label="Ignite tab">🔥 Ignite</button>
+  <button class="ntab" onclick="sw('playbook',this)" aria-label="Playbook tab">📖 Playbook</button>
+  <button class="ntab" onclick="sw('rising-me',this)" aria-label="My Wins tab">🌟 My Wins</button>
+</div>
+
+<div class="main">
+
+<!-- ===================== START HERE ===================== -->
+<div id="tab-start" class="tab on">
+
+  <div class="card fire" style="text-align:center;padding:22px 16px 18px">
+    <div style="font-size:40px;margin-bottom:8px">❤️‍🔥</div>
+    <div style="font-size:19px;font-weight:900;margin-bottom:6px">You opened this.</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.65;max-width:340px;margin:0 auto">That took something. Let's figure out what you actually need right now — not what you think you <em>should</em> need.</div>
+  </div>
+
+  <!-- PRE-CRISIS WARNING SIGNS -->
+  <div class="warning-card" id="warning-card">
+    <div class="warning-title">
+      ⚠️ My Early Warning Signs
+      <span style="font-size:9px;font-weight:400;color:var(--muted);margin-left:auto">I know I'm about to crash when…</span>
+    </div>
+    <div id="warning-list"></div>
+    <div class="warning-add-row">
+      <input type="text" id="warning-input" placeholder="e.g. I start avoiding messages…" maxlength="100"
+        onkeydown="if(event.key==='Enter')addWarningSign()">
+      <button class="warning-add-btn" onclick="addWarningSign()" aria-label="Add item">+ Add</button>
+    </div>
+  </div>
+
+  <!-- TRUSTED PEOPLE CARD -->
+  <div class="card" id="trusted-card" style="display:none">
+    <div class="card-hd">
+      <div class="card-title">💜 Trusted People</div>
+      <div class="card-sub">Who to reach out to when you need support</div>
+    </div>
+    <div id="trusted-list"></div>
+    <button onclick="openAddTrusted()" style="width:100%;margin-top:8px;padding:8px;background:rgba(var(--primary-rgb),.1);border:1.5px dashed rgba(var(--primary-rgb),.3);color:var(--purple-l,#c8baff);border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">+ Add person</button>
+  </div>
+
+  <!-- QUICK-EXIT BUTTON -->
+  <button onclick="openQE()" style="width:100%;padding:11px;background:rgba(var(--primary-rgb),.12);border:1.5px solid rgba(var(--primary-rgb),.25);border-radius:12px;color:var(--purple-l,#c8baff);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px">
+    <span>🫁</span> Quick-Exit Grounding — one breath, two words, done
+  </button>
+
+  <div class="sdiv">Right now I feel most like...</div>
+
+  <div class="state-grid">
+    <button class="s-btn" data-route="cope" onclick="selState(this)">
+      <div class="s-em">😵</div>
+      <div class="s-lbl">Completely overwhelmed</div>
+      <div class="s-sub">Too much at once, can't find the thread</div>
+    </button>
+    <button class="s-btn" data-route="cope" onclick="selState(this)">
+      <div class="s-em">🧱</div>
+      <div class="s-lbl">Paralyzed / can't start</div>
+      <div class="s-sub">Executive dysfunction. The wall is up.</div>
+    </button>
+    <button class="s-btn" data-route="cope" onclick="selState(this)">
+      <div class="s-em">💔</div>
+      <div class="s-lbl">RSD spiral</div>
+      <div class="s-sub">Rejection or criticism hit. Spiraling.</div>
+    </button>
+    <button class="s-btn" data-route="breathe" onclick="selState(this)">
+      <div class="s-em">🔇</div>
+      <div class="s-lbl">Sensory overload</div>
+      <div class="s-sub">Everything is too loud, too much</div>
+    </button>
+    <button class="s-btn" data-route="breathe" onclick="selState(this)">
+      <div class="s-em">😰</div>
+      <div class="s-lbl">Anxious & activated</div>
+      <div class="s-sub">Body won't calm down</div>
+    </button>
+    <button class="s-btn" data-route="cope" onclick="selState(this)">
+      <div class="s-em">😶</div>
+      <div class="s-lbl">Shutdown / going blank</div>
+      <div class="s-sub">Numb. Flat. Not quite here.</div>
+    </button>
+    <button class="s-btn" data-route="cope" onclick="selState(this)">
+      <div class="s-em">💥</div>
+      <div class="s-lbl">Hyperfocus trap</div>
+      <div class="s-sub">Locked onto the wrong thing</div>
+    </button>
+    <button class="s-btn" data-route="rising" onclick="selState(this)">
+      <div class="s-em">✨</div>
+      <div class="s-lbl">Actually okay</div>
+      <div class="s-sub">Just want grounding or a reminder</div>
+    </button>
+  </div>
+
+  <button class="route-btn" id="route-btn" onclick="routeState()">Show me what I need →</button>
+
+  <div style="margin-top:20px">
+    <div class="sdiv">Quick Access</div>
+    <div class="ql-grid">
+      <button class="ql ql-fire" onclick="sw('ignite',document.querySelector(".ntab[onclick*='ignite']"))" aria-label="Ignite High energy day protocol tab">
+        <div class="ql-em">🔥</div>
+        <div class="ql-name" style="color:var(--fire1)">Ignite</div>
+        <div class="ql-desc">High energy day protocol</div>
+      </button>
+      <button class="ql" onclick="sw('breathe',document.querySelector(".ntab[onclick*='breathe']"))" aria-label="Breathe Box, 4-7-8, grounding tab">
+        <div class="ql-em">🌬️</div>
+        <div class="ql-name">Breathe</div>
+        <div class="ql-desc">Box, 4-7-8, grounding</div>
+      </button>
+      <a href="survival-mode.html" class="ql">
+        <div class="ql-em">🛡️</div>
+        <div class="ql-name">Survival Mode</div>
+        <div class="ql-desc">Four things. That's it.</div>
+      </a>
+      <a href="survival-mode.html" class="ql">
+        <div class="ql-em">🧠</div>
+        <div class="ql-name">Migraine Protocol</div>
+        <div class="ql-desc">Activate when it hits</div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== COPE ===================== -->
+<div id="tab-cope" class="tab">
+
+  <div class="hint">🧠 Pick the one that matches right now. One tool. Just one. Don't read all of them.</div>
+
+  <!-- Executive Dysfunction -->
+  <button class="cope-btn" onclick="togCope(this)">
+    <div class="cope-ic">🧱</div>
+    <div class="cope-tx"><div class="cope-nm">Executive Dysfunction — Can't Start</div><div class="cope-ds">The wall is up. You know what needs doing. You can't do it.</div></div>
+    <div class="cope-ar">▼</div>
+  </button>
+  <div class="cope-body">
+    <div class="cstep"><div class="csn">1</div><span><strong>Name the smallest possible unit.</strong> Not "do the report" — what's the first sentence? The first tab? Get that specific.</span></div>
+    <div class="cstep"><div class="csn">2</div><span><strong>5-Minute Door:</strong> Set a timer for 5 minutes. You only have to start — not finish. When it goes off, you're free to stop. You usually won't.</span></div>
+    <div class="cstep"><div class="csn">3</div><span><strong>Body first:</strong> Water, food, 2 minutes of movement. Executive dysfunction gets worse when the physical system is running low.</span></div>
+    <div class="cstep"><div class="csn">4</div><span><strong>Change one physical thing:</strong> Different room, different chair, music on or off. Your brain is looking for a context cue that signals transition.</span></div>
+    <div class="cstep"><div class="csn">5</div><span><strong>If still blocked after 20 min:</strong> That's a rest day. Brain dump it and go to Survival Mode. The wall doesn't argue — you find the door beside it.</span></div>
+    <div style="margin-top:12px">
+      <div class="mt">
+        <div class="mt-time" id="exec-t">5:00</div>
+        <div class="mt-lbl">5-Minute Door — just begin. You can stop when the timer goes off.</div>
+        <button class="mt-btn go" onclick="startMT('exec-t',300,this)">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RSD -->
+  <button class="cope-btn" onclick="togCope(this)">
+    <div class="cope-ic">💔</div>
+    <div class="cope-tx"><div class="cope-nm">RSD Spiral — Rejection Sensitivity</div><div class="cope-ds">Something happened — real or perceived — and the shame spiral started fast.</div></div>
+    <div class="cope-ar">▼</div>
+  </button>
+  <div class="cope-body">
+    <div class="cstep"><div class="csn">1</div><span><strong>Name it:</strong> "I'm experiencing RSD right now. This is a neurological response, not a fact about my worth."</span></div>
+    <div class="cstep"><div class="csn">2</div><span><strong>Time question:</strong> "Will this feel this big in 3 days?" If no — you're experiencing RSD intensity, not reality arriving.</span></div>
+    <div class="cstep"><div class="csn">3</div><span><strong>Don't respond to anything yet.</strong> AuDHD + RSD + communication = usually regrettable. Phone down. 20 minutes minimum before any reply.</span></div>
+    <div class="cstep"><div class="csn">4</div><span><strong>Physical interrupt:</strong> Cold water on wrists, step outside 3 minutes, or open Breathe. The body leads the brain out of this, not the other way.</span></div>
+    <div class="cstep"><div class="csn">5</div><span><strong>Go to Rising when you're ready.</strong> Not to fix it — just to steady it.</span></div>
+  </div>
+
+  <!-- Overwhelm -->
+  <button class="cope-btn" onclick="togCope(this)">
+    <div class="cope-ic">😵</div>
+    <div class="cope-tx"><div class="cope-nm">Overwhelm — Everything Competing</div><div class="cope-ds">Everything wants attention simultaneously and nothing is getting done.</div></div>
+    <div class="cope-ar">▼</div>
+  </button>
+  <div class="cope-body">
+    <div class="cstep"><div class="csn">1</div><span><strong>Get it out of your head.</strong> Brain dump everything that's in there — not to sort it, just to externalize it. Paper or Thought Jar in HQ.</span></div>
+    <div class="cstep"><div class="csn">2</div><span><strong>Hard deadlines only:</strong> What has a real deadline today? Only those things exist right now. Everything else is tomorrow's problem.</span></div>
+    <div class="cstep"><div class="csn">3</div><span><strong>One room, closed door.</strong> Pick ONE thing and close the mental door on everything else. You will get to the others.</span></div>
+    <div class="cstep"><div class="csn">4</div><span><strong>Reduce inputs.</strong> Close tabs, phone face down, fewer decisions. Your working memory is full — stop adding to it.</span></div>
+    <div class="cstep"><div class="csn">5</div><span><strong>If it's physical overwhelm:</strong> That's sensory overload — go to that section. Your nervous system needs a reset, not a plan.</span></div>
+  </div>
+
+  <!-- Sensory Overload -->
+  <button class="cope-btn" onclick="togCope(this)">
+    <div class="cope-ic">🔇</div>
+    <div class="cope-tx"><div class="cope-nm">Sensory Overload</div><div class="cope-ds">Too loud, too bright, too much input. The environment is winning.</div></div>
+    <div class="cope-ar">▼</div>
+  </button>
+  <div class="cope-body">
+    <div class="cstep"><div class="csn">1</div><span><strong>Reduce input immediately:</strong> Lights dimmed or off. Headphones or silence. Screen brightness down. Close unnecessary tabs.</span></div>
+    <div class="cstep"><div class="csn">2</div><span><strong>Leave if you can.</strong> Different room, outside briefly, bathroom if that's all you have. 5 minutes of reduced input can reset 30 minutes of overload.</span></div>
+    <div class="cstep"><div class="csn">3</div><span><strong>Heavy pressure:</strong> Weighted blanket, firm hand pressure, feet flat on the floor, back against a wall. Proprioception is regulating.</span></div>
+    <div class="cstep"><div class="csn">4</div><span><strong>Don't try to think through anything right now.</strong> Sensory overload degrades cognition. Regulate first. Think later.</span></div>
+    <div class="cstep"><div class="csn">5</div><span><strong>Cat time counts.</strong> Sit on the floor with the cat. Their calm regulation is literal, not metaphorical.</span></div>
+  </div>
+
+  <!-- Shutdown -->
+  <button class="cope-btn" onclick="togCope(this)">
+    <div class="cope-ic">😶</div>
+    <div class="cope-tx"><div class="cope-nm">Shutdown / Going Blank</div><div class="cope-ds">Numb, flat, not quite present. The system went offline.</div></div>
+    <div class="cope-ar">▼</div>
+  </button>
+  <div class="cope-body">
+    <div class="cstep"><div class="csn">1</div><span><strong>Don't fight it.</strong> Shutdown is a nervous system protective response. Forcing function through it usually makes it last longer.</span></div>
+    <div class="cstep"><div class="csn">2</div><span><strong>Check the basics:</strong> When did you last eat? Sleep? These are the two most reliable shutdown triggers after overstimulation.</span></div>
+    <div class="cstep"><div class="csn">3</div><span><strong>Very small physical anchor:</strong> Warm drink, textured object, cat. Not fixes — threads back to the present.</span></div>
+    <div class="cstep"><div class="csn">4</div><span><strong>Survival Mode is enough.</strong> Open it. Four things. That's the whole job today.</span></div>
+    <div class="cstep"><div class="csn">5</div><span><strong>It will lift.</strong> Shutdown is temporary. You don't have to understand why right now. Rest and let the system come back online.</span></div>
+  </div>
+
+  <!-- Hyperfocus Trap -->
+  <button class="cope-btn" onclick="togCope(this)">
+    <div class="cope-ic">💥</div>
+    <div class="cope-tx"><div class="cope-nm">Hyperfocus Trap</div><div class="cope-ds">Locked onto the wrong thing. Time is disappearing.</div></div>
+    <div class="cope-ar">▼</div>
+  </button>
+  <div class="cope-body">
+    <div class="cstep"><div class="csn">1</div><span><strong>Notice and name it:</strong> "I've been hyperfocused on [X] for [time]. This wasn't the plan."</span></div>
+    <div class="cstep"><div class="csn">2</div><span><strong>Is this the right thing?</strong> Yes → set an end time and keep going. No → log it in Thought Jar and close the tab.</span></div>
+    <div class="cstep"><div class="csn">3</div><span><strong>The rabbit hole will still be there.</strong> Bookmark it. It doesn't disappear when you stop. You can come back at 6pm.</span></div>
+    <div class="cstep"><div class="csn">4</div><span><strong>Physical interrupt to break the lock:</strong> Stand up, get water, 2 minutes outside. A physical transition is usually the only reliable way to break hyperfocus.</span></div>
+    <div class="cstep"><div class="csn">5</div><span><strong>Set a transition timer before the next task</strong> or you'll lock in again immediately.</span></div>
+  </div>
+
+</div>
+
+<!-- ===================== BREATHE ===================== -->
+<div id="tab-breathe" class="tab">
+
+  <div class="hint">🌬️ Pick one. Do it fully before you decide anything. Your nervous system needs to lead here.</div>
+
+  <div class="bc">
+    <div class="bc-title">🟦 Box Breathing</div>
+    <div class="bc-best">Best for: steady anxiety, before appointments, pre-task dread</div>
+    <div class="bc-ring" id="box-ring">4</div>
+    <div class="bc-ph" id="box-ph">Ready — press start</div>
+    <div class="bc-btns">
+      <button class="bbt go" id="box-sb" onclick="startBreath('box')" aria-label="Forward">▶ Start</button>
+      <button class="bbt" onclick="stopBreath('box')" aria-label="Stop timer">■ Stop</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px">Inhale 4 · Hold 4 · Exhale 4 · Hold 4 — minimum 4 rounds</div>
+  </div>
+
+  <div class="bc">
+    <div class="bc-title">😮‍💨 4-7-8 Breathing</div>
+    <div class="bc-best">Best for: panic, racing thoughts, pre-sleep, migraine tension</div>
+    <div class="bc-ring" id="four78-ring">4</div>
+    <div class="bc-ph" id="four78-ph">Ready — press start</div>
+    <div class="bc-btns">
+      <button class="bbt go" id="four78-sb" onclick="startBreath('four78')" aria-label="Forward">▶ Start</button>
+      <button class="bbt" onclick="stopBreath('four78')" aria-label="Stop timer">■ Stop</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px">Inhale 4 · Hold 7 · Exhale 8 — the long exhale activates your calm system</div>
+  </div>
+
+  <div class="bc">
+    <div class="bc-title">⚡ 30-Second Reset</div>
+    <div class="bc-best">Best for: mid-task overwhelm, right now, before a hard conversation</div>
+    <div class="bc-ring" id="quick-ring">4</div>
+    <div class="bc-ph" id="quick-ph">Ready — press start</div>
+    <div class="bc-btns">
+      <button class="bbt go" id="quick-sb" onclick="startBreath('quick')" aria-label="Forward">▶ Start</button>
+      <button class="bbt" onclick="stopBreath('quick')" aria-label="Stop timer">■ Stop</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px">Three slow deliberate breaths. In through nose, out through mouth. Feel your feet.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🌱 5-4-3-2-1 Grounding</div><div class="card-sub">Best for: dissociation, panic, fog</div></div>
+    <div class="gnd"><div class="gnd-n" style="color:var(--purple-d)">5</div><div><div class="gnd-title">Things you can SEE</div><div class="gnd-desc">Look around. Name 5 things. Say them out loud.</div></div></div>
+    <div class="gnd"><div class="gnd-n" style="color:var(--teal)">4</div><div><div class="gnd-title">Things you can TOUCH</div><div class="gnd-desc">Feel 4 textures right now — floor, clothes, chair, skin.</div></div></div>
+    <div class="gnd"><div class="gnd-n" style="color:var(--green)">3</div><div><div class="gnd-title">Things you can HEAR</div><div class="gnd-desc">Name 3 sounds. Traffic, breathing, anything real.</div></div></div>
+    <div class="gnd"><div class="gnd-n" style="color:var(--gold)">2</div><div><div class="gnd-title">Things you can SMELL</div><div class="gnd-desc">Two scents. Coffee, air, shampoo, anything.</div></div></div>
+    <div class="gnd"><div class="gnd-n" style="color:var(--pink)">1</div><div><div class="gnd-title">Thing you can TASTE</div><div class="gnd-desc">One taste. Water, gum, toothpaste. Anything real.</div></div></div>
+    <div style="margin-top:13px;background:var(--card2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--text2);font-style:italic;text-align:center">You are in your body. You are in this moment. That's enough right now.</div>
+  </div>
+
+</div>
+
+<!-- ===================== RISING ===================== -->
+<div id="tab-rising" class="tab">
+
+  <div class="hint">✨ These aren't hype. They're accurate statements about how your brain actually works. Star the ones that land and they'll save here.</div>
+
+  <div class="sdiv">On Executive Dysfunction & Getting Things Done</div>
+  <div id="m-exec"></div>
+
+  <div class="sdiv">On RSD & How People See You</div>
+  <div id="m-rsd"></div>
+
+  <div class="sdiv">On the ADHD Tax & What You're Actually Managing</div>
+  <div id="m-tax"></div>
+
+  <div class="sdiv">On Hard Days & Your Real Strength</div>
+  <div id="m-hard"></div>
+
+  <div class="sdiv">On the Bigger Picture</div>
+  <div id="m-big"></div>
+
+  <div class="sdiv">⭐ Your Saved Mantras</div>
+  <div id="m-starred">
+    <div style="color:var(--muted);font-size:12px;padding:14px;text-align:center;background:var(--card);border-radius:9px;border:1px solid var(--border)">Star mantras above to keep them here.</div>
+  </div>
+
+</div>
+
+<!-- ===================== SIMPLIFY ===================== -->
+<div id="tab-simplify" class="tab">
+
+  <div class="hint">💡 When the full system feels impossible. How to strip it down and still move.</div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🛡️ Drop to Minimum</div></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:13px;line-height:1.65">When today is hard: open Survival Mode. Four things. That's the whole job. <br><br><strong style="color:var(--green)">Survival Mode done = successful day. Full stop.</strong></div>
+    <a href="survival-mode.html" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:9px;background:linear-gradient(135deg,rgba(var(--green-rgb),.1),rgba(var(--teal-rgb),.08));border:1px solid rgba(var(--green-rgb),.3);color:var(--green);font-size:13px;font-weight:800;text-decoration:none;transition:all .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">🛡️ Open Survival Mode →</a>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📍 The One Task Rule</div></div>
+    <div class="pi"><div class="pi-ic">1️⃣</div><div class="pi-tx"><strong>Pick ONE task.</strong> Say it out loud or write it down. That is now the only thing that exists.</div></div>
+    <div class="pi"><div class="pi-ic">🚫</div><div class="pi-tx">Do not expand scope. Do not add tasks. The one thing completes or you acknowledge you can't today.</div></div>
+    <div class="pi"><div class="pi-ic">✅</div><div class="pi-tx">When it's done: acknowledge it. Then decide — one more, or stop. No pressure either way.</div></div>
+    <div class="pi"><div class="pi-ic">🧠</div><div class="pi-tx"><strong>The task you finish today can never be un-done.</strong> That's permanent progress.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">⏱️ 5-Minute Door</div></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:11px;line-height:1.6">Set a timer for 5 minutes. Start the smallest part. When it goes off, you are <strong style="color:var(--text)">free to stop</strong> — no guilt. You usually won't want to.</div>
+    <div class="mt">
+      <div class="mt-time" id="door-t">5:00</div>
+      <div class="mt-lbl">Just start. That's the whole job right now.</div>
+      <button class="mt-btn go" onclick="startMT('door-t',300,this)">Start</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🌊 Body Check First</div></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Overwhelm is physical before it's mental. Check these before anything else — tap to mark done.</div>
+    <div class="bc-row" onclick="togBC(this)"><div class="bc-box"></div><span style="font-size:15px;margin-right:8px">💧</span><span>Water — had any in the last 2 hours?</span></div>
+    <div class="bc-row" onclick="togBC(this)"><div class="bc-box"></div><span style="font-size:15px;margin-right:8px">🍽️</span><span>Food — when did you last eat something real?</span></div>
+    <div class="bc-row" onclick="togBC(this)"><div class="bc-box"></div><span style="font-size:15px;margin-right:8px">😴</span><span>Sleep — running on less than 6 hours?</span></div>
+    <div class="bc-row" onclick="togBC(this)"><div class="bc-box"></div><span style="font-size:15px;margin-right:8px">🏃</span><span>Movement — been in one position too long?</span></div>
+    <div class="bc-row" onclick="togBC(this)"><div class="bc-box"></div><span style="font-size:15px;margin-right:8px">💊</span><span>Meds — taken today?</span></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);font-style:italic">Address the physical need first. Then reassess the mental state.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🔑 Permission Slips</div></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">You are allowed to:</div>
+    <div class="pi"><div class="pi-ic">✋</div><div class="pi-tx">Do less than planned. This is not failure. It is <strong>accurate capacity management.</strong></div></div>
+    <div class="pi"><div class="pi-ic">🛑</div><div class="pi-tx">Stop for the day at any point. The work will still be there tomorrow.</div></div>
+    <div class="pi"><div class="pi-ic">🍕</div><div class="pi-tx">Order food. Feeding yourself is a win regardless of method.</div></div>
+    <div class="pi"><div class="pi-ic">😭</div><div class="pi-tx">Be upset about a hard day. Feeling it is not the same as being defined by it.</div></div>
+    <div class="pi"><div class="pi-ic">🐱</div><div class="pi-tx">Sit on the floor with the cat for 10 minutes and do nothing else. This is not wasted time.</div></div>
+    <div class="pi"><div class="pi-ic">💤</div><div class="pi-tx">Rest. <strong>Resting is not quitting. It's how you finish what matters.</strong></div></div>
+    <div class="pi"><div class="pi-ic">🧠</div><div class="pi-tx">Not have answers today. You don't have to figure everything out right now.</div></div>
+  </div>
+
+</div>
+
+<!-- ===================== IGNITE ===================== -->
+<div id="tab-ignite" class="tab">
+
+  <div class="ign-banner">
+    <span class="ign-ic">🔥</span>
+    <div class="ign-title">IGNITE</div>
+    <div class="ign-sub">Your brain is online today. Full signal. High-energy ADHD days are rare — and they can be wasted just as fast as they can be used. Here's how to direct the fire.</div>
+  </div>
+
+  <!-- Mission Lock -->
+  <div class="mission-wrap">
+    <div class="mission-lbl">🎯 Your One Priority Today</div>
+    <div class="mission-locked" id="ml">
+      <div class="ml-lbl">🔒 Locked In</div>
+      <div class="ml-txt" id="ml-txt"></div>
+      <span class="ml-chg" onclick="unlockM()">Change mission</span>
+    </div>
+    <input id="m-in" class="mission-in" placeholder="What's the ONE thing that matters most today?">
+    <button class="lock-btn" onclick="lockM()">🔒 Lock It In</button>
+  </div>
+
+  <div class="hint fire">🔥 High-energy ADHD is powerful and undirected. <strong>You are the direction today.</strong> Pick the thing. Lock it in. Protect it.</div>
+
+  <div class="sdiv">The Rules Today</div>
+
+  <div class="rule"><div class="rule-ic">1️⃣</div><div class="rule-tx"><strong>Your locked-in mission is the day.</strong> Everything else is secondary. Not "I'll get to it after" — it either happens or it doesn't, and that's okay.</div></div>
+  <div class="rule"><div class="rule-ic">⏰</div><div class="rule-tx"><strong>Set a work window with a real end time.</strong> Not "until done." A specific time. Your brain needs a landing zone or you'll crash-land and waste the day.</div></div>
+  <div class="rule"><div class="rule-ic">🛡️</div><div class="rule-tx"><strong>Protect your flow state.</strong> When you're in it — close the door, silence the phone, stay in it. Flow is the rarest resource you have.</div></div>
+  <div class="rule"><div class="rule-ic">🍽️</div><div class="rule-tx"><strong>Eat before you need to.</strong> Don't crash your momentum with hunger. Schedule food like a pit stop, not a surrender.</div></div>
+  <div class="rule"><div class="rule-ic">🧱</div><div class="rule-tx"><strong>High energy ≠ unlimited.</strong> You'll need to land this. Plan the wind-down before you need it.</div></div>
+  <div class="rule"><div class="rule-ic">🚫</div><div class="rule-tx"><strong>Do not overcommit today.</strong> High-energy days feel like you can promise everything. You can't. Don't schedule more than a normal day — just execute better.</div></div>
+
+  <div class="sdiv">Fuel Stations</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Brief resets that maintain momentum rather than killing it. Use between blocks.</div>
+    <div class="mt"><div class="mt-time" id="f1-t">5:00</div><div class="mt-lbl">🧍 Stand + stretch — 5 min. Move before you seize up.</div><button class="mt-btn go" onclick="startMT('f1-t',300,this)">Go</button></div>
+    <div class="mt"><div class="mt-time" id="f2-t">2:00</div><div class="mt-lbl">💧 Water break — 2 min. Hydration is not optional on high-output days.</div><button class="mt-btn go" onclick="startMT('f2-t',120,this)">Go</button></div>
+    <div class="mt"><div class="mt-time" id="f3-t">10:00</div><div class="mt-lbl">🚶 Short walk — 10 min. Processes stress hormones before they build up.</div><button class="mt-btn go" onclick="startMT('f3-t',600,this)">Go</button></div>
+  </div>
+
+  <div class="redirect">
+    <div class="redir-title">🐇 Rabbit Hole — Redirect Protocol</div>
+    <div class="redir-step"><div class="rsn">1</div><span>Notice it. Name it: "I've been in [X] for [time]. That wasn't the plan."</span></div>
+    <div class="redir-step"><div class="rsn">2</div><span>Is this actually the right thing right now? Yes or no. No deliberating.</span></div>
+    <div class="redir-step"><div class="rsn">3</div><span>If NO: bookmark it, log it in Thought Jar, close the tab. <strong>The rabbit hole will still be there at 6pm. Your momentum won't.</strong></span></div>
+    <div class="redir-step"><div class="rsn">4</div><span>Physical interrupt: stand up, get water, 60 seconds outside. Break the lock physically.</span></div>
+    <div class="redir-step"><div class="rsn">5</div><span>Return to your locked-in mission. That's still the day.</span></div>
+  </div>
+
+  <div class="sdiv">🔥 Words That Move</div>
+
+  <div class="im"><div class="im-text">"You've got a full tank today. Don't spend it all on email."</div><div class="im-sub">Pick the mission. Protect the window.</div></div>
+  <div class="im"><div class="im-text">"High-energy ADHD is powerful and undirected. <strong>You are the direction today.</strong>"</div><div class="im-sub">Don't just feel the energy. Point it at something real.</div></div>
+  <div class="im"><div class="im-text">"You're not behind. You're lined up. Now go."</div><div class="im-sub">Stop assessing. Start moving.</div></div>
+  <div class="im"><div class="im-text">"Three shifts, not one endless period. Work in blocks, recover between them."</div><div class="im-sub">Hockey doesn't run one line all night. Neither do you.</div></div>
+  <div class="im"><div class="im-text">"When you're in flow — close the door, silence the phone, stay in it."</div><div class="im-sub">Flow is the rarest resource. Protect it like it costs money.</div></div>
+  <div class="im"><div class="im-text">"Don't explain the plan to everyone. Execute it."</div><div class="im-sub">Talking about the thing is not doing the thing.</div></div>
+  <div class="im"><div class="im-text">"The goal isn't to do everything. It's to do the <strong>right thing</strong>."</div><div class="im-sub">One well-executed priority beats five half-finished ones. Every time.</div></div>
+  <div class="im"><div class="im-text">"Your brain works differently. Today that difference is the asset."</div><div class="im-sub">You've been preparing for a day like this. Use it.</div></div>
+
+  <div class="sdiv">🛬 End of Day — Land the Plane</div>
+  <div class="card">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:13px;line-height:1.6">A hard landing wastes the whole day and wrecks tomorrow. Wind down with intention.</div>
+    <div class="prog-row">
+      <div class="prog-lbl">Landing checklist</div>
+      <div class="prog-n" id="lnd-ct">0/5</div>
+    </div>
+    <div class="rb-track md" style="margin-bottom:14px"><div class="rb-fill" id="lnd-bar" style="width:0%"></div></div>
+    <div class="lnd-step"><div class="lnd-ic">✅</div><div class="lnd-tx"><strong>Log today's win</strong> — even one thing. What got done?</div><div class="lnd-cb" onclick="togLnd(this,0)"></div></div>
+    <div class="lnd-step"><div class="lnd-ic">📋</div><div class="lnd-tx"><strong>Brain dump anything unfinished</strong> — get it out of your head so you can actually stop</div><div class="lnd-cb" onclick="togLnd(this,1)"></div></div>
+    <div class="lnd-step"><div class="lnd-ic">⏰</div><div class="lnd-tx"><strong>Set tomorrow's one priority</strong> — while today's brain is still online</div><div class="lnd-cb" onclick="togLnd(this,2)"></div></div>
+    <div class="lnd-step"><div class="lnd-ic">🎒</div><div class="lnd-tx"><strong>10-min prepwork</strong> — tomorrow-you won't have today's energy. Set it up now.</div><div class="lnd-cb" onclick="togLnd(this,3)"></div></div>
+    <div class="lnd-step"><div class="lnd-ic">📵</div><div class="lnd-tx"><strong>Phone down by a set time</strong> — high-output days need proper recovery sleep</div><div class="lnd-cb" onclick="togLnd(this,4)"></div></div>
+  </div>
+
+</div>
+
+<!-- ===================== PLAYBOOK ===================== -->
+<div id="tab-playbook" class="tab">
+
+  <!-- POST-IGNITE DEBRIEF -->
+  <div class="debrief-card">
+    <div class="debrief-title">🔥 Post-Ignite Debrief</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">After a high-energy day, log before you crash. Reduces the post-hyperfocus drop.</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:5px">✅ What got done today</div>
+      <textarea id="deb-done" class="ftextarea" rows="2" placeholder="The things that actually happened…" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:9px;padding:9px 11px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box;resize:vertical"></textarea>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:5px">🌀 What got lost or went sideways</div>
+      <textarea id="deb-lost" class="ftextarea" rows="2" placeholder="Rabbit holes, missed things, overcomplicated…" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:9px;padding:9px 11px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box;resize:vertical"></textarea>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:5px">🌅 One thing tomorrow needs</div>
+      <textarea id="deb-tomorrow" class="ftextarea" rows="2" placeholder="What matters most when you wake up…" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:9px;padding:9px 11px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box;resize:vertical"></textarea>
+    </div>
+    <button onclick="saveDebrief()" style="background:rgba(var(--coral-rgb),.15);border:1.5px solid rgba(var(--coral-rgb),.3);color:var(--fire1,#ff5e1a);border-radius:9px;padding:9px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Save">💾 Save Debrief</button>
+  </div>
+
+  <!-- CRISIS HISTORY LOG -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📖 Crisis Playbook</div>
+      <div class="card-sub">What happened · what helped · personal evidence</div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">After using any protocol, log it here. Each entry is proof that you've gotten through hard things before.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+      <div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">What happened</div>
+        <textarea id="crisis-what" class="ftextarea" rows="2" placeholder="The situation or state…" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:9px;padding:8px 10px;font-size:11px;font-family:inherit;width:100%;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">What helped</div>
+        <textarea id="crisis-helped" class="ftextarea" rows="2" placeholder="The thing that actually worked…" style="background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:9px;padding:8px 10px;font-size:11px;font-family:inherit;width:100%;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+    </div>
+    <button onclick="saveCrisisEntry()" style="background:rgba(var(--primary-rgb),.12);border:1.5px solid rgba(var(--primary-rgb),.3);color:var(--purple-l,#c8baff);border-radius:9px;padding:9px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">+ Log this entry</button>
+    <div id="crisis-log-list" style="margin-top:14px"></div>
+  </div>
+
+  <!-- CUSTOM QUOTES -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">💬 My Own Words</div>
+      <div class="card-sub">Truths, perspectives, reminders — yours</div>
+    </div>
+    <div id="custom-quotes-list"></div>
+    <div class="cq-add-row">
+      <textarea id="cq-input" placeholder="A quote, reminder, or truth that grounds you…" maxlength="300"></textarea>
+      <button class="cq-add-btn" onclick="addCustomQuote()" aria-label="Add item">+ Add</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== MY WINS ===================== -->
+<div id="tab-rising-me" class="tab">
+
+  <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.65;padding:12px 14px;background:rgba(var(--primary-rgb),.07);border:1px solid rgba(var(--primary-rgb),.2);border-radius:10px">
+    🌟 It can't rain all the time. This is the evidence. Real data from your real life — the days it worked, the wins you logged, the streaks you kept.
+  </div>
+
+  <!-- Stats strip -->
+  <div class="ach-strip" id="ach-stats">
+    <div class="ach-card"><div class="ach-num" id="ach-wins">—</div><div class="ach-lbl">Wins logged</div></div>
+    <div class="ach-card"><div class="ach-num" id="ach-checkins">—</div><div class="ach-lbl">Check-ins</div></div>
+    <div class="ach-card"><div class="ach-num" id="ach-good-days">—</div><div class="ach-lbl">Good days</div></div>
+  </div>
+
+  <!-- Recent wins gallery -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🏆 Recent Wins</div></div>
+    <div id="ach-wins-list"></div>
+  </div>
+
+  <!-- Good check-in days -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📈 Good Days (mood 4–5 or energy 4–5)</div>
+      <div class="card-sub" id="ach-good-pct"></div>
+    </div>
+    <div id="ach-good-days-list"></div>
+  </div>
+
+</div>
+
+</div><!-- /main -->
+
+<!-- Bottom nav injected by hq-core.js -->
+<script>window.HQ_CURRENT_PAGE = 'firebird';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/firebird-protocol.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+
+<!-- ── QUICK-EXIT GROUNDING OVERLAY ── -->
+<div id="qe-overlay" class="qe-overlay" onclick="if(event.target===this)closeQE()">
+  <div class="qe-word" id="qe-word">BREATHE</div>
+  <div class="qe-instruction" id="qe-instruction">In through the nose. Out through the mouth. One breath. That's it.</div>
+  <div class="qe-breath-strip">
+    <button class="qe-breath-btn" onclick="qeStep('ground')">🌱 Ground</button>
+    <button class="qe-breath-btn" onclick="qeStep('safe')">🛡 Safe</button>
+    <button class="qe-breath-btn" onclick="qeStep('here')">📍 Here</button>
+  </div>
+  <button class="qe-close" onclick="closeQE()">I'm okay — close</button>
+</div>
+
+<!-- TRUSTED PEOPLE MODAL -->
+<!-- H-06 -->
+<div id="trusted-modal" class="hq-modal-bg">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:400px">
+    <div style="font-size:15px;font-weight:900;margin-bottom:14px">💜 Add Trusted Person</div>
+    <div style="margin-bottom:9px"><label style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px">Name</label>
+      <input id="tr-name" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12px;font-family:inherit;box-sizing:border-box" placeholder="e.g. Mum"></div>
+    <div style="margin-bottom:9px"><label style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px">Relationship</label>
+      <input id="tr-rel" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12px;font-family:inherit;box-sizing:border-box" placeholder="e.g. Mum, best friend, therapist"></div>
+    <div style="margin-bottom:14px"><label style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px">What to say to them when dysregulated</label>
+      <textarea id="tr-msg" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box" rows="2" placeholder="e.g. I'm struggling today. I don't need advice, just company."></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="HQModal.close('trusted-modal')" style="background:var(--surface);border:1.5px solid var(--border);color:var(--muted);border-radius:9px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Cancel">Cancel</button>
+      <button onclick="saveTrustedPerson()" style="background:var(--purple);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

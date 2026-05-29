@@ -1,0 +1,784 @@
+import { useState, useMemo, useRef, useEffect } from "react";
+
+// ══════════════════════════════════════════════════════════════════
+//  DATA LAYER — mirrors production condition-pools.js + category-registry.js
+// ══════════════════════════════════════════════════════════════════
+
+const CATEGORY_REGISTRY = {
+  cognitive:       { id: "cognitive",       label: "Cognitive",           emoji: "💭", color: "#a78bfa" },
+  physical:        { id: "physical",        label: "Physical",            emoji: "🩺", color: "#34d399" },
+  pain:            { id: "pain",            label: "Pain",                emoji: "🔥", color: "#f97316" },
+  sensory:         { id: "sensory",         label: "Sensory",             emoji: "👁️", color: "#818cf8" },
+  neurological:    { id: "neurological",    label: "Neurological",        emoji: "🧠", color: "#c084fc" },
+  sleep:           { id: "sleep",           label: "Sleep",               emoji: "💤", color: "#60a5fa" },
+  gi:              { id: "gi",              label: "GI / Digestive",      emoji: "🫄", color: "#a3e635" },
+  immune:          { id: "immune",          label: "Immune / Inflam.",    emoji: "🛡️", color: "#fbbf24" },
+  hormonal:        { id: "hormonal",        label: "Hormonal",            emoji: "🔄", color: "#f472b6" },
+  skin:            { id: "skin",            label: "Skin",                emoji: "🧬", color: "#fb923c" },
+  mood:            { id: "mood",            label: "Mood / Emotional",    emoji: "💜", color: "#e879f9" },
+  autonomic:       { id: "autonomic",       label: "Autonomic",           emoji: "⚡", color: "#22d3ee" },
+  respiratory:     { id: "respiratory",     label: "Respiratory",         emoji: "🫁", color: "#7dd3fc" },
+  musculoskeletal: { id: "musculoskeletal", label: "Musculoskeletal",     emoji: "🦴", color: "#fdba74" },
+  urological:      { id: "urological",      label: "Urological",          emoji: "💧", color: "#94a3b8" },
+  cardiovascular:  { id: "cardiovascular",  label: "Cardiovascular",      emoji: "🫀", color: "#f87171" },
+  behavioral:      { id: "behavioral",      label: "Behavioral",          emoji: "🔁", color: "#86efac" },
+};
+
+const CONDITIONS_BY_GROUP = [
+  {
+    group: "🧠 Neurodivergent",
+    conditions: [
+      { id: "adhd",         name: "ADHD",               emoji: "🌀", color: "#C8BAFF", symptoms: ["Brain fog","Task paralysis","Time blindness","Emotional dysregulation","Hyperfocus","Rejection sensitivity","Working memory loss","Inattention","Low motivation","Fatigue","Sensory overload","Sleep disturbance","Irritability","Anxiety"] },
+      { id: "autism",       name: "Autism / AuDHD",     emoji: "🧩", color: "#7EC8E3", symptoms: ["Sensory overload","Social exhaustion","Meltdown aftermath","Shutdown aftermath","Interoception difficulty","Fatigue","Emotional dysregulation","Executive dysfunction","Dissociation","Social withdrawal"] },
+      { id: "dyspraxia",    name: "Dyspraxia / DCD",    emoji: "🎯", color: "#93c5fd", symptoms: ["Coordination difficulty","Proprioception difficulty","Fatigue","Brain fog","Clumsiness","Motor planning difficulty"] },
+    ]
+  },
+  {
+    group: "🧩 Mental Health",
+    conditions: [
+      { id: "anxietyGad",   name: "Anxiety (GAD/Panic)",emoji: "😰", color: "#fde68a", symptoms: ["Chest tightness","Heart racing","Rumination","Racing thoughts","Hypervigilance","Panic attack","Dread","Derealization","Muscle tension","Nausea","Dizziness","Sweating","Avoidance urge","Overwhelm"] },
+      { id: "cptsd",        name: "C-PTSD / PTSD",      emoji: "🌊", color: "#7dd3fc", symptoms: ["Emotional flashback","Shame spiral","Dissociation","Hypervigilance","Freeze response","Intrusive thoughts","Nightmares","Somatic flare","Emotional flooding","Social withdrawal","Fawn fatigue","Numbness","Feeling unsafe"] },
+      { id: "ocd",          name: "OCD",                emoji: "🔁", color: "#a5b4fc", symptoms: ["Intrusive thoughts","Checking compulsion","Contamination obsession","Reassurance seeking","Mental reviewing","Avoidance compulsion","Anxiety spike","Distress from thoughts","Exhaustion from OCD cycle"] },
+      { id: "mdd",          name: "Depression (MDD)",   emoji: "🌑", color: "#94a3b8", symptoms: ["Persistent sadness","Emotional numbness","Hopelessness","Loss of interest","Difficulty starting tasks","Social withdrawal","Fatigue","Sleep changes","Appetite changes","Irritability"] },
+      { id: "bipolar",      name: "Bipolar Disorder",   emoji: "🌓", color: "#c4b5fd", symptoms: ["Mood episode","Hypomanic episode","Depressive episode","Racing thoughts","Decreased need for sleep","Impulsivity","Energy surge","Crash after episode","Irritability","Grandiosity"] },
+      { id: "bpd",          name: "BPD",                emoji: "🌪️", color: "#f9a8d4", symptoms: ["Emotional dysregulation","Fear of abandonment","Identity disturbance","Impulsivity","Shame spiral","Dissociation","Emotional flooding","Relationship difficulty","Self-harm urge","Intense mood shifts"] },
+    ]
+  },
+  {
+    group: "🔥 Chronic Pain / Connective Tissue",
+    conditions: [
+      { id: "fibromyalgia", name: "Fibromyalgia",        emoji: "🦴", color: "#FFB347", symptoms: ["Widespread pain","Tender points","Allodynia","Burning pain","Muscle stiffness","Fibro fog","Unrefreshing sleep","Post-exertional fatigue","Light sensitivity","Sound sensitivity","Temperature sensitivity"] },
+      { id: "eds",          name: "EDS / hEDS",          emoji: "🫀", color: "#fca5a5", symptoms: ["Joint hypermobility","Joint subluxation","Joint instability","Widespread pain","Easy bruising","Proprioception difficulty","POTS overlap","Fatigue","Slow healing","TMJ pain","Muscle weakness"] },
+      { id: "crps",         name: "CRPS",                emoji: "🔥", color: "#FF6B35", symptoms: ["Severe burning pain","Electric shock pain","Allodynia","Hyperalgesia","Skin color changes","Temperature changes in limb","Swelling","Sweating changes"] },
+      { id: "ra",           name: "Rheumatoid Arthritis",emoji: "🦴", color: "#f97316", symptoms: ["Joint pain","Joint swelling","Morning stiffness","Symmetric joint pain","Reduced grip strength","Fatigue","Low-grade fever","Active flare","Remission","Dry eyes"] },
+      { id: "chronicPain",  name: "Chronic Pain Syndrome",emoji: "💢", color: "#fb923c", symptoms: ["Widespread pain","Burning pain","Stabbing pain","Pain sensitivity increase","Allodynia","Hyperalgesia","Fatigue","Depression (pain)","Sleep disruption from pain"] },
+    ]
+  },
+  {
+    group: "⚡ Autonomic / Cardiovascular",
+    conditions: [
+      { id: "pots",         name: "POTS",                emoji: "💓", color: "#f43f5e", symptoms: ["Heart racing on standing","Lightheadedness on standing","Presyncope","Syncope","Palpitations","Exercise intolerance","Blood pooling","Brain fog","Fatigue","Nausea","Shakiness"] },
+      { id: "mcas",         name: "MCAS",                emoji: "🌡️", color: "#fb7185", symptoms: ["Flushing","Hives","Itching","Angioedema","Nausea","Palpitations","Throat tightness","Brain fog","Headache","Anaphylactic reaction","Abdominal cramping","Bloating"] },
+      { id: "raynauds",     name: "Raynaud's Phenomenon",emoji: "🥶", color: "#93c5fd", symptoms: ["Fingers turning white","Fingers turning blue","Cold-triggered pain","Tingling after rewarming","Color changes"] },
+    ]
+  },
+  {
+    group: "🛡️ Immune / Inflammatory",
+    conditions: [
+      { id: "lupus",        name: "Lupus (SLE)",         emoji: "🦋", color: "#c084fc", symptoms: ["Butterfly rash","Fatigue","Joint inflammation","Unexplained fever","Hair loss","Mouth ulcers","Photosensitive rash","Brain fog","Raynaud's episode","Active flare","Pleuritis","Swollen lymph nodes"] },
+      { id: "longCovid",    name: "Long COVID",           emoji: "🦠", color: "#6ee7b7", symptoms: ["Post-exertional malaise","Severe fatigue","Brain fog","Parosmia","Anosmia","Palpitations","POTS overlap","Tinnitus","Light sensitivity","Peripheral neuropathy","Recurring infections","Grief about lost capacity"] },
+      { id: "sjögrens",     name: "Sjögren's Syndrome",  emoji: "👁️", color: "#a5f3fc", symptoms: ["Dry eyes","Burning eyes","Dry mouth","Difficulty swallowing","Fatigue","Swollen glands","Flu-like malaise","Joint pain"] },
+      { id: "celiac",       name: "Celiac Disease",      emoji: "🌾", color: "#fde68a", symptoms: ["Abdominal pain","Bloating","Chronic diarrhea","Constipation","Iron deficiency","Fatigue","Weight loss","Dermatitis herpetiformis"] },
+      { id: "mecfs",        name: "ME / CFS",            emoji: "🛌", color: "#c4b5fd", symptoms: ["Post-exertional malaise","Severe fatigue","Unrefreshing sleep","Delayed crash","Brain fog","Cognitive fatigue","Word-finding difficulty","Orthostatic intolerance"] },
+    ]
+  },
+  {
+    group: "🧠 Neurological",
+    conditions: [
+      { id: "ms",           name: "Multiple Sclerosis",  emoji: "⚡", color: "#818cf8", symptoms: ["Numbness/tingling","Spasticity","Fatigue","Balance problems","Bladder urgency","Brain fog","Heat sensitivity","Optic neuritis","Tremor","Cognitive fatigue","Relapse flag"] },
+      { id: "seizure",      name: "Seizure Disorders",   emoji: "⚡", color: "#a78bfa", symptoms: ["Absence episode","Tonic-clonic episode","Post-ictal fatigue","Post-ictal confusion","Myoclonic jerks","Aura","Mood change before seizure","Memory gap after seizure"] },
+      { id: "migraine",     name: "Migraine",            emoji: "🌩️", color: "#8b5cf6", symptoms: ["Head pain","Nausea","Light sensitivity","Sound sensitivity","Aura","Visual disturbance","Fatigue (post-migraine)","Neck stiffness","Dizziness"] },
+      { id: "tbiPostConcussion", name: "TBI / Post-Concussion", emoji: "🧠", color: "#6d28d9", symptoms: ["Persistent headache","Dizziness","Brain fog","Memory difficulty","Light sensitivity","Sound sensitivity","Screen intolerance","Balance problems","Slowed processing"] },
+      { id: "fnd",          name: "FND",                 emoji: "🌀", color: "#7c3aed", symptoms: ["Functional weakness","Tremor episodes","Walking difficulty","Coordination problems","Numbness","Speech difficulty","Vision changes","Fatigue"] },
+      { id: "narcolepsy",   name: "Narcolepsy / Hypersomnia", emoji: "😴", color: "#4f46e5", symptoms: ["Sleep attacks","Excessive daytime sleepiness","Cataplexy","Sleep paralysis","Hypnagogic hallucinations","Unrefreshing sleep","Brain fog","Microsleeps"] },
+    ]
+  },
+  {
+    group: "🫄 GI / Digestive",
+    conditions: [
+      { id: "ibs",          name: "IBS",                 emoji: "🫄", color: "#84cc16", symptoms: ["Abdominal cramping","Bloating","Constipation","Diarrhea","Urgency","Incomplete evacuation","Gas","Mucus in stool","Nausea","Fatigue"] },
+      { id: "crohns",       name: "Crohn's Disease",     emoji: "🔬", color: "#65a30d", symptoms: ["Abdominal pain","Diarrhea","Blood in stool","Urgency","Fatigue","Unexplained fever","Weight loss","Nausea","Active flare","Joint pain (Crohn's)"] },
+      { id: "gerd",         name: "GERD / Acid Reflux",  emoji: "🔥", color: "#a3e635", symptoms: ["Heartburn","Acid regurgitation","Sour taste","Chest pain","Difficulty swallowing","Chronic cough","Hoarseness","Throat clearing"] },
+      { id: "gastroparesis",name: "Gastroparesis",       emoji: "🫃", color: "#bef264", symptoms: ["Early fullness","Nausea","Vomiting","Bloating","Abdominal pain","Poor appetite","Blood sugar instability from delayed digestion"] },
+    ]
+  },
+  {
+    group: "🔄 Hormonal / Reproductive",
+    conditions: [
+      { id: "pcos",         name: "PCOS",                emoji: "🔄", color: "#f9a8d4", symptoms: ["Irregular periods","Hormonal acne","Hair thinning","Hirsutism","Mood swings","Fatigue","Weight gain","Bloating","Pelvic pain","Ovulation pain","Brain fog (hormonal)","Insulin resistance"] },
+      { id: "endometriosis",name: "Endometriosis",       emoji: "🌸", color: "#fb7185", symptoms: ["Severe cramps","Pelvic pain outside cycle","Heavy periods","Lower back pain","Hip pain","Bloating","Nausea","Constipation during cycle","Fatigue","Fertility difficulty"] },
+      { id: "pmdd",         name: "PMDD",                emoji: "🌊", color: "#e879f9", symptoms: ["Premenstrual dysphoria","Rage (PMDD)","Severe mood swings","Depersonalization","Hopelessness","Breast pain","Bloating","Fatigue","Sleep changes","Intrusive thoughts (PMDD)"] },
+      { id: "perimenopause",name: "Perimenopause / Menopause", emoji: "🌡️", color: "#fda4af", symptoms: ["Hot flashes","Night sweats","Irregular periods","Brain fog","Word-finding difficulty","Sleep disruption","Mood changes","Joint pain","Fatigue","Vaginal dryness"] },
+      { id: "hypothyroidism", name: "Hypothyroidism",   emoji: "🐢", color: "#a5f3fc", symptoms: ["Fatigue","Cold intolerance","Cold hands/feet","Weight gain","Constipation","Dry skin","Hair thinning","Brain fog","Memory difficulty","Depression (thyroid)","Slow heart rate","Hoarse voice"] },
+      { id: "hyperthyroidism", name: "Hyperthyroidism / Graves'", emoji: "⚡", color: "#fde68a", symptoms: ["Heat intolerance","Excessive sweating","Weight loss","Tremor","Rapid heartbeat","Muscle weakness","Anxiety (hyperthyroid)","Irritability","Insomnia","Eye bulging (Graves')"] },
+    ]
+  },
+  {
+    group: "💧 Other",
+    conditions: [
+      { id: "insomnia",     name: "Insomnia / Sleep Disorders", emoji: "🌙", color: "#1d4ed8", symptoms: ["Difficulty falling asleep","Racing thoughts at bedtime","Frequent waking","Early morning waking","Unrefreshing sleep","Daytime fatigue","Sleep paralysis","Hypnic jerks","Nightmares"] },
+      { id: "diabetesT1",   name: "Diabetes Type 1",   emoji: "💉", color: "#22d3ee", symptoms: ["Shakiness (low BG)","Sweating (low BG)","Confusion (low BG)","Increased thirst","Frequent urination","Fatigue","Blurred vision","Slow healing","DKA symptoms"] },
+      { id: "diabetesT2",   name: "Diabetes Type 2",   emoji: "🩸", color: "#06b6d4", symptoms: ["Energy crash after eating","Brain fog after eating","Increased thirst","Frequent urination","Fatigue","Tingling/numbness","Blurred vision","Slow healing"] },
+      { id: "asthma",       name: "Asthma",            emoji: "🫁", color: "#7dd3fc", symptoms: ["Wheezing","Chest tightness","Shortness of breath","Persistent cough","Exercise trigger","Night symptoms"] },
+      { id: "ic",           name: "Interstitial Cystitis", emoji: "💧", color: "#94a3b8", symptoms: ["Bladder pain","Urinary urgency","Frequent urination","Pelvic pain","Pain with full bladder","Flare after certain foods"] },
+    ]
+  },
+];
+
+// Flatten for lookup
+const ALL_CONDITIONS = CONDITIONS_BY_GROUP.flatMap(g => g.conditions);
+
+// Build symptom pool from selected conditions
+function buildSymptomPool(selectedIds) {
+  const seen = new Set();
+  const result = [];
+  selectedIds.forEach(condId => {
+    const cond = ALL_CONDITIONS.find(c => c.id === condId);
+    if (!cond) return;
+    cond.symptoms.forEach(symptom => {
+      if (!seen.has(symptom)) {
+        seen.add(symptom);
+        result.push({ label: symptom, sourceConditions: [condId] });
+      } else {
+        const existing = result.find(s => s.label === symptom);
+        if (existing && !existing.sourceConditions.includes(condId)) {
+          existing.sourceConditions.push(condId);
+        }
+      }
+    });
+  });
+  return result;
+}
+
+// Infer categories from symptom labels (heuristic for prototype)
+function inferCategory(label) {
+  const l = label.toLowerCase();
+  if (l.includes("pain") || l.includes("allodynia") || l.includes("hyperalgesia") || l.includes("aching") || l.includes("tender")) return "pain";
+  if (l.includes("fog") || l.includes("memory") || l.includes("concentration") || l.includes("focus") || l.includes("word") || l.includes("processing") || l.includes("paralysis") || l.includes("blindness") || l.includes("cognitive") || l.includes("executive") || l.includes("inattention")) return "cognitive";
+  if (l.includes("fatigue") || l.includes("weakness") || l.includes("healing") || l.includes("thirst") || l.includes("urination") || l.includes("weight") || l.includes("appetite") || l.includes("exercise intolerance")) return "physical";
+  if (l.includes("mood") || l.includes("emotion") || l.includes("dysreg") || l.includes("shame") || l.includes("dread") || l.includes("dissociation") || l.includes("anxiety") || l.includes("depression") || l.includes("irritab") || l.includes("rage") || l.includes("hopeless") || l.includes("numbness") || l.includes("sadness") || l.includes("flashback") || l.includes("grief") || l.includes("fear") || l.includes("panic") || l.includes("overwhelm") || l.includes("withdrawal") || l.includes("avoidance") || l.includes("rumination")) return "mood";
+  if (l.includes("sleep") || l.includes("waking") || l.includes("insomnia") || l.includes("nightmar") || l.includes("hypnic") || l.includes("paralysis")) return "sleep";
+  if (l.includes("nausea") || l.includes("bloating") || l.includes("constipation") || l.includes("diarrhea") || l.includes("abdominal") || l.includes("gut") || l.includes("stool") || l.includes("urgency") || l.includes("cramping") || l.includes("reflux") || l.includes("heartburn") || l.includes("acid") || l.includes("swallow")) return "gi";
+  if (l.includes("skin") || l.includes("rash") || l.includes("hives") || l.includes("flushing") || l.includes("bruising") || l.includes("acne") || l.includes("hair") || l.includes("dry skin") || l.includes("itch")) return "skin";
+  if (l.includes("palpitation") || l.includes("heart racing") || l.includes("syncope") || l.includes("presyncope") || l.includes("lightheaded") || l.includes("standing") || l.includes("blood pooling") || l.includes("tachycardia")) return "autonomic";
+  if (l.includes("sensory") || l.includes("sensitivity") || l.includes("overload") || l.includes("light") || l.includes("sound") || l.includes("smell") || l.includes("touch") || l.includes("interoception") || l.includes("screen")) return "sensory";
+  if (l.includes("joint") || l.includes("muscle") || l.includes("stiffness") || l.includes("mobility") || l.includes("subluxation") || l.includes("dislocation") || l.includes("hypermobility") || l.includes("grip") || l.includes("spasm") || l.includes("coordination")) return "musculoskeletal";
+  if (l.includes("fever") || l.includes("immune") || l.includes("inflammation") || l.includes("flare") || l.includes("swollen lymph") || l.includes("malaise")) return "immune";
+  if (l.includes("hormonal") || l.includes("period") || l.includes("cycle") || l.includes("hot flash") || l.includes("night sweat") || l.includes("pelvic") || l.includes("ovulation") || l.includes("thyroid") || l.includes("insulin")) return "hormonal";
+  if (l.includes("breathing") || l.includes("breath") || l.includes("wheez") || l.includes("cough") || l.includes("respiratory") || l.includes("chest tight")) return "respiratory";
+  if (l.includes("bladder") || l.includes("urinary") || l.includes("urination")) return "urological";
+  if (l.includes("tremor") || l.includes("seizure") || l.includes("aura") || l.includes("dizziness") || l.includes("vertigo") || l.includes("numbness") || l.includes("tingling") || l.includes("neuropathy") || l.includes("tinnitus") || l.includes("optic") || l.includes("neurological")) return "neurological";
+  return "physical";
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SUBCOMPONENTS
+// ══════════════════════════════════════════════════════════════════
+
+function StepIndicator({ current, total }) {
+  return (
+    <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} style={{
+          height: 3, flex: 1, borderRadius: 2,
+          background: i < current ? "#a78bfa" : i === current ? "#7c3aed" : "rgba(167,139,250,0.2)",
+          transition: "all 0.3s ease"
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function ConditionChip({ condition, selected, onToggle }) {
+  const count = condition.symptoms.length;
+  return (
+    <button onClick={() => onToggle(condition.id)} style={{
+      display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
+      borderRadius: 20, border: `1.5px solid ${selected ? condition.color : "rgba(255,255,255,0.1)"}`,
+      background: selected ? `${condition.color}22` : "rgba(255,255,255,0.04)",
+      color: selected ? condition.color : "rgba(255,255,255,0.7)",
+      cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+      transition: "all 0.18s ease", whiteSpace: "nowrap",
+    }}>
+      <span>{condition.emoji}</span>
+      <span>{condition.name}</span>
+      <span style={{
+        fontSize: 10, fontWeight: 600, opacity: selected ? 0.65 : 0.35,
+        marginLeft: 1, letterSpacing: "0.02em",
+      }}>{count}</span>
+      {selected && <span style={{ fontSize: 10, opacity: 0.8 }}>✓</span>}
+    </button>
+  );
+}
+
+function SymptomChip({ symptom, checked, onToggle, sourceConditions, allConditions }) {
+  const catId = inferCategory(symptom.label);
+  const cat = CATEGORY_REGISTRY[catId] || CATEGORY_REGISTRY.physical;
+  const sourceConds = sourceConditions.map(id => allConditions.find(c => c.id === id)?.name).filter(Boolean);
+  return (
+    <button onClick={() => onToggle(symptom.label)} title={sourceConds.length > 1 ? `Shared by: ${sourceConds.join(", ")}` : undefined}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px",
+        borderRadius: 16, border: `1.5px solid ${checked ? cat.color : "rgba(255,255,255,0.1)"}`,
+        background: checked ? `${cat.color}1a` : "rgba(255,255,255,0.03)",
+        color: checked ? cat.color : "rgba(255,255,255,0.55)",
+        cursor: "pointer", fontSize: 12, fontWeight: checked ? 700 : 500, fontFamily: "inherit",
+        transition: "all 0.15s ease", position: "relative",
+      }}>
+      {sourceConditions.length > 1 && (
+        <span style={{
+          position: "absolute", top: -3, right: -3, background: "#a78bfa",
+          color: "#fff", fontSize: 8, fontWeight: 800, borderRadius: 8, padding: "1px 4px", lineHeight: 1.4
+        }}>{sourceConditions.length}</span>
+      )}
+      {checked ? "✓" : "+"} {symptom.label}
+    </button>
+  );
+}
+
+function CategoryFilter({ selected, onSelect, available }) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+      <button onClick={() => onSelect("all")} style={{
+        padding: "5px 12px", borderRadius: 20, border: "1.5px solid",
+        borderColor: selected === "all" ? "#a78bfa" : "rgba(255,255,255,0.12)",
+        background: selected === "all" ? "rgba(167,139,250,0.15)" : "transparent",
+        color: selected === "all" ? "#a78bfa" : "rgba(255,255,255,0.55)",
+        fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit"
+      }}>All</button>
+      {available.map(catId => {
+        const cat = CATEGORY_REGISTRY[catId];
+        if (!cat) return null;
+        return (
+          <button key={catId} onClick={() => onSelect(catId)} style={{
+            padding: "5px 12px", borderRadius: 20, border: "1.5px solid",
+            borderColor: selected === catId ? cat.color : "rgba(255,255,255,0.12)",
+            background: selected === catId ? `${cat.color}22` : "transparent",
+            color: selected === catId ? cat.color : "rgba(255,255,255,0.55)",
+            fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit"
+          }}>{cat.emoji} {cat.label}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEP 0 — WELCOME
+// ══════════════════════════════════════════════════════════════════
+function StepWelcome({ onNext, onSkip }) {
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ fontSize: 52, marginBottom: 16, lineHeight: 1 }}>🩺</div>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 8 }}>Health Tracker Setup</div>
+      <h2 style={{ fontSize: 28, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 12 }}>Build Your Symptom<br />Watchlist</h2>
+      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: 1.65, marginBottom: 24 }}>
+        We'll ask about your conditions to build your personal symptom list automatically.
+        Takes 2–3 minutes. Skip anything, change it all later.
+      </p>
+      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 18, marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>🗺️ What we'll do</div>
+        {[
+          ["1", "Select conditions", "Pick your diagnoses from a searchable grouped list"],
+          ["2", "Review your pool", "See all suggested symptoms — deselect any you don't want"],
+          ["3", "Set preferences", "How many chips to show, severity scale, illness tracking"],
+        ].map(([num, title, hint]) => (
+          <div key={num} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
+            <div style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)", color: "#a78bfa", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{num}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{title}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{hint}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={onSkip} style={{ padding: "12px 16px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, background: "transparent", color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Skip for now</button>
+        <button onClick={onNext} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Let's go →</button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEP 1 — SELECT CONDITIONS
+// ══════════════════════════════════════════════════════════════════
+function StepConditions({ selected, onToggle, onNext, onBack, customConditions, setCustomConditions }) {
+  const [search, setSearch] = useState("");
+  // All groups collapsed by default — user expands what's relevant
+  const [collapsed, setCollapsed] = useState(() =>
+    Object.fromEntries(CONDITIONS_BY_GROUP.map(g => [g.group, true]))
+  );
+  const [customInput, setCustomInput] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return CONDITIONS_BY_GROUP;
+    const q = search.toLowerCase();
+    return CONDITIONS_BY_GROUP.map(g => ({
+      ...g,
+      conditions: g.conditions.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
+    })).filter(g => g.conditions.length > 0);
+  }, [search]);
+
+  // Auto-expand groups that have search matches
+  const prevSearch = useRef("");
+  useEffect(() => {
+    if (search.trim() && !prevSearch.current.trim()) {
+      setCollapsed(Object.fromEntries(CONDITIONS_BY_GROUP.map(g => [g.group, false])));
+    } else if (!search.trim() && prevSearch.current.trim()) {
+      setCollapsed(Object.fromEntries(CONDITIONS_BY_GROUP.map(g => [g.group, true])));
+    }
+    prevSearch.current = search;
+  }, [search]);
+
+  const toggleGroup = (group) => setCollapsed(prev => ({ ...prev, [group]: !prev[group] }));
+
+  const addCustomCondition = () => {
+    const val = customInput.trim();
+    if (!val) return;
+    const exists = ALL_CONDITIONS.some(c => c.name.toLowerCase() === val.toLowerCase());
+    const alreadyCustom = customConditions.some(c => c.name.toLowerCase() === val.toLowerCase());
+    if (!exists && !alreadyCustom) {
+      const newId = "custom_" + val.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+      setCustomConditions(prev => [...prev, { id: newId, name: val, emoji: "📌", color: "#a78bfa", symptoms: [], custom: true }]);
+      onToggle(newId);
+    }
+    setCustomInput("");
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 8 }}>Step 1 of 3</div>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Select Your Conditions</h2>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 16, lineHeight: 1.5 }}>Tap everything that applies. Your symptom watchlist is built automatically.</p>
+
+      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search conditions…"
+        style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1.5px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", marginBottom: 12, boxSizing: "border-box" }} />
+
+      <div style={{ maxHeight: 360, overflowY: "auto", marginBottom: 14, paddingRight: 4 }}>
+        {filtered.map(({ group, conditions }) => {
+          const isOpen = !collapsed[group];
+          const groupSelected = conditions.filter(c => selected.includes(c.id)).length;
+          return (
+            <div key={group} style={{ marginBottom: 8 }}>
+              <button onClick={() => toggleGroup(group)} style={{
+                display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.07)", borderRadius: isOpen ? "10px 10px 0 0" : 10,
+                color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: 800, textTransform: "uppercase",
+                letterSpacing: "0.05em", cursor: "pointer", padding: "9px 14px", width: "100%", textAlign: "left",
+                fontFamily: "inherit", transition: "background 0.15s",
+              }}>
+                <span style={{ fontSize: 11, color: isOpen ? "#a78bfa" : "rgba(255,255,255,0.3)", transition: "color 0.15s" }}>{isOpen ? "▼" : "▶"}</span>
+                <span style={{ flex: 1 }}>{group}</span>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>{conditions.length} conditions</span>
+                {groupSelected > 0 && (
+                  <span style={{ fontSize: 10, fontWeight: 800, background: "rgba(167,139,250,0.2)", color: "#a78bfa", padding: "2px 7px", borderRadius: 10 }}>
+                    {groupSelected} ✓
+                  </span>
+                )}
+              </button>
+              {isOpen && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "10px 12px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderTop: "none", borderRadius: "0 0 10px 10px" }}>
+                  {conditions.map(cond => (
+                    <ConditionChip key={cond.id} condition={cond} selected={selected.includes(cond.id)} onToggle={onToggle} />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Custom conditions from user */}
+        {customConditions.length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 7, padding: "0 2px" }}>📌 Added by you</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {customConditions.map(cond => (
+                <ConditionChip key={cond.id} condition={cond} selected={selected.includes(cond.id)} onToggle={onToggle} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Don't see yours */}
+        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px 14px", marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+            Don't see yours? Add it:
+          </div>
+          <div style={{ display: "flex", gap: 7 }}>
+            <input value={customInput} onChange={e => setCustomInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && addCustomCondition()}
+              placeholder="e.g. Chronic Lyme, Mold illness…"
+              style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+            <button onClick={addCustomCondition} disabled={!customInput.trim()} style={{
+              padding: "8px 14px", borderRadius: 8, border: "none",
+              background: customInput.trim() ? "rgba(167,139,250,0.2)" : "rgba(255,255,255,0.05)",
+              color: customInput.trim() ? "#a78bfa" : "rgba(255,255,255,0.2)",
+              fontSize: 12, fontWeight: 700, cursor: customInput.trim() ? "pointer" : "not-allowed", fontFamily: "inherit"
+            }}>+ Add</button>
+          </div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
+            Custom conditions won't have auto-suggested symptoms — you'll build the pool manually in Step 2.
+          </div>
+        </div>
+      </div>
+
+      {selected.length > 0 && (
+        <div style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 10, padding: "10px 14px", marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 6 }}>Selected ({selected.length})</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            {selected.map(id => {
+              const cond = [...ALL_CONDITIONS, ...customConditions].find(c => c.id === id);
+              return cond ? (
+                <span key={id} style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 10 }}>{cond.emoji} {cond.name}</span>
+              ) : null;
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={onBack} style={{ padding: "12px 16px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, background: "transparent", color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>
+        <button onClick={onNext} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: selected.length > 0 ? "#7c3aed" : "rgba(255,255,255,0.1)", color: selected.length > 0 ? "#fff" : "rgba(255,255,255,0.3)", fontSize: 15, fontWeight: 800, cursor: selected.length > 0 ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all 0.2s" }}>
+          {selected.length > 0 ? `Review ${buildSymptomPool(selected).length} symptoms →` : "Select at least one condition"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEP 2 — REVIEW SYMPTOM POOL
+// ══════════════════════════════════════════════════════════════════
+function StepSymptomPool({ selectedConditions, checkedSymptoms, setCheckedSymptoms, onNext, onBack, customSymptoms, setCustomSymptoms }) {
+  const [catFilter, setCatFilter] = useState("all");
+  const [catCollapsed, setCatCollapsed] = useState({});
+  const [bulkText, setBulkText] = useState("");
+  const [customInput, setCustomInput] = useState("");
+  const pool = useMemo(() => buildSymptomPool(selectedConditions), [selectedConditions]);
+
+  const toggleCat = (catId) => setCatCollapsed(prev => ({ ...prev, [catId]: !prev[catId] }));
+
+  const grouped = useMemo(() => {
+    const g = {};
+    pool.forEach(s => {
+      const cat = inferCategory(s.label);
+      if (!g[cat]) g[cat] = [];
+      g[cat].push(s);
+    });
+    return g;
+  }, [pool]);
+
+  const availableCats = Object.keys(grouped);
+
+  const filteredPool = catFilter === "all" ? pool : pool.filter(s => inferCategory(s.label) === catFilter);
+
+  const toggleSymptom = (label) => {
+    setCheckedSymptoms(prev =>
+      prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
+    );
+  };
+
+  const selectAll = () => setCheckedSymptoms(pool.map(s => s.label));
+  const deselectAll = () => setCheckedSymptoms([]);
+
+  const addCustom = () => {
+    const val = customInput.trim();
+    if (val && !pool.some(s => s.label.toLowerCase() === val.toLowerCase()) && !customSymptoms.includes(val)) {
+      setCustomSymptoms(prev => [...prev, val]);
+      setCheckedSymptoms(prev => [...prev, val]);
+    }
+    setCustomInput("");
+  };
+
+  const importBulk = () => {
+    const lines = bulkText.split("\n").map(l => l.trim()).filter(Boolean);
+    const newSymptoms = lines.filter(l => !pool.some(s => s.label.toLowerCase() === l.toLowerCase()) && !customSymptoms.includes(l));
+    if (newSymptoms.length) {
+      setCustomSymptoms(prev => [...prev, ...newSymptoms]);
+      setCheckedSymptoms(prev => [...prev, ...newSymptoms]);
+    }
+    setBulkText("");
+  };
+
+  const dupCount = pool.filter(s => s.sourceConditions.length > 1).length;
+  const totalChecked = checkedSymptoms.length;
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 8 }}>Step 2 of 3</div>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Review Your Symptom Pool</h2>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 6 }}>
+        Based on: {selectedConditions.map(id => ALL_CONDITIONS.find(c => c.id === id)?.name).filter(Boolean).join(" · ")}
+      </p>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+          {pool.length} symptoms · {dupCount} duplicates merged
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: 11, color: "#a78bfa", fontWeight: 700 }}>
+          {totalChecked} selected
+        </span>
+        <button onClick={selectAll} style={{ padding: "4px 10px", borderRadius: 16, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.1)", color: "#a78bfa", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>All</button>
+        <button onClick={deselectAll} style={{ padding: "4px 10px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>None</button>
+      </div>
+
+      <CategoryFilter selected={catFilter} onSelect={setCatFilter} available={availableCats} />
+
+      <div style={{ maxHeight: 280, overflowY: "auto", marginBottom: 14, paddingRight: 4 }}>
+        {catFilter === "all" ? (
+          availableCats.map(catId => {
+            const cat = CATEGORY_REGISTRY[catId] || CATEGORY_REGISTRY.physical;
+            const syms = grouped[catId] || [];
+            const checkedInCat = syms.filter(s => checkedSymptoms.includes(s.label)).length;
+            const isOpen = !catCollapsed[catId];
+            return (
+              <div key={catId} style={{ marginBottom: 8 }}>
+                <button onClick={() => toggleCat(catId)} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: isOpen ? "10px 10px 0 0" : 10,
+                  padding: "8px 12px", width: "100%", cursor: "pointer", fontFamily: "inherit",
+                  transition: "border-radius 0.15s",
+                }}>
+                  <span style={{ fontSize: 11, color: isOpen ? cat.color : "rgba(255,255,255,0.3)" }}>{isOpen ? "▼" : "▶"}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: cat.color, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }}>
+                    {cat.emoji} {cat.label}
+                  </span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>{syms.length}</span>
+                  {checkedInCat > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 800, background: `${cat.color}22`, color: cat.color, padding: "2px 7px", borderRadius: 10 }}>
+                      {checkedInCat} ✓
+                    </span>
+                  )}
+                </button>
+                {isOpen && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "8px 10px 10px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderTop: "none", borderRadius: "0 0 10px 10px" }}>
+                    {syms.map(s => (
+                      <SymptomChip key={s.label} symptom={s} checked={checkedSymptoms.includes(s.label)} onToggle={toggleSymptom} sourceConditions={s.sourceConditions} allConditions={ALL_CONDITIONS} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            {filteredPool.map(s => (
+              <SymptomChip key={s.label} symptom={s} checked={checkedSymptoms.includes(s.label)} onToggle={toggleSymptom} sourceConditions={s.sourceConditions} allConditions={ALL_CONDITIONS} />
+            ))}
+          </div>
+        )}
+
+        {customSymptoms.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", marginBottom: 7, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              ✏️ Custom ({customSymptoms.length})
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {customSymptoms.map(label => (
+                <button key={label} onClick={() => toggleSymptom(label)} style={{
+                  display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px",
+                  borderRadius: 16, border: `1.5px solid ${checkedSymptoms.includes(label) ? "#fbbf24" : "rgba(255,255,255,0.1)"}`,
+                  background: checkedSymptoms.includes(label) ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.03)",
+                  color: checkedSymptoms.includes(label) ? "#fbbf24" : "rgba(255,255,255,0.45)",
+                  cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit"
+                }}>✏️ {label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 14, marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>── Or add custom ──</div>
+        <div style={{ display: "flex", gap: 7, marginBottom: 10 }}>
+          <input value={customInput} onChange={e => setCustomInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addCustom()} placeholder="Add a symptom…"
+            style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+          <button onClick={addCustom} style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "rgba(167,139,250,0.2)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Add</button>
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginBottom: 5 }}>Bulk add (one per line):</div>
+        <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} placeholder={"Burning feet\nPost-exertional malaise\nChemical sensitivity"}
+          style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 12, fontFamily: "inherit", outline: "none", minHeight: 70, resize: "vertical", boxSizing: "border-box" }} />
+        <button onClick={importBulk} disabled={!bulkText.trim()} style={{ marginTop: 7, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(167,139,250,0.3)", background: "rgba(167,139,250,0.08)", color: bulkText.trim() ? "#a78bfa" : "rgba(255,255,255,0.2)", fontSize: 11, fontWeight: 700, cursor: bulkText.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>Import ↑</button>
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={onBack} style={{ padding: "12px 16px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, background: "transparent", color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>
+        <button onClick={onNext} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+          Next → ({totalChecked} symptoms)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEP 3 — PREFERENCES
+// ══════════════════════════════════════════════════════════════════
+function StepPreferences({ prefs, setPrefs, onNext, onBack }) {
+  const opt = (key, val) => (
+    <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: prefs[key] === val ? "rgba(167,139,250,0.1)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${prefs[key] === val ? "#a78bfa" : "rgba(255,255,255,0.08)"}`, borderRadius: 10, cursor: "pointer", marginBottom: 6 }}>
+      <input type="radio" name={key} value={val} checked={prefs[key] === val} onChange={() => setPrefs(p => ({ ...p, [key]: val }))} style={{ accentColor: "#a78bfa" }} />
+      <span style={{ fontSize: 13, fontWeight: 600, color: prefs[key] === val ? "#fff" : "rgba(255,255,255,0.55)" }}>{val}</span>
+    </label>
+  );
+
+  const toggle = (key) => setPrefs(p => ({ ...p, [key]: !p[key] }));
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 8 }}>Step 3 of 3</div>
+      <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Quick Preferences</h2>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 20 }}>All have sensible defaults. Tap Finish without changing anything — editable later.</p>
+
+      {[
+        { label: "Check-in chips to show", key: "chipCount", options: ["6", "8", "12", "Show all"] },
+        { label: "Group chips by", key: "groupBy", options: ["Category (Pain, Cognitive…)", "Condition (Fibro, POTS…)", "Alphabetical"] },
+        { label: "Severity mode", key: "severityMode", options: ["1–10 scale", "Low / Med / High", "Tap to log only"] },
+      ].map(({ label, key, options }) => (
+        <div key={key} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 14px 8px", marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 10 }}>{label}</div>
+          {options.map(v => opt(key, v))}
+        </div>
+      ))}
+
+      {[
+        { label: "🤒 Track illness episodes separately", key: "illnessTracking", hint: "Enables the Illness Quick-Log panel" },
+        { label: "🔔 Flare alerts", key: "flareAlerts", hint: "Notify when high-severity symptoms are logged" },
+      ].map(({ label, key, hint }) => (
+        <button key={key} onClick={() => toggle(key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: prefs[key] ? "rgba(167,139,250,0.1)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${prefs[key] ? "#a78bfa" : "rgba(255,255,255,0.08)"}`, borderRadius: 12, cursor: "pointer", marginBottom: 10, textAlign: "left", fontFamily: "inherit" }}>
+          <div style={{ width: 36, height: 20, borderRadius: 10, background: prefs[key] ? "#a78bfa" : "rgba(255,255,255,0.15)", position: "relative", flexShrink: 0, transition: "all 0.2s" }}>
+            <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: prefs[key] ? 18 : 2, transition: "all 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{label}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{hint}</div>
+          </div>
+        </button>
+      ))}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+        <button onClick={onBack} style={{ padding: "12px 16px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, background: "transparent", color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>
+        <button onClick={onNext} style={{ flex: 1, padding: "13px", borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Finish setup ✓</button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FINISH SCREEN
+// ══════════════════════════════════════════════════════════════════
+function StepFinish({ selectedConditions, checkedSymptoms, prefs, onDone }) {
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease", textAlign: "center" }}>
+      <div style={{ fontSize: 52, marginBottom: 12 }}>✅</div>
+      <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 8 }}>You're all set!</h2>
+      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: 1.65, marginBottom: 24 }}>
+        {checkedSymptoms.length} symptoms added to your watchlist
+      </p>
+      <div style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 14, padding: 18, marginBottom: 20, textAlign: "left" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>Summary</div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>
+          <span style={{ color: "#a78bfa", fontWeight: 700 }}>{checkedSymptoms.length}</span> symptoms in watchlist
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>
+          <span style={{ fontWeight: 600 }}>Conditions:</span> {selectedConditions.map(id => ALL_CONDITIONS.find(c => c.id === id)?.name).filter(Boolean).join(" · ")}
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>
+          <span style={{ fontWeight: 600 }}>Severity:</span> {prefs.severityMode}
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+          <span style={{ fontWeight: 600 }}>Illness tracking:</span> {prefs.illnessTracking ? "Enabled" : "Disabled"}
+        </div>
+      </div>
+      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>
+        Edit your conditions anytime in Health Tracker → Setup.
+      </p>
+      <button onClick={onDone} style={{ width: "100%", padding: "14px", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #7c3aed, #a78bfa)", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+        Go to Health Tracker →
+      </button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MAIN APP
+// ══════════════════════════════════════════════════════════════════
+const STEPS = ["welcome", "conditions", "pool", "prefs", "finish"];
+const STEP_LABELS = ["Welcome", "Conditions", "Symptom Pool", "Preferences", "Done"];
+
+const DEFAULT_PREFS = {
+  chipCount: "12",
+  groupBy: "Category (Pain, Cognitive…)",
+  severityMode: "1–10 scale",
+  illnessTracking: true,
+  flareAlerts: false,
+};
+
+export default function HealthSetupWizard() {
+  const [step, setStep] = useState(0);
+  const [selectedConditions, setSelectedConditions] = useState([]);
+  const [checkedSymptoms, setCheckedSymptoms] = useState([]);
+  const [customSymptoms, setCustomSymptoms] = useState([]);
+  const [customConditions, setCustomConditions] = useState([]);
+  const [prefs, setPrefs] = useState(DEFAULT_PREFS);
+  const [done, setDone] = useState(false);
+
+  const pool = useMemo(() => buildSymptomPool(selectedConditions), [selectedConditions]);
+
+  // Auto-check all when pool changes (new conditions added)
+  useEffect(() => {
+    setCheckedSymptoms(pool.map(s => s.label));
+  }, [pool.length]);
+
+  const toggleCondition = (id) => {
+    setSelectedConditions(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const progress = step / (STEPS.length - 1);
+
+  if (done) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0d0a1e", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ maxWidth: 480, width: "100%" }}>
+          <div style={{ textAlign: "center", fontSize: 64, marginBottom: 20 }}>🎉</div>
+          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 15 }}>Setup complete! This wizard would close and navigate to the Health Tracker.</div>
+          <button onClick={() => { setDone(false); setStep(0); setSelectedConditions([]); setCheckedSymptoms([]); setCustomSymptoms([]); setCustomConditions([]); setPrefs(DEFAULT_PREFS); }}
+            style={{ marginTop: 24, width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+            ↩ Run wizard again (demo)
+          </button>
+        </div>
+        <style>{`@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }`}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0d0a1e",
+      fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+      color: "#fff",
+    }}>
+      <style>{`
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 4px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+      `}</style>
+
+      {/* Sticky header */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(13,10,30,0.95)", backdropFilter: "blur(12px)", padding: "14px 20px 12px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa" }}>🩺 Health Setup</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>
+              {STEP_LABELS[step]}
+            </div>
+          </div>
+          <StepIndicator current={step} total={STEPS.length} />
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 20px 120px" }}>
+        {step === 0 && <StepWelcome onNext={() => setStep(1)} onSkip={() => setDone(true)} />}
+        {step === 1 && <StepConditions selected={selectedConditions} onToggle={toggleCondition} onNext={() => setStep(2)} onBack={() => setStep(0)} customConditions={customConditions} setCustomConditions={setCustomConditions} />}
+        {step === 2 && <StepSymptomPool selectedConditions={selectedConditions} checkedSymptoms={checkedSymptoms} setCheckedSymptoms={setCheckedSymptoms} customSymptoms={customSymptoms} setCustomSymptoms={setCustomSymptoms} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+        {step === 3 && <StepPreferences prefs={prefs} setPrefs={setPrefs} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
+        {step === 4 && <StepFinish selectedConditions={selectedConditions} checkedSymptoms={checkedSymptoms} prefs={prefs} onDone={() => setDone(true)} />}
+      </div>
+    </div>
+  );
+}

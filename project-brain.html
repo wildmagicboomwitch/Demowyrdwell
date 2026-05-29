@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗂 Project Brain — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<link rel="stylesheet" href="pages/project-brain.css">
+</head>
+<body>
+<!-- hq-core.js injects: topbar, sidenav, bottom-nav, toast, theme CSS -->
+<div id="appWrap" class="app-wrap">
+
+<!-- HERO ────────────────────────────────────────────────────────── -->
+<div class="hero">
+
+  <div class="hero-curve"></div>
+  <div class="hero-content">
+    <div class="hero-row">
+      <div>
+        <div class="day-label" id="dayLabel">Projects</div>
+
+      </div>
+      <div class="hero-right">
+        <div class="hero-stat"><div class="hero-stat-val" id="statTotal">0</div><div class="hero-stat-lbl">Total</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="statActive">0</div><div class="hero-stat-lbl">Active</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="statDone">0</div><div class="hero-stat-lbl">Done</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="statStalled">0</div><div class="hero-stat-lbl">Stalled</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="statPaused">0</div><div class="hero-stat-lbl">Paused</div></div>
+        <div class="hero-stat"><div class="hero-stat-val" id="statConcepts">0</div><div class="hero-stat-lbl">Concepts</div></div>
+      </div>
+    </div>
+    <div class="hero-progress">
+      <div class="progress-meta-row">
+        <span class="progress-lbl">Overall Progress</span>
+        <span class="progress-pct-lbl" id="heroPct">0%</span>
+      </div>
+      <div class="hero-track"><div class="hero-fill" id="heroFill" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN PAGE ────────────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- Tab nav + actions -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="tabs" style="margin-bottom:0;flex:1;">
+      <button class="ntab on" data-tab="projects">📌 Projects</button>
+      <button class="ntab" data-tab="concepts">🧠 Concepts</button>
+      <button class="ntab" data-tab="archive" onclick="renderArchive()">🗄️ Archive</button>
+    </div>
+    <button class="btn btn-primary" onclick="openNewProject()" style="padding:8px 14px;font-size:.82rem;white-space:nowrap;">＋ Project</button>
+    <button class="page-icon-btn" onclick="exportData()" title="Export" aria-label="Export">📤</button>
+  </div>
+
+  <!-- PROJECTS TAB -->
+  <div class="tab-panel active" id="tab-projects">
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="🔍 Search projects…" oninput="renderProjects()">
+      <select id="catFilter" onchange="renderProjects()" aria-label="Cat Filter">
+        <option value="">All Categories</option>
+        <option value="home">🏠 Home</option>
+        <option value="creative">🎨 Creative</option>
+        <option value="work">💼 Work &amp; Education</option>
+        <option value="friends">💌 For Friends</option>
+        <option value="fun">🎉 Fun</option>
+        <option value="life-plan">🌱 Life Plan</option>
+        <option value="health">🏥 Health</option>
+        <option value="finance">💰 Finance</option>
+        <option value="admin">📋 Admin</option>
+        <option value="self">🧠 Self &amp; Growth</option>
+        <option value="personal">🌿 Personal</option>
+        <option value="other">💭 Other</option>
+      </select>
+      <select id="statusFilter" onchange="renderProjects()" aria-label="Status Filter">
+        <option value="">All Statuses</option>
+        <option value="brainstorm">🧠 Brainstorming</option>
+        <option value="active">📌 Active</option>
+        <option value="finishing">⌛ Finishing</option>
+        <option value="paused">⏸️ Paused</option>
+        <option value="deferred">🔄 Deferred</option>
+        <option value="hold-temp">🪫 Hold – Temp</option>
+        <option value="hold-indef">⏹️ Hold – Indefinite</option>
+        <option value="stalled">🛑 Stalled</option>
+        <option value="completed">✅ Completed</option>
+        <option value="terminated">❌ Terminated</option>
+      </select>
+      <div class="filter-group">
+        <button class="filter-pill" data-flag="forFriends" onclick="toggleFlagFilter(this)">💌 Friends</button>
+        <button class="filter-pill" data-flag="forMoney" onclick="toggleFlagFilter(this)">💰 Money</button>
+      </div>
+    </div>
+    <div id="projectsList"></div>
+  </div>
+
+  <!-- CONCEPTS TAB -->
+  <div class="tab-panel" id="tab-concepts">
+    <div class="section-label">🧠 Concept Holding Zone</div>
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:14px;font-weight:500;">Ideas that aren't projects yet — capture freely, promote when ready.</p>
+    <div class="add-concept-bar">
+      <input type="text" id="newConceptTitle" placeholder="Working title for a new concept…" onkeydown="if(event.key==='Enter')addConcept()">
+      <button onclick="addConcept()">＋ Add</button>
+    </div>
+    <div id="conceptsList"></div>
+  </div>
+
+  <!-- ARCHIVE TAB -->
+  <div class="tab-panel" id="tab-archive">
+    <div class="section-label">🗄️ Archived Projects</div>
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:14px;font-weight:500;">Projects put away for now. Unarchive to bring back into view.</p>
+    <div class="archive-grid" id="archiveGrid"></div>
+    <div class="empty-state" id="archiveEmpty" style="display:none;"><div class="e-icon">📦</div><p>No archived projects yet.</p></div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NEW PROJECT / EDIT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">＋ New Project</h2>
+      <button class="modal-close" onclick="closeModal('projectModal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <input type="hidden" id="editingId">
+
+    <!-- Title -->
+    <div class="form-row"><label>Project Title</label><input type="text" id="f_title" placeholder="What's this project?"></div>
+
+    <!-- For Friends / For Money toggles -->
+    <div style="display:flex;gap:10px;margin-bottom:13px;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:var(--surface2);border:1px solid var(--border-col);border-radius:9px;padding:8px 12px;flex:1;min-width:130px;">
+        <input type="checkbox" id="f_forFriends" style="width:auto;accent-color:var(--teal);">
+        <span style="font-size:.85rem;font-weight:700;color:var(--text-main);">💌 For Friends</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:var(--surface2);border:1px solid var(--border-col);border-radius:9px;padding:8px 12px;flex:1;min-width:130px;">
+        <input type="checkbox" id="f_forMoney" style="width:auto;accent-color:var(--accent-gold);" onchange="toggleMoneyFields()">
+        <span style="font-size:.85rem;font-weight:700;color:var(--text-main);">💰 For Money</span>
+      </label>
+    </div>
+
+    <!-- Category + Subcategory -->
+    <div class="form-grid">
+      <div class="form-row"><label>Category</label>
+        <select id="f_cat" onchange="updateSubcats()" aria-label="Category">
+          <option value="home">🏠 Home</option>
+          <option value="creative">🎨 Creative</option>
+          <option value="work">💼 Work &amp; Education</option>
+          <option value="friends">💌 For Friends</option>
+          <option value="fun">🎉 Fun</option>
+          <option value="life-plan">🌱 Life Plan</option>
+          <option value="health">🏥 Health</option>
+          <option value="finance">💰 Finance</option>
+          <option value="admin">📋 Admin</option>
+          <option value="self">🧠 Self &amp; Growth</option>
+          <option value="personal">🌿 Personal</option>
+          <option value="other">💭 Other</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Subcategory</label><select id="f_subcat" aria-label="Subcategory"></select></div>
+    </div>
+
+    <!-- Status + Timeline Length -->
+    <div class="form-grid">
+      <div class="form-row"><label>Status</label>
+        <select id="f_status" onchange="updateStatusCommentVisibility()" aria-label="Status">
+          <option value="brainstorm">🧠 Brainstorming</option>
+          <option value="active">📌 Active</option>
+          <option value="finishing">⌛ Finishing</option>
+          <option value="paused">⏸️ Paused</option>
+          <option value="deferred">🔄 Deferred</option>
+          <option value="hold-temp">🪫 Hold – Temp</option>
+          <option value="hold-indef">⏹️ Hold – Indefinite</option>
+          <option value="stalled">🛑 Stalled</option>
+          <option value="completed">✅ Completed</option>
+          <option value="terminated">❌ Terminated</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Timeline Length</label>
+        <select id="f_timelineLen" aria-label="Timeline Length">
+          <option value="tbd">❓ TBD</option>
+          <option value="short">⚡ Short (&lt;1 mo)</option>
+          <option value="medium">📆 Medium (1–3 mo)</option>
+          <option value="long">🗓 Long (3+ mo)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Status comment (stalled/hold/paused/terminated) -->
+    <div id="statusCommentBlock" style="display:none;">
+      <div class="status-comment-box" id="statusCommentBox">
+        <div class="form-row"><label>⛔ Barriers / What's blocking</label><textarea id="f_barriers" rows="2" placeholder="What's getting in the way?"></textarea></div>
+        <div class="form-row"><label>📋 Plans / Next steps when unblocked</label><textarea id="f_statusPlans" rows="2" placeholder="What would need to happen to restart?"></textarea></div>
+        <div class="form-row"><label>📅 Reactivation date (optional)</label><input type="date" id="f_reactivationDate" aria-label="F Reactivation Date"></div>
+      </div>
+    </div>
+
+    <!-- Priority + Energy -->
+    <div class="form-grid">
+      <div class="form-row"><label>Priority</label>
+        <select id="f_priority" aria-label="Priority">
+          <option value="p1">🔴 P1 – Critical</option>
+          <option value="p2">🟠 P2 – High</option>
+          <option value="p3" selected>🟡 P3 – Medium</option>
+          <option value="p4">🟢 P4 – Low</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Energy Required</label>
+        <select id="f_energy" aria-label="Energy Required">
+          <option value="e1">🔴 High drain</option>
+          <option value="e2" selected>🟡 Medium</option>
+          <option value="e3">🟢 Low / Easy</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Start + Due dates -->
+    <div class="form-grid">
+      <div class="form-row"><label>Start Date (optional)</label><input type="date" id="f_startDate" aria-label="F Start Date"></div>
+      <div class="form-row"><label>Due Date (optional)</label><input type="date" id="f_due" aria-label="F Due"></div>
+    </div>
+
+    <!-- Description -->
+    <div class="form-row"><label>Description / Notes</label><textarea id="f_desc" placeholder="What does success look like? Any context…"></textarea></div>
+
+    <!-- Barriers / Problems to Solve -->
+    <div class="form-row"><label>🛑 Barriers (known)</label><textarea id="f_knownBarriers" rows="2" placeholder="Things that could block progress…"></textarea></div>
+    <div class="form-row"><label>🧩 Problems to Solve</label><textarea id="f_problemsToSolve" rows="2" placeholder="Key challenges that need solutions…"></textarea></div>
+    <div class="form-row"><label>🍀 Strokes of Luck / Advantages</label><textarea id="f_strokesOfLuck" rows="2" placeholder="Advantages, luck, resources already in hand…"></textarea></div>
+    <div class="form-row"><label>🔧 Resources &amp; Skills Needed</label><textarea id="f_resourcesSkills" rows="2" placeholder="Skills, tools, people, money needed…"></textarea></div>
+    <div class="form-row"><label>📦 Materials / Tools</label><input type="text" id="f_materials" placeholder="Comma-separated list…"></div>
+
+    <!-- Custom tags -->
+    <div class="form-row">
+      <label>🏷️ Custom Tags</label>
+      <div class="tag-chips" id="f_tagChips"></div>
+      <div class="tag-add-row" style="margin-top:7px;">
+        <input class="emoji-in" type="text" id="f_tagEmoji" placeholder="🏷️" maxlength="4">
+        <input type="text" id="f_tagName" placeholder="Tag name…" onkeydown="if(event.key==='Enter'){addCustomTag();event.preventDefault();}">
+        <input type="color" id="f_tagColor" value="#645EB7" style="width:38px;height:36px;padding:2px 4px;flex:none;border-radius:6px;">
+        <button class="btn btn-ghost" onclick="addCustomTag()" style="padding:7px 12px;white-space:nowrap;font-size:.8rem;">+ Tag</button>
+      </div>
+    </div>
+
+    <!-- Cost/Benefit -->
+    <div class="form-row">
+      <label>⚖️ Cost / Benefit Analysis</label>
+      <div class="cb-grid">
+        <div class="cb-box">
+          <h4>Costs</h4>
+          <textarea id="f_cbCosts" rows="2" placeholder="Time, money, energy, stress…"></textarea>
+        </div>
+        <div class="cb-box">
+          <h4>Benefits</h4>
+          <textarea id="f_cbBenefits" rows="2" placeholder="What you gain…"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:8px;"><label>Verdict / Decision</label><input type="text" id="f_cbVerdict" placeholder="Worth it because… / Not worth it because…"></div>
+    </div>
+
+    <!-- Cost/Profit (For Money only) -->
+    <div id="moneyFieldsBlock" style="display:none;">
+      <div class="form-row" style="background:rgba(var(--gold-rgb),.07);border:1px solid rgba(var(--gold-rgb),.25);border-radius:10px;padding:12px;">
+        <div style="font-size:.8rem;font-weight:800;color:var(--accent-gold);margin-bottom:10px;">💰 Financial Analysis</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Investment / Costs</label><input type="text" id="f_cpInvestment" placeholder="e.g. $200 materials + 40h time"></div>
+          <div class="form-row"><label>Expected Revenue</label><input type="text" id="f_cpRevenue" placeholder="e.g. $500–800 per month"></div>
+        </div>
+        <div class="form-row"><label>Notes</label><textarea id="f_cpNotes" rows="2" placeholder="Pricing strategy, market, assumptions…"></textarea></div>
+      </div>
+    </div>
+
+    <!-- Project Steps -->
+    <div class="form-row">
+      <label>Project Steps <span style="color:var(--text-muted);font-weight:400">(3–10 steps)</span></label>
+      <div class="step-list" id="stepList"></div>
+      <button class="add-step-btn" onclick="addStep()" id="addStepBtn">＋ Add Step</button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('projectModal')" aria-label="Cancel">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProject()" aria-label="Save">💾 Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PROMOTE CONCEPT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="promoteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📤 Promote to Project</h2>
+      <button class="modal-close" onclick="closeModal('promoteModal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="promote-highlight">Promoting: <strong id="promotingTitle"></strong></div>
+    <div class="form-row"><label>Project Title (edit if needed)</label><input type="text" id="p_title" aria-label="P Title"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Category</label>
+        <select id="p_cat" onchange="updatePromoteSubcats()" aria-label="Category">
+          <option value="home">🏠 Home</option>
+          <option value="creative">🎨 Creative</option>
+          <option value="work">💼 Work &amp; Education</option>
+          <option value="friends">💌 For Friends</option>
+          <option value="fun">🎉 Fun</option>
+          <option value="life-plan">🌱 Life Plan</option>
+          <option value="health">🏥 Health</option>
+          <option value="finance">💰 Finance</option>
+          <option value="admin">📋 Admin</option>
+          <option value="self">🧠 Self &amp; Growth</option>
+          <option value="personal">🌿 Personal</option>
+          <option value="other">💭 Other</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Subcategory</label><select id="p_subcat" aria-label="Subcategory"></select></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>Priority</label>
+        <select id="p_priority" aria-label="Priority">
+          <option value="p1">🔴 P1</option><option value="p2">🟠 P2</option>
+          <option value="p3" selected>🟡 P3</option><option value="p4">🟢 P4</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Energy</label>
+        <select id="p_energy" aria-label="Energy">
+          <option value="e1">🔴 High drain</option>
+          <option value="e2" selected>🟡 Medium</option>
+          <option value="e3">🟢 Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>Additional Notes</label><textarea id="p_desc"></textarea></div>
+    <input type="hidden" id="promotingConceptId">
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('promoteModal')" aria-label="Cancel">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmPromote()" aria-label="Export">📤 Promote to Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HOW IT'S GOING — LOG ENTRY MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📓 How It's Going</h2>
+      <button class="modal-close" onclick="closeModal('logModal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <input type="hidden" id="logProjectId">
+    <div class="form-row">
+      <label>Mood check</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn btn-ghost log-mood-btn" data-mood="1" onclick="selLogMood(1)" style="flex:1;font-size:1.2rem;padding:8px;" aria-label="Button">😤</button>
+        <button class="btn btn-ghost log-mood-btn" data-mood="2" onclick="selLogMood(2)" style="flex:1;font-size:1.2rem;padding:8px;" aria-label="Button">😕</button>
+        <button class="btn btn-ghost log-mood-btn" data-mood="3" onclick="selLogMood(3)" style="flex:1;font-size:1.2rem;padding:8px;" aria-label="Button">😐</button>
+        <button class="btn btn-ghost log-mood-btn" data-mood="4" onclick="selLogMood(4)" style="flex:1;font-size:1.2rem;padding:8px;" aria-label="Button">🙂</button>
+        <button class="btn btn-ghost log-mood-btn" data-mood="5" onclick="selLogMood(5)" style="flex:1;font-size:1.2rem;padding:8px;" aria-label="Button">🚀</button>
+      </div>
+    </div>
+    <div class="form-row"><label>Log entry</label><textarea id="logNote" rows="4" placeholder="What's happening with this project? Blockers, wins, next steps…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('logModal')" aria-label="Cancel">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLogEntry()" aria-label="Save">💾 Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BASE CAMP — STALL RECOVERY MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay basecamp-modal" id="basecampModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⛺ Base Camp Protocol</h2>
+      <button class="modal-close" onclick="closeModal('basecampModal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <input type="hidden" id="basecampProjectId">
+    <div class="basecamp-hero">
+      <h3>You're not lost. You're positioned.</h3>
+      <p>Stalls happen. Base Camp is where you regroup, not where you give up.</p>
+    </div>
+    <div class="basecamp-q">
+      <label>🟢 What's working? (even small things)</label>
+      <textarea id="bc_working" rows="2" placeholder="Parts still alive, things you've learned…"></textarea>
+    </div>
+    <div class="basecamp-q">
+      <label>🛑 What's blocking you right now?</label>
+      <textarea id="bc_blocking" rows="2" placeholder="Be specific — fear, capacity, missing piece…"></textarea>
+    </div>
+    <div class="basecamp-q">
+      <label>⚡ What's the smallest possible next move?</label>
+      <textarea id="bc_next" rows="2" placeholder="Something doable in 15 minutes or less…"></textarea>
+    </div>
+    <div class="form-row"><label>📅 Set a re-entry date</label><input type="date" id="bc_reentry" aria-label="Bc Reentry"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('basecampModal')">Not now</button>
+      <button class="btn btn-primary" onclick="saveBaseCamp()">⛺ Save Base Camp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MONETIZATION CHECKLIST MODAL (For Money + completed)
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="monetizationModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>💰 Post-Project Monetization</h2>
+      <button class="modal-close" onclick="closeModal('monetizationModal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <input type="hidden" id="monet_pid">
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px;">Check off steps to launch and sustain this income stream.</p>
+    <div id="monetizationList"></div>
+    <div style="display:flex;gap:6px;margin-top:12px;">
+      <input type="text" id="monetTaskInput" placeholder="Add a monetization task…" style="flex:1;" onkeydown="if(event.key==='Enter')addMonetTask()">
+      <button class="btn btn-primary" onclick="addMonetTask()" style="padding:8px 12px;white-space:nowrap;font-size:.82rem;">＋ Add</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('monetizationModal')">Close</button>
+      <button class="btn btn-primary" onclick="saveMonetization()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     EXPORT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📤 Export &amp; Sync Data</h2>
+      <button class="modal-close" onclick="closeModal('exportModal')" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="export-note">💾 Your data lives in <strong>localStorage</strong>. Export regularly as a backup.</div>
+    <div class="form-row">
+      <label>Format</label>
+      <select id="exportFormat" onchange="refreshExportPreview()" aria-label="Format">
+        <option value="json">JSON (full backup)</option>
+        <option value="csv">CSV (spreadsheet)</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Preview</label><div class="export-box" id="exportPreview"></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('exportModal')">Close</button>
+      <button class="btn btn-ghost" onclick="copyExport()" aria-label="Copy">📋 Copy</button>
+      <button class="btn btn-primary" onclick="downloadExport()" aria-label="Import">⬇️ Download</button>
+    </div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border-col);">
+      <div class="section-label">Import / Restore</div>
+      <div class="form-row"><label>Paste JSON backup</label>
+        <textarea id="importArea" placeholder='{"projects":[…],"concepts":[…]}' rows="3"></textarea>
+      </div>
+      <button class="btn btn-danger" onclick="importData()" style="width:100%" aria-label="Replace all — overwrites data">⚠️ Replace All Data with Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DETAIL PANEL
+═══════════════════════════════════════════════════════════════ -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-panel-header">
+    <button class="panel-close" onclick="closeDetail()" aria-label="Close detail panel">←</button>
+    <h2 id="dp_title">Project Detail</h2>
+    <button class="page-icon-btn" onclick="editFromDetail()" style="font-size:.78rem;padding:5px 9px;" aria-label="Edit">✏️ Edit</button>
+    <button class="page-icon-btn" onclick="archiveFromDetail()" style="font-size:.78rem;padding:5px 9px;" aria-label="Button">🗄️</button>
+  </div>
+  <div class="detail-body">
+    <!-- Status -->
+    <div class="detail-section">
+      <h3>Status</h3>
+      <div class="status-row" id="dp_statusRow"></div>
+      <div id="dp_basecampBtn" style="display:none;margin-top:8px;">
+        <button class="btn btn-ghost" style="font-size:.8rem;padding:6px 12px;" onclick="openBaseCamp(activeDetailId)">⛺ Base Camp Protocol</button>
+      </div>
+    </div>
+    <!-- Details -->
+    <div class="detail-section">
+      <h3>Details</h3>
+      <div id="dp_meta" style="font-size:.85rem;color:var(--text2);display:flex;flex-direction:column;gap:5px;"></div>
+      <div id="dp_timeline" style="margin-top:6px;"></div>
+    </div>
+    <!-- Status Comment (stalled/hold/paused) -->
+    <div class="detail-section" id="dp_statusCommentSection" style="display:none;">
+      <h3>Hold / Stall Details</h3>
+      <div id="dp_statusComment" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div>
+    </div>
+    <!-- Progress -->
+    <div class="detail-section">
+      <h3>Progress</h3>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="dp_progressFill" style="width:0%"></div></div>
+        <div class="progress-label"><span id="dp_progressLabel">0 / 0 steps</span><span id="dp_progressPct">0%</span></div>
+      </div>
+    </div>
+    <!-- Steps -->
+    <div class="detail-section" id="dp_stepsSection">
+      <h3>Steps</h3>
+      <div id="dp_steps" class="step-list"></div>
+    </div>
+    <!-- Tasks -->
+    <div class="detail-section">
+      <h3>Tasks</h3>
+      <div id="dp_tasks" class="task-list"></div>
+      <div style="display:flex;gap:6px;margin-top:7px;">
+        <input type="text" id="newTaskInput" placeholder="Add a task…" style="flex:1;" onkeydown="if(event.key==='Enter')addTaskToDetail()">
+        <button class="btn btn-primary" style="white-space:nowrap;padding:7px 12px;font-size:.82rem;" onclick="addTaskToDetail()" aria-label="Add">＋</button>
+      </div>
+    </div>
+    <!-- Barriers -->
+    <div class="detail-section" id="dp_barriersSection" style="display:none;">
+      <h3>Barriers</h3>
+      <div id="dp_barriers" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div>
+    </div>
+    <!-- Problems to Solve -->
+    <div class="detail-section" id="dp_problemsSection" style="display:none;">
+      <h3>Problems to Solve</h3>
+      <div id="dp_problems" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div>
+    </div>
+    <!-- Strokes of Luck -->
+    <div class="detail-section" id="dp_lucksSection" style="display:none;">
+      <h3>Strokes of Luck</h3>
+      <div id="dp_lucks" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div>
+    </div>
+    <!-- Resources & Skills -->
+    <div class="detail-section" id="dp_resourcesSection" style="display:none;">
+      <h3>Resources &amp; Skills Needed</h3>
+      <div id="dp_resources" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div>
+    </div>
+    <!-- Cost/Benefit -->
+    <div class="detail-section" id="dp_cbSection" style="display:none;">
+      <h3>Cost / Benefit</h3>
+      <div class="cb-grid" style="margin-top:6px;">
+        <div class="cb-box"><h4>Costs</h4><div id="dp_cbCosts" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div></div>
+        <div class="cb-box"><h4>Benefits</h4><div id="dp_cbBenefits" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div></div>
+      </div>
+      <div id="dp_cbVerdict" style="font-size:.82rem;color:var(--text-muted);margin-top:6px;font-style:italic;"></div>
+    </div>
+    <!-- Cost/Profit (For Money) -->
+    <div class="detail-section" id="dp_cpSection" style="display:none;">
+      <h3>Financial Analysis 💰</h3>
+      <div id="dp_cp" style="font-size:.85rem;color:var(--text2);"></div>
+    </div>
+    <!-- Monetization Checklist -->
+    <div class="detail-section" id="dp_monetSection" style="display:none;">
+      <h3>Monetization Checklist</h3>
+      <div id="dp_monet"></div>
+      <button class="btn btn-ghost" style="margin-top:8px;font-size:.8rem;padding:6px 12px;" onclick="openMonetization(activeDetailId)" aria-label="Edit">✏️ Edit Checklist</button>
+    </div>
+    <!-- Notes -->
+    <div class="detail-section">
+      <h3>Notes</h3>
+      <div id="dp_desc" style="font-size:.85rem;color:var(--text2);white-space:pre-wrap;"></div>
+    </div>
+    <!-- Materials -->
+    <div class="detail-section" id="dp_matSection" style="display:none;">
+      <h3>Materials / Tools</h3>
+      <div id="dp_materials" style="font-size:.85rem;color:var(--text2);"></div>
+    </div>
+    <!-- Custom Tags -->
+    <div class="detail-section" id="dp_tagsSection" style="display:none;">
+      <h3>Tags</h3>
+      <div id="dp_tags" class="tag-chips"></div>
+    </div>
+    <!-- How It's Going Log -->
+    <div class="detail-section">
+      <h3>How It's Going</h3>
+      <div id="dp_log"></div>
+      <button class="btn btn-ghost" style="margin-top:8px;font-size:.8rem;padding:6px 12px;width:100%;" onclick="openLogEntry(activeDetailId)">📓 Add Log Entry</button>
+    </div>
+    <!-- Delete -->
+    <div class="detail-section">
+      <button class="btn btn-danger" style="width:100%;" onclick="deleteFromDetail()" aria-label="Remove">❌ Delete Project</button>
+    </div>
+  </div>
+</div>
+</div><!-- /appWrap -->
+<script>
+window.HQ_CURRENT_PAGE = 'projects';
+</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/project-brain.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

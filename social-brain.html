@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💬 Social Brain — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#120f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="pages/social-brain.css">
+</head>
+<body>
+<div id="sb-toast" class="la-toast"></div>
+
+<!-- Topbar injected by hq-core.js -->
+
+<nav class="la-nav">
+  <button class="ntab on" onclick="sw('people',this)" aria-label="People tab">👥 People</button>
+  <button class="ntab"    onclick="sw('reachout',this)" aria-label="Reach Out tab">💌 Reach Out</button>
+  <button class="ntab"    onclick="sw('convprep',this)" aria-label="Conv Prep tab">💬 Conv Prep</button>
+  <button class="ntab"    onclick="sw('scripts',this)" aria-label="Scripts tab">📄 Scripts</button>
+  <button class="ntab"    onclick="sw('energy',this)" aria-label="Social Energy tab">🔋 Social Energy</button>
+  <button class="ntab"    onclick="sw('setup',this);sbSetupLoad();sbRenderSetup();" aria-label="Settings">⚙️ Setup</button>
+</nav>
+
+<div class="main">
+
+<!-- ════════════════ PEOPLE ════════════════ -->
+<div id="tab-people" class="tab on">
+  <div class="hint">👥 Your people — logged once, tracked gently. No guilt about gaps. Just awareness.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="p-total" style="color:var(--pink)">0</div><div class="sl">People</div></div>
+    <div class="sc"><div class="sn" id="p-due" style="color:var(--orange)">0</div><div class="sl">Reach out due</div></div>
+    <div class="sc"><div class="sn" id="p-overdue" style="color:var(--red)">0</div><div class="sl">Long overdue</div></div>
+    <div class="sc"><div class="sn" id="p-recent" style="color:var(--green)">0</div><div class="sl">Recent contact</div></div>
+  </div>
+  <div class="frow" id="people-filter-row"></div>
+  <div id="people-list"></div>
+  <button class="add-trigger" onclick="openModal('person-modal')">+ Add Person</button>
+</div>
+
+<!-- ════════════════ REACH OUT ════════════════ -->
+<div id="tab-reachout" class="tab">
+  <div class="hint">💌 People you haven't connected with in a while. Gentle — not guilt-inducing. One message at a time.</div>
+  <div id="reachout-list"></div>
+</div>
+
+<!-- ════════════════ CONVERSATION PREP ════════════════ -->
+<div id="tab-convprep" class="tab">
+  <div class="hint">💬 Before hard conversations — what you want to say, what you're worried about, what a good outcome looks like. Write it before you speak.</div>
+  <div id="convprep-list"></div>
+  <button class="add-trigger" onclick="openModal('convprep-modal')">+ New Conversation Prep</button>
+</div>
+
+<!-- ════════════════ SCRIPTS ════════════════ -->
+<div id="tab-scripts" class="tab">
+  <div class="hint">📄 Pre-written responses for situations that feel hard to word in the moment. Use as-is or adapt. Tap to expand, copy to use.</div>
+  <div class="frow" id="scripts-filter-row"></div>
+  <div id="scripts-list"></div>
+  <button class="add-trigger" onclick="openModal('script-modal')">+ Add Custom Script</button>
+</div>
+
+<!-- ════════════════ SOCIAL ENERGY ════════════════ -->
+<div id="tab-energy" class="tab">
+  <div class="hint">🔋 Log how much a social event cost you. Builds a map of your actual social capacity — not what you think it should be.</div>
+
+  <!-- Capacity summary -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">⚡ Your Social Capacity Map</div><div class="card-sub">Last 30 days</div></div>
+    <div class="srow" style="margin-bottom:10px">
+      <div class="sc"><div class="sn" id="se-events" style="color:var(--pink)">0</div><div class="sl">Events</div></div>
+      <div class="sc"><div class="sn" id="se-avg-cost" style="color:var(--orange)">—</div><div class="sl">Avg spoons</div></div>
+      <div class="sc"><div class="sn" id="se-masking" style="color:var(--purple)">0</div><div class="sl">High masking</div></div>
+      <div class="sc"><div class="sn" id="se-avg-recovery" style="color:var(--teal)">—</div><div class="sl">Avg recovery</div></div>
+    </div>
+    <div id="se-insight" style="font-size:11px;color:var(--muted);font-style:italic;display:none;padding:8px 10px;background:var(--surface);border-radius:8px"></div>
+  </div>
+
+  <div id="energy-log-list"></div>
+  <button class="add-trigger" onclick="openEnergyModal()">+ Log Social Event</button>
+</div>
+
+
+<!-- ════════════════ SETUP ════════════════ -->
+<div id="tab-setup" class="tab">
+  <div class="hint">⚙️ Configure Social Brain — import contacts in bulk, manage your data, and set defaults.</div>
+
+  <!-- CONTACT IMPORT -->
+  <div class="la-setup-card">
+    <div class="la-setup-hd">📥 Contact Import</div>
+    <div class="la-setup-desc">Import multiple people at once. Both paths always available — choose whichever is easier right now.</div>
+
+    <!-- Text paste path -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:5px;letter-spacing:.04em">📋 PASTE TEXT — one contact per line</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:7px;font-style:italic">Format: Name, Type, Phone, Email (any order, all optional except Name)</div>
+      <textarea id="sb-import-text" class="ftextarea" rows="5"
+        placeholder="Jess, close-friend, 555-1234, jess@example.com&#10;Dr Kim, therapist, 617-555-0100&#10;Mum, family&#10;Work Team, colleague, , team@company.com"></textarea>
+      <button class="la-setup-btn" style="margin-top:6px" onclick="sbPreviewImport()" aria-label="Search">🔍 Preview Import</button>
+    </div>
+
+    <!-- File upload path -->
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:5px;letter-spacing:.04em">📂 UPLOAD FILE — CSV or plain text</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:7px;font-style:italic">CSV: Name, Type, Phone, Email columns (header row optional)</div>
+      <input type="file" id="sb-import-file" accept=".csv,.txt,.tsv"
+        style="font-size:11px;color:var(--text2);display:block;margin-bottom:6px"
+        onchange="sbPreviewFileImport(this)"
+        aria-label="Import contacts CSV, text, or TSV file">
+    </div>
+
+    <!-- Preview area -->
+    <div id="sb-import-preview" style="display:none">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:6px;letter-spacing:.04em;margin-top:10px">
+        👀 PREVIEW — <span id="sb-preview-count">0</span> contacts parsed
+        <span id="sb-dupe-note" style="color:var(--orange);margin-left:8px;font-weight:600;display:none"></span>
+      </div>
+      <div id="sb-preview-list" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="la-setup-btn" style="background:rgba(var(--green-rgb),.12);border-color:rgba(var(--green-rgb),.3);color:var(--green)"
+          onclick="sbConfirmImport()" aria-label="Complete">✅ Import All</button>
+        <button class="la-setup-btn" style="background:rgba(var(--red-rgb),.07);border-color:rgba(var(--red-rgb),.2);color:var(--red)"
+          onclick="sbCancelImport()">✕ Cancel</button>
+      </div>
+    </div>
+
+    <!-- Import stats -->
+    <div id="sb-import-stats" style="margin-top:10px;font-size:11px;color:var(--muted)"></div>
+  </div>
+
+  <!-- BACKUP & RESTORE -->
+  <div class="la-setup-card">
+    <div class="la-setup-hd">💾 Backup & Restore</div>
+    <div class="la-setup-desc">Export your Social Brain setup config as JSON. Restore it on a new device or after a reset.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="la-setup-btn" onclick="sbExportSetup()" aria-label="Import">⬇️ Export setup JSON</button>
+      <label class="la-setup-btn" style="cursor:pointer">
+        ⬆️ Restore setup JSON
+        <input type="file" accept=".json" style="display:none" onchange="sbImportSetup(this)" aria-label="Restore social brain setup from JSON">
+      </label>
+    </div>
+  </div>
+</div>
+
+
+</div><!-- /main -->
+
+<!-- ════ MODALS ════════════════════════════════════════════════════ -->
+
+<!-- PERSON MODAL -->
+<div id="person-modal" class="modal-bg" onclick="if(event.target===this)closeModal('person-modal')">
+  <div class="modal-box">
+    <div class="modal-title" id="person-modal-title">👤 Add Person</div>
+    <input type="hidden" id="per-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Name *</label><input id="per-name" class="fin" placeholder="e.g. Jess"></div>
+      <div class="fg"><label class="fl">Relationship</label>
+        <select id="per-rel" class="fin" aria-label="Relationship">
+          <option value="friend">👫 Friend</option>
+          <option value="close-friend">💜 Close friend</option>
+          <option value="family">👨‍👩‍👧 Family</option>
+          <option value="partner">❤️ Partner</option>
+          <option value="colleague">💼 Colleague</option>
+          <option value="acquaintance">🤝 Acquaintance</option>
+          <option value="therapist">🧠 Therapist / Support</option>
+          <option value="other">👤 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Preferred contact method</label>
+        <select id="per-contact" class="fin" aria-label="Preferred contact method">
+          <option value="text">💬 Text / iMessage</option>
+          <option value="call">📱 Call</option>
+          <option value="email">✉️ Email</option>
+          <option value="in-person">🤝 In person</option>
+          <option value="social">📱 Social media</option>
+          <option value="any">✨ Any</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Reach out every (days)</label>
+        <input id="per-freq" class="fin" type="number" min="1" max="365" placeholder="e.g. 30" value="30">
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Last contact date</label><input id="per-last" class="fin" type="date" aria-label="Per Last"></div>
+    <div class="fg"><label class="fl">What matters to them / notes</label>
+      <textarea id="per-notes" class="ftextarea" rows="2" placeholder="e.g. Loves to talk about her dog, prefers texting, don't call unannounced…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('person-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="savePerson()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERSATION PREP MODAL -->
+<div id="convprep-modal" class="modal-bg" onclick="if(event.target===this)closeModal('convprep-modal')">
+  <div class="modal-box">
+    <div class="modal-title" id="convprep-modal-title">💬 Conversation Prep</div>
+    <input type="hidden" id="cp-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">With who *</label><input id="cp-who" class="fin" placeholder="e.g. Mum, boss, housemate…"></div>
+      <div class="fg"><label class="fl">When</label><input id="cp-date" class="fin" type="date" aria-label="Cp Date"></div>
+    </div>
+    <div class="fg"><label class="fl">Topic</label><input id="cp-topic" class="fin" placeholder="e.g. Setting a boundary, asking for help, difficult feedback…"></div>
+    <div class="fg"><label class="fl">What I want to say / express</label>
+      <textarea id="cp-want" class="ftextarea" rows="2" placeholder="The main point. In your own words."></textarea>
+    </div>
+    <div class="fg"><label class="fl">What I'm worried about</label>
+      <textarea id="cp-worry" class="ftextarea" rows="2" placeholder="What feels risky or hard about this?"></textarea>
+    </div>
+    <div class="fg"><label class="fl">What a good outcome looks like</label>
+      <textarea id="cp-good" class="ftextarea" rows="2" placeholder="Not necessarily perfect — just what 'okay' would feel like."></textarea>
+    </div>
+    <div class="fg"><label class="fl">Opening line (say this first)</label>
+      <input id="cp-opener" class="fin" placeholder="e.g. 'I wanted to talk about something that's been on my mind.'">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('convprep-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveConvPrep()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPT MODAL -->
+<div id="script-modal" class="modal-bg" onclick="if(event.target===this)closeModal('script-modal')">
+  <div class="modal-box">
+    <div class="modal-title" id="script-modal-title">📄 Add Script</div>
+    <input type="hidden" id="sc-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Title *</label><input id="sc-title" class="fin" placeholder="e.g. Declining an invite"></div>
+      <div class="fg"><label class="fl">Category</label>
+        <select id="sc-cat" class="fin" aria-label="Category">
+          <option value="decline">🙅 Declining / Canceling</option>
+          <option value="boundary">🛑 Setting a boundary</option>
+          <option value="accommodate">♿ Asking for accommodations</option>
+          <option value="conflict">💬 Difficult conversation</option>
+          <option value="checkin">💜 Checking in on someone</option>
+          <option value="custom">✏️ Custom</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Script *</label>
+      <textarea id="sc-text" class="ftextarea" rows="5" placeholder="Write the message or script you'd use. You can adapt it when you need it."></textarea>
+    </div>
+    <div class="fg"><label class="fl">When to use</label>
+      <input id="sc-when" class="fin" placeholder="e.g. When I'm dysregulated and need to cancel last-minute">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('script-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveScript()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SOCIAL ENERGY MODAL -->
+<div id="energy-modal" class="modal-bg" onclick="if(event.target===this)closeModal('energy-modal')">
+  <div class="modal-box">
+    <div class="modal-title">🔋 Log Social Event</div>
+    <div class="fg"><label class="fl">Event / Who *</label><input id="se-event" class="fin" placeholder="e.g. Family dinner, work meeting, friend's party…"></div>
+    <div class="fg"><label class="fl">Date</label><input id="se-date" class="fin" type="date" aria-label="Se Date"></div>
+    <div class="fg">
+      <label class="fl">Spoons used (1 = easy, 10 = wiped out)</label>
+      <div class="spoon-row" id="spoon-selector"></div>
+      <div id="spoon-label" style="font-size:11px;color:var(--muted);margin-top:5px">Tap to set</div>
+    </div>
+    <div class="fg">
+      <label class="fl">Recovery time needed</label>
+      <select id="se-recovery" class="fin" aria-label="Recovery time needed">
+        <option value="0">None needed</option>
+        <option value="1">An hour or two</option>
+        <option value="4">Half a day</option>
+        <option value="8">Full day</option>
+        <option value="24">Multiple days</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Masking level</label>
+      <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">
+        <button class="fchip" data-mask="none" onclick="setMasking('none',this)">😌 None — fully myself</button>
+        <button class="fchip" data-mask="low" onclick="setMasking('low',this)">🙂 Light masking</button>
+        <button class="fchip" data-mask="high" onclick="setMasking('high',this)">😶 Heavy masking</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Notes</label>
+      <textarea id="se-notes" class="ftextarea" rows="2" placeholder="What made it hard or easy? Anything surprising?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('energy-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveSocialEnergy()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<script>window.HQ_CURRENT_PAGE = 'social-brain';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/social-brain.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

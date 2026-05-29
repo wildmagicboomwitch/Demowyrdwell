@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💡 Idea Studio — AuDHD HQ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#120f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="pages/idea-studio.css">
+</head>
+<body>
+<div id="is-toast" class="la-toast"></div>
+
+<!-- Topbar injected by hq-core.js -->
+
+<nav class="la-nav">
+  <button class="ntab on" onclick="sw('sparks',this)" aria-label="Interests tab">⚡ Interests</button>
+  <button class="ntab"    onclick="sw('hyperfocus',this)" aria-label="Hyperfocus Log tab">🔥 Hyperfocus Log</button>
+  <button class="ntab"    onclick="sw('ideas',this)" aria-label="Ideas tab">💡 Ideas</button>
+  <button class="ntab"    onclick="sw('holes',this)" aria-label="Rabbit Holes tab">🐇 Rabbit Holes</button>
+  <button class="ntab"    onclick="sw('quotes',this)" aria-label="Quotes tab">✨ Quotes</button>
+</nav>
+
+<div class="main">
+
+<!-- ════════════════ INTERESTS / SPARKS ════════════════ -->
+<div id="tab-sparks" class="tab on">
+  <div class="hint">⚡ Log your interests — current obsessions, recurring topics, areas you keep returning to. Heat = how active right now.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="sp-total" style="color:var(--gold)">0</div><div class="sl">Interests</div></div>
+    <div class="sc"><div class="sn" id="sp-hot" style="color:var(--gold)">0</div><div class="sl">Active now</div></div>
+    <div class="sc"><div class="sn" id="sp-warm" style="color:var(--orange)">0</div><div class="sl">Simmering</div></div>
+    <div class="sc"><div class="sn" id="sp-cool" style="color:var(--muted)">0</div><div class="sl">Background</div></div>
+  </div>
+  <div id="sparks-list"></div>
+  <button class="add-trigger" onclick="openModal('spark-modal')">+ Add Interest</button>
+</div>
+
+<!-- ════════════════ HYPERFOCUS LOG ════════════════ -->
+<div id="tab-hyperfocus" class="tab">
+  <div class="hint">🔥 Track active hyperfocus sessions. Start a timer, pause when you surface, stop when done. Builds a log of what your brain loves and how long it goes.</div>
+  <div class="srow">
+    <div class="sc"><div class="sn" id="hf-total" style="color:var(--gold)">0</div><div class="sl">Sessions</div></div>
+    <div class="sc"><div class="sn" id="hf-active" style="color:var(--green)">0</div><div class="sl">In progress</div></div>
+    <div class="sc"><div class="sn" id="hf-avg" style="color:var(--orange)">—</div><div class="sl">Avg length</div></div>
+    <div class="sc"><div class="sn" id="hf-top" style="color:var(--teal);font-size:11px">—</div><div class="sl">Top topic</div></div>
+  </div>
+  <div id="hf-list"></div>
+  <button class="add-trigger" onclick="openModal('hf-modal')">+ Start Hyperfocus Session</button>
+</div>
+
+<!-- ════════════════ IDEAS ════════════════ -->
+<div id="tab-ideas" class="tab">
+  <div class="hint">💡 Idea incubation queue — from spark to active project. Don't let ideas disappear into your notes app never to be seen again.</div>
+  <div class="frow" id="ideas-filter-row"></div>
+  <div id="ideas-list"></div>
+  <button class="add-trigger" onclick="openModal('idea-modal')">+ Capture Idea</button>
+</div>
+
+<!-- ════════════════ RABBIT HOLES ════════════════ -->
+<div id="tab-holes" class="tab">
+  <div class="hint">🐇 Research spirals, Wikipedia trails, links you meant to come back to. Log them here instead of 47 browser tabs.</div>
+  <div class="frow" id="holes-filter-row"></div>
+  <div id="holes-list"></div>
+  <button class="add-trigger" onclick="openModal('hole-modal')">+ Log Rabbit Hole</button>
+</div>
+
+<!-- ════════════════ QUOTES ════════════════ -->
+<div id="tab-quotes" class="tab">
+  <div class="hint">✨ Things that made you think, shifted your perspective, or belong in your brain permanently. Not inspiration porn — actual signal.</div>
+  <div id="quotes-list"></div>
+  <button class="add-trigger" onclick="openModal('quote-modal')">+ Add Quote</button>
+</div>
+
+</div><!-- /main -->
+
+<!-- ════ MODALS ════════════════════════════════════════════════════ -->
+
+<!-- INTEREST / SPARK MODAL -->
+<div id="spark-modal" class="modal-bg" onclick="if(event.target===this)closeModal('spark-modal')">
+  <div class="modal-box">
+    <div class="modal-title" id="spark-modal-title">⚡ Add Interest</div>
+    <input type="hidden" id="spm-id">
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Interest / Topic *</label><input id="spm-name" class="fin" placeholder="e.g. Sourdough, urban planning, moths…"></div>
+      <div class="fg"><label class="fl">Emoji</label><input id="spm-emoji" class="fin" placeholder="⚡" maxlength="2"></div>
+    </div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Category</label>
+        <select id="spm-cat" class="fin" aria-label="Category">
+          <option value="creative">🎨 Creative</option>
+          <option value="science">🔬 Science / Tech</option>
+          <option value="humanities">📚 Humanities</option>
+          <option value="practical">🔧 Practical / Craft</option>
+          <option value="social">👥 Social / Cultural</option>
+          <option value="health">🏥 Health / Body</option>
+          <option value="other">✨ Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Heat level</label>
+        <select id="spm-heat" class="fin" aria-label="Heat level">
+          <option value="hot">🔥 Hot — obsessed right now</option>
+          <option value="warm">🌡 Warm — active interest</option>
+          <option value="cool">❄️ Cool — background interest</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Notes / What specifically interests you</label>
+      <textarea id="spm-notes" class="ftextarea" rows="2" placeholder="The specific angle, question, or aspect that grabs you…"></textarea>
+    </div>
+    <div class="fg"><label class="fl">Resources / Where you're learning</label>
+      <input id="spm-resources" class="fin" placeholder="e.g. Book, YouTube channel, subreddit, podcast…">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('spark-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveSpark()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- HYPERFOCUS MODAL -->
+<div id="hf-modal" class="modal-bg" onclick="if(event.target===this)closeModal('hf-modal')">
+  <div class="modal-box">
+    <div class="modal-title">🔥 Start Hyperfocus Session</div>
+    <div class="fg"><label class="fl">What are you hyperfocusing on? *</label>
+      <input id="hfm-topic" class="fin" placeholder="e.g. Redesigning the whole app, reading about cephalopods…">
+    </div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Category / Interest</label>
+        <select id="hfm-cat" class="fin" aria-label="Category / Interest">
+          <option value="">— pick one —</option>
+          <option value="creative">🎨 Creative</option>
+          <option value="science">🔬 Science / Tech</option>
+          <option value="work">💼 Work</option>
+          <option value="research">🔍 Research</option>
+          <option value="other">✨ Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Start time</label>
+        <input id="hfm-start" class="fin" type="time" aria-label="Hfm Start">
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Intention — what are you trying to achieve?</label>
+      <textarea id="hfm-intention" class="ftextarea" rows="2" placeholder="The thing you want to actually accomplish before you surface…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('hf-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="startHyperfocus()">🔥 Start Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- IDEA MODAL -->
+<div id="idea-modal" class="modal-bg" onclick="if(event.target===this)closeModal('idea-modal')">
+  <div class="modal-box">
+    <div class="modal-title" id="idea-modal-title">💡 Capture Idea</div>
+    <input type="hidden" id="idm-id">
+    <div class="fg"><label class="fl">Idea title *</label><input id="idm-title" class="fin" placeholder="e.g. A browser extension that…, A way to fix…"></div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Category</label>
+        <select id="idm-cat" class="fin" aria-label="Category">
+          <option value="project">🗂 Project</option>
+          <option value="creative">🎨 Creative</option>
+          <option value="business">💼 Business</option>
+          <option value="life">🌿 Life improvement</option>
+          <option value="research">🔍 Research</option>
+          <option value="other">✨ Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Stage</label>
+        <select id="idm-stage" class="fin" aria-label="Stage">
+          <option value="spark">⚡ Spark — just captured</option>
+          <option value="incubating">🌱 Incubating — thinking about it</option>
+          <option value="active">🚀 Active — working on it</option>
+          <option value="shelved">📦 Shelved — for later</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">The idea in detail</label>
+      <textarea id="idm-detail" class="ftextarea" rows="3" placeholder="Describe it fully while it's in your head — who it helps, how it works, why it matters…"></textarea>
+    </div>
+    <div class="fg"><label class="fl">What excites you about it</label>
+      <textarea id="idm-excite" class="ftextarea" rows="2" placeholder="The thing that made you write it down…"></textarea>
+    </div>
+    <div class="fg"><label class="fl">Next action (optional)</label>
+      <input id="idm-next" class="fin" placeholder="e.g. Sketch it out, look up whether it exists, talk to someone about it…">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('idea-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveIdea()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RABBIT HOLE MODAL -->
+<div id="hole-modal" class="modal-bg" onclick="if(event.target===this)closeModal('hole-modal')">
+  <div class="modal-box">
+    <div class="modal-title">🐇 Log Rabbit Hole</div>
+    <div class="fg"><label class="fl">What is it? *</label><input id="rhm-title" class="fin" placeholder="e.g. History of the QWERTY keyboard, CRISPR explainer…"></div>
+    <div class="frow-2">
+      <div class="fg"><label class="fl">Category</label>
+        <select id="rhm-cat" class="fin" aria-label="Category">
+          <option value="science">🔬 Science / Tech</option>
+          <option value="history">📜 History</option>
+          <option value="culture">🌍 Culture / Society</option>
+          <option value="health">🏥 Health</option>
+          <option value="creative">🎨 Creative</option>
+          <option value="practical">🔧 Practical</option>
+          <option value="other">✨ Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Link / URL</label><input id="rhm-url" class="fin" type="url" placeholder="https://…"></div>
+    </div>
+    <div class="fg"><label class="fl">Why it grabbed you / key insight</label>
+      <textarea id="rhm-note" class="ftextarea" rows="2" placeholder="What specifically was interesting? What did you learn?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('hole-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveHole()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUOTE MODAL -->
+<div id="quote-modal" class="modal-bg" onclick="if(event.target===this)closeModal('quote-modal')">
+  <div class="modal-box">
+    <div class="modal-title">✨ Add Quote</div>
+    <div class="fg"><label class="fl">Quote *</label>
+      <textarea id="qm-text" class="ftextarea" rows="3" placeholder="The thing that should live in your brain…"></textarea>
+    </div>
+    <div class="fg"><label class="fl">Attribution (person, book, source)</label>
+      <input id="qm-attr" class="fin" placeholder="e.g. Ursula K. Le Guin, Thinking Fast and Slow…">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('quote-modal')" aria-label="Cancel">Cancel</button>
+      <button class="btn-save" onclick="saveQuote()" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<script>window.HQ_CURRENT_PAGE = 'idea-studio';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<script src="pages/idea-studio.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>

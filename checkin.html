@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✅ Check-In — AuDHD HQ</title>
+
+<!-- PWA META TAGS ──────────────────────────────────────────── -->
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+<meta name="theme-color" content="#9b6dff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+
+<link rel="stylesheet" href="pages/checkin.css">
+
+</head>
+<body>
+<div id="toast-el" class="toast"></div>
+
+<!-- Topbar injected by hq-core.js -->
+
+<div class="content-inner">
+
+  <div id="checkin-form">
+
+    <!-- Page header row -->
+	<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:20px;font-weight:900;line-height:1.2">⚡ Check-In</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="hdr-date"></div>
+      </div>
+      <a href="index.html" class="hq-back-btn">← HQ</a>
+    </div>
+
+
+    <!-- M-06: First-run hint — hidden by JS once check-ins exist -->
+    <div id="ci-first-run-hint" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:900;margin-bottom:6px">👋 First time here?</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6">
+        Pick a <strong>slot</strong> (morning / afternoon / night) then fill in what feels relevant — you don't have to complete every section.<br>
+        Tap <strong>⚡ Save Check-in</strong> at the bottom when you're done.
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <a href="audhdhq-setup-guide.html" style="font-size:10px;font-weight:800;color:var(--purple);text-decoration:none;border:1px solid var(--purple);border-radius:6px;padding:4px 10px;">📖 Setup Guide</a>
+        <button onclick="document.getElementById('ci-first-run-hint').style.display='none'" style="font-size:10px;font-weight:800;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Got it ✕</button>
+      </div>
+    </div>
+
+    <!-- P5: SURFACE-CHECKIN ITEMS — items flagged to surface during check-in -->
+    <div id="ci-surface-panel" style="display:none;margin-bottom:12px;background:rgba(var(--teal-rgb),.05);border:1.5px solid rgba(var(--teal-rgb),.22);border-radius:12px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;border-bottom:1px solid rgba(var(--teal-rgb),.15);font-size:11px;font-weight:800;color:var(--teal,#3dd6cd)">
+        <span>✅ Flagged for this check-in</span>
+        <span id="ci-surface-count" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
+        <button onclick="dismissAllCheckinSurface()" style="margin-left:auto;background:none;border:0.5px solid rgba(var(--teal-rgb),.3);cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);padding:3px 8px;border-radius:5px;font-family:inherit;transition:all .15s" onmouseover="this.style.color='var(--teal,#3dd6cd)'" onmouseout="this.style.color='var(--muted)'">Dismiss all</button>
+      </div>
+      <div id="ci-surface-list" style="padding:6px 13px 10px"></div>
+    </div>
+
+    <!-- Streak -->
+    <div class="streak-card">
+      <div>
+        <div class="streak-num" id="streak-num">0</div>
+        <div class="streak-label">Day streak 🔥</div>
+        <div class="streak-sub">consecutive check-ins</div>
+      </div>
+      <div style="flex:1">
+        <div class="streak-dots" id="streak-dots"></div>
+      </div>
+    </div>
+
+    <!-- Today's logged slots summary -->
+    <div class="today-slots-bar" id="today-slots-bar">
+      <div class="tsb-label">✅ Today's check-ins</div>
+      <div class="tsb-items" id="tsb-items"></div>
+    </div>
+
+    <!-- TIME OF DAY SLOT SELECTOR — rendered dynamically based on workday status -->
+    <div class="slot-section">
+      <div class="slot-title" id="slot-title">🕐 When is it?</div>
+      <div class="slot-grid" id="slot-grid"></div>
+    </div>
+
+        <!-- Low-energy redirect panel — shown after save if energy ≤ 2 -->
+    <div id="survival-suggestion" style="display:none;margin:10px 0;padding:13px 14px;background:rgba(var(--primary-rgb),.08);border:1.5px solid rgba(var(--primary-rgb),.25);border-radius:12px;">
+      <div style="font-weight:800;color:var(--purple-l,#c8baff);margin-bottom:8px;font-size:12px;">🛟 Sounds like a hard day. Where do you want to go?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+        <a href="survival-mode.html" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 6px;background:rgba(var(--primary-rgb),.15);border:1px solid rgba(var(--primary-rgb),.3);border-radius:9px;text-decoration:none;font-size:10px;font-weight:800;color:var(--purple-l,#c8baff);">
+          <span style="font-size:18px">🛟</span>Survival Mode
+        </a>
+        <a href="firebird-protocol.html" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 6px;background:rgba(var(--coral-rgb),.1);border:1px solid rgba(var(--coral-rgb),.25);border-radius:9px;text-decoration:none;font-size:10px;font-weight:800;color:#ffaa88;">
+          <span style="font-size:18px">🔥</span>Firebird
+        </a>
+        <a href="brain-dump.html" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 6px;background:rgba(var(--teal-rgb),.1);border:1px solid rgba(var(--teal-rgb),.25);border-radius:9px;text-decoration:none;font-size:10px;font-weight:800;color:var(--teal);">
+          <span style="font-size:18px">🫙</span>Thought Jar
+        </a>
+      </div>
+      <button onclick="document.getElementById('survival-suggestion').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;font-family:inherit;">Dismiss</button>
+    </div>
+
+    <!-- END-OF-WEEK / END-OF-MONTH CHECK-IN BUTTONS -->
+    <div id="eow-buttons" style="margin-bottom:4px">
+      <button class="eow-btn week" id="eow-week-btn" onclick="openEOW('week')" disabled title="Available Sundays 10am–midnight">
+        📅 End-of-Week Check-In
+      </button>
+      <button class="eow-btn month" id="eow-month-btn" onclick="openEOW('month')" disabled title="Available last day of month, 10am+">
+        📅 End-of-Month Check-In
+      </button>
+      <div id="eow-unlock-hint" style="font-size:10px;color:var(--muted);text-align:center;padding:3px 0 1px;line-height:1.4">
+        🔒 Week check-in unlocks Sundays · Month check-in unlocks last day of month
+      </div>
+    </div>
+    <!-- EOW SAVED SUMMARY — rendered by renderEOWSummary() -->
+    <div id="eow-summary"></div>
+
+    <!-- DONE BANNER — shown when slot already has an entry -->
+    <div id="done-banner" class="done-banner" style="display:none">
+      <div class="done-title">✅ Already checked in — <span id="done-slot-label"></span></div>
+      <div class="done-slots" id="done-summary"></div>
+      <button class="done-edit" onclick="editSlot()" aria-label="Edit">✏️ Update this check-in</button>
+    </div>
+
+
+    <!-- M-07: Post-save "what next?" panel -->
+    <div id="ci-what-next" style="display:none;margin:10px 0;padding:13px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;"></div>
+
+    <!-- CHECK-IN MODE PICKER (Phase 8 Step 3) — rendered by renderCheckinModePicker() -->
+    <div id="checkin-mode-bar" style="margin:0 0 10px 0">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Quick Presets -->
+    <div class="section-card" id="sec-presets">
+      <div class="sec-label">⚡ Quick Presets</div>
+      <div id="quick-presets-row" style="display:flex;flex-wrap:wrap;gap:7px;padding:4px 0">
+        <!-- rendered by renderQuickPresets() in checkin.js -->
+      </div>
+    </div>
+
+    <!-- How I'm Feeling (Tone + Sub-Tags) -->
+    <div class="section-card" id="sec-feeling">
+      <div class="sec-label">🎭 How I'm Feeling</div>
+      <div class="feeling-tone-row">
+        <button class="feeling-tone-btn" data-tone="bad"   onclick="selFeelingTone('bad')"  style="--ft-color:#EF5886">😣<span>Bad</span></button>
+        <button class="feeling-tone-btn" data-tone="blah"  onclick="selFeelingTone('blah')" style="--ft-color:#C96020">😶<span>Blah</span></button>
+        <button class="feeling-tone-btn" data-tone="fine"  onclick="selFeelingTone('fine')" style="--ft-color:#C49A00">😐<span>Fine</span></button>
+        <button class="feeling-tone-btn" data-tone="good"  onclick="selFeelingTone('good')" style="--ft-color:#2A8A85">🙂<span>Good</span></button>
+        <button class="feeling-tone-btn" data-tone="great" onclick="selFeelingTone('great')" style="--ft-color:#2A7A4E">🤩<span>Great</span></button>
+      </div>
+      <!-- Conditional sub-tags — rendered by JS -->
+      <div id="feeling-sub-section" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+        <div class="sec-label" id="feeling-sub-label" style="margin-bottom:8px"></div>
+        <div class="chips" id="feeling-sub-chips"></div>
+      </div>
+    </div>
+
+    <!-- Mood (numeric 1–5) -->
+    <div class="section-card" id="sec-mood">
+      <div class="sec-label">🌡️ Mood Intensity (1–5)</div>
+      <div class="mood-row">
+        <button class="mood-btn" data-m="1" onclick="selMood(1)"><div class="mood-em">😭</div><div class="mood-label">Very Low</div></button>
+        <button class="mood-btn" data-m="2" onclick="selMood(2)"><div class="mood-em">😔</div><div class="mood-label">Low</div></button>
+        <button class="mood-btn" data-m="3" onclick="selMood(3)"><div class="mood-em">😐</div><div class="mood-label">Okay</div></button>
+        <button class="mood-btn" data-m="4" onclick="selMood(4)"><div class="mood-em">🙂</div><div class="mood-label">Good</div></button>
+        <button class="mood-btn" data-m="5" onclick="selMood(5)"><div class="mood-em">🤩</div><div class="mood-label">Great</div></button>
+      </div>
+    </div>
+
+    <!-- Energy -->
+    <div class="section-card" id="sec-energy">
+      <div class="sec-label">🔋 Energy</div>
+      <div class="energy-row" role="group" aria-label="Energy level">
+        <button class="energy-btn" data-e="1" onclick="selEnergy(1)" title="Empty" aria-label="Energy: Empty">🪫</button>
+        <button class="energy-btn" data-e="2" onclick="selEnergy(2)" title="Low" aria-label="Energy: Low">😴</button>
+        <button class="energy-btn" data-e="3" onclick="selEnergy(3)" title="Okay" aria-label="Energy: Okay">😐</button>
+        <button class="energy-btn" data-e="4" onclick="selEnergy(4)" title="Good" aria-label="Energy: Good">😊</button>
+        <button class="energy-btn" data-e="5" onclick="selEnergy(5)" title="High" aria-label="Energy: High">🚀</button>
+        <span class="energy-label" id="energy-label">Tap to set</span>
+      </div>
+    </div>
+
+    <!-- Body / symptoms quick log — split Physical / Emotional -->
+    <div class="section-card" id="sec-body">
+      <div class="sec-label">🩺 Body — anything notable?</div>
+
+      <!-- PHYSICAL -->
+      <div class="body-subsec-label">Physical</div>
+      <div class="chips" id="body-chips">
+        <button class="chip c-pink" onclick="tog(this)">🧠 Headache</button>
+        <button class="chip c-pink" onclick="tog(this)">😴 Fatigue</button>
+        <button class="chip c-pink" onclick="tog(this)">🤢 Nausea</button>
+        <button class="chip c-pink" onclick="tog(this)">💢 Pain</button>
+        <button class="chip c-pink" onclick="tog(this)">🤒 Stomach Ache</button>
+        <button class="chip c-pink" onclick="tog(this)">🫄 Bloating</button>
+        <button class="chip c-pink" onclick="tog(this)">💊 Meds affecting me</button>
+        <button class="chip c-teal" onclick="tog(this)">💪 Strong</button>
+        <button class="chip c-teal" onclick="tog(this)">✨ Feeling good physically</button>
+      </div>
+
+      <!-- EMOTIONAL / COGNITIVE -->
+      <div class="body-subsec-label" style="margin-top:10px">Emotional / Cognitive</div>
+      <div class="chips" id="body-chips-emotional">
+        <button class="chip c-pink" onclick="tog(this)">🧠 Brain fog</button>
+        <button class="chip c-pink" onclick="tog(this)">😶 Shutdown-y</button>
+        <button class="chip c-pink" onclick="tog(this)">😰 Anxiety high</button>
+        <button class="chip c-pink" onclick="tog(this)">😤 Irritable</button>
+        <button class="chip c-pink" onclick="tog(this)">😞 Low mood</button>
+        <button class="chip c-teal" onclick="tog(this)">😌 Calm</button>
+        <button class="chip c-teal" onclick="tog(this)">⚡ Focused</button>
+      </div>
+
+      <!-- Custom body chip add -->
+      <div style="display:flex;gap:7px;margin-top:10px;align-items:center">
+        <input id="custom-body-input" class="fin" type="text" placeholder="Add custom symptom…" style="flex:1;font-size:12px;padding:7px 10px" onkeydown="if(event.key==='Enter')addCustomBodyChip()">
+        <button onclick="addCustomBodyChip()" style="background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:800;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .2s" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='var(--border)'">＋ Add</button>
+      </div>
+
+      <!-- WATCHLIST CHIPS (Phase B3 — injected from symptom pool) -->
+      <div id="body-watchlist-wrap" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div class="body-subsec-label" style="margin-bottom:6px">🩺 From My Watchlist</div>
+        <div class="chips" id="body-chips-watchlist" style="gap:5px"></div>
+      </div>
+
+      <!-- Sensory sensitivity rating with N/A option -->
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div class="sec-label" style="margin-bottom:6px;">🔊 Sensory sensitivity today</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;gap:5px;" id="sensory-btns" role="group" aria-label="Sensory sensitivity">
+            <button class="energy-btn scale-btn" data-s="0" onclick="selSensory(0)" title="Not applicable / skip" aria-label="Skip / not applicable">—</button>
+            <button class="energy-btn scale-btn" data-s="1" onclick="selSensory(1)" title="Very low — barely notice" aria-label="Very low sensitivity">😌</button>
+            <button class="energy-btn scale-btn" data-s="2" onclick="selSensory(2)" title="Low" aria-label="Low sensitivity">🙂</button>
+            <button class="energy-btn scale-btn" data-s="3" onclick="selSensory(3)" title="Moderate" aria-label="Moderate sensitivity">😐</button>
+            <button class="energy-btn scale-btn" data-s="4" onclick="selSensory(4)" title="High — noticeable" aria-label="High sensitivity">😣</button>
+            <button class="energy-btn scale-btn" data-s="5" onclick="selSensory(5)" title="Very high — overwhelming" aria-label="Very high sensitivity">🤯</button>
+          </div>
+          <div class="scale-micro-labels" aria-hidden="true">
+            <span>N/A</span><span>Very low</span><span>Low</span><span>Moderate</span><span>High</span><span>V.high</span>
+          </div>
+          <span class="energy-label" id="sensory-label">Tap to set</span>
+        </div>
+      </div>
+
+      <!-- Anxiety intensity rating with N/A option -->
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div class="sec-label" style="margin-bottom:6px;">😰 Anxiety intensity</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;gap:5px;" id="anxiety-btns" role="group" aria-label="Anxiety intensity">
+            <button class="energy-btn scale-btn" data-a="0" onclick="selAnxiety(0)" title="Not applicable / skip" aria-label="Skip / not applicable">—</button>
+            <button class="energy-btn scale-btn" data-a="1" onclick="selAnxiety(1)" title="None / minimal" aria-label="Minimal anxiety">😌</button>
+            <button class="energy-btn scale-btn" data-a="2" onclick="selAnxiety(2)" title="Mild" aria-label="Mild anxiety">🙂</button>
+            <button class="energy-btn scale-btn" data-a="3" onclick="selAnxiety(3)" title="Moderate — noticeable" aria-label="Moderate anxiety">😐</button>
+            <button class="energy-btn scale-btn" data-a="4" onclick="selAnxiety(4)" title="High — affecting me" aria-label="High anxiety">😰</button>
+            <button class="energy-btn scale-btn" data-a="5" onclick="selAnxiety(5)" title="Severe — overwhelming" aria-label="Severe anxiety">😱</button>
+          </div>
+          <div class="scale-micro-labels" aria-hidden="true">
+            <span>N/A</span><span>Minimal</span><span>Mild</span><span>Moderate</span><span>High</span><span>Severe</span>
+          </div>
+          <span class="energy-label" id="anxiety-label">Tap to set</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Walk toggle — shows miles field when checked -->
+    <div class="section-card" id="sec-walk">
+      <div class="sec-label">🚶 Movement</div>
+      <div class="walk-cb-row" id="cb-walk-row" onclick="togWalk(this)">
+        <input type="checkbox" id="did-walk" onclick="event.stopPropagation()">
+        <span class="cb-label">🦶 Did you walk today?</span>
+      </div>
+      <div id="walk-miles-wrap" style="display:none">
+        <div class="walk-miles-row" style="margin-top:10px">
+          <label class="fl" for="walk-miles">Miles walked</label>
+          <input id="walk-miles" class="fin" type="number" min="0" max="99" step="0.1" placeholder="e.g. 2.5" style="max-width:120px">
+        </div>
+      </div>
+    </div>
+
+    <!-- Sleep quick log — shown only for morning slot -->
+    <div class="section-card" id="sec-sleep">
+      <div class="sec-label">😴 Sleep Last Night</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div class="fg">
+          <label class="fl">Hours</label>
+          <input id="sleep-hrs" class="fin" type="number" min="0" max="24" step="0.5" placeholder="e.g. 7.5">
+        </div>
+        <div class="fg">
+          <label class="fl">Quality (1–5)</label>
+          <div style="display:flex;gap:5px;margin-top:2px">
+            <button class="energy-btn" style="width:34px;height:34px;font-size:13px" data-q="1" onclick="selSleepQ(1)" aria-label="Sleep quality 1 — very poor">1</button>
+            <button class="energy-btn" style="width:34px;height:34px;font-size:13px" data-q="2" onclick="selSleepQ(2)" aria-label="Sleep quality 2 — poor">2</button>
+            <button class="energy-btn" style="width:34px;height:34px;font-size:13px" data-q="3" onclick="selSleepQ(3)" aria-label="Sleep quality 3 — okay">3</button>
+            <button class="energy-btn" style="width:34px;height:34px;font-size:13px" data-q="4" onclick="selSleepQ(4)" aria-label="Sleep quality 4 — good">4</button>
+            <button class="energy-btn" style="width:34px;height:34px;font-size:13px" data-q="5" onclick="selSleepQ(5)" aria-label="Sleep quality 5 — excellent">5</button>
+          </div>
+        </div>
+      </div>
+      <div class="wd-check cb-row" id="cb-woke-row" onclick="togCB('woke-ontime',this)">
+        <input type="checkbox" id="woke-ontime" onclick="event.stopPropagation()">
+        <span class="cb-label">⏰ Woke up on time</span>
+      </div>
+
+      <!-- AM routine quick checks — only shown on morning slot -->
+      <div id="sec-am-checks" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:none">
+        <div class="sec-label" style="margin-bottom:8px;">☀️ Morning Checklist</div>
+        <div class="am-checks-grid">
+          <div class="cb-row am-check-row" onclick="togCB('am-meds',this)">
+            <input type="checkbox" id="am-meds" onclick="event.stopPropagation()">
+            <span class="cb-label">💊 Took meds</span>
+          </div>
+          <div class="cb-row am-check-row" onclick="togCB('am-teeth',this)">
+            <input type="checkbox" id="am-teeth" onclick="event.stopPropagation()">
+            <span class="cb-label">🦷 Brushed teeth</span>
+          </div>
+          <div class="cb-row am-check-row" onclick="togCB('am-cat',this)">
+            <input type="checkbox" id="am-cat" onclick="event.stopPropagation()">
+            <span class="cb-label">🐱 Fed the cat</span>
+          </div>
+          <div class="cb-row am-check-row" onclick="togCB('am-water',this)">
+            <input type="checkbox" id="am-water" onclick="event.stopPropagation()">
+            <span class="cb-label">💧 Had water</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work section — shown only for start-of-workday slot on actual workdays -->
+    <div class="section-card" id="sec-work-time">
+      <div class="sec-label">💼 Work Day <span id="non-workday-notice" style="display:none;font-size:9px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px;opacity:.7">— not a workday</span></div>
+      <div class="work-top-row">
+        <div class="cb-row" id="cb-work-row" onclick="togCB('work-ontime',this)" style="margin-top:0">
+          <input type="checkbox" id="work-ontime" onclick="event.stopPropagation()">
+          <span class="cb-label">🏃 On time</span>
+        </div>
+        <button class="late-btn" id="late-btn" onclick="togLate(this)" type="button">
+          <div class="late-dot"></div>
+          <span class="late-lbl">🚨 Late</span>
+        </button>
+      </div>
+      <div class="fl" style="margin-bottom:4px">How was your work day?</div>
+      <div class="workday-row" id="workday-row">
+        <button class="wd-btn" data-w="1" onclick="selWorkDay(1)"><div class="wd-em">😤</div><div class="wd-lbl">Rough</div></button>
+        <button class="wd-btn" data-w="2" onclick="selWorkDay(2)"><div class="wd-em">😕</div><div class="wd-lbl">Meh</div></button>
+        <button class="wd-btn" data-w="3" onclick="selWorkDay(3)"><div class="wd-em">😐</div><div class="wd-lbl">Okay</div></button>
+        <button class="wd-btn" data-w="4" onclick="selWorkDay(4)"><div class="wd-em">🙂</div><div class="wd-lbl">Good</div></button>
+        <button class="wd-btn" data-w="5" onclick="selWorkDay(5)"><div class="wd-em">🤩</div><div class="wd-lbl">Great</div></button>
+      </div>
+    </div>
+
+    <!-- Capture panel — replaces simple note, routes through Thought Jar -->
+    <div class="section-card" id="sec-notes">
+      <div class="sec-label">📝 Capture — Wins, Notes, Worries, Reminders</div>
+      <div class="capture-type-row" id="capture-type-row">
+        <button class="capture-type-btn active" data-ctype="note"    onclick="selCaptureType('note')">💭 Note</button>
+        <button class="capture-type-btn"        data-ctype="win"     onclick="selCaptureType('win')">🏆 Win</button>
+        <button class="capture-type-btn"        data-ctype="worry"   onclick="selCaptureType('worry')">😰 Worry</button>
+        <button class="capture-type-btn"        data-ctype="reminder" onclick="selCaptureType('reminder')" aria-label="Notifications">🔔 Reminder</button>
+      </div>
+      <textarea id="checkin-note" class="ftextarea" rows="2" placeholder="What's on your mind…"></textarea>
+      <!-- Route chips — shown after text is entered -->
+      <div class="capture-route-row" id="capture-route-row">
+        <span class="capture-route-label">→ Send to:</span>
+        <button class="capture-route-btn active" data-route="jar-only"  onclick="selCaptureRoute('jar-only')">🫙 Thought Jar only</button>
+        <button class="capture-route-btn"        data-route="weekly"    onclick="selCaptureRoute('weekly')">📆 Weekly</button>
+        <button class="capture-route-btn"        data-route="monthly"   onclick="selCaptureRoute('monthly')">🗓 Monthly</button>
+        <button class="capture-route-btn"        data-route="health"    onclick="selCaptureRoute('health')">🩺 Health</button>
+      </div>
+      <div class="capture-route-hint" id="capture-route-hint">Saved to Thought Jar. Viewable and reroutable from there.</div>
+    </div>
+
+    <!-- Medication confirmation — only shown if meds are logged -->
+    <div class="section-card" id="sec-meds-confirm" style="display:none">
+      <div class="sec-label">💊 Medications today</div>
+      <div id="med-confirm-list"></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px">
+        Manage your medication list in <a href="health-tracker.html" style="color:var(--teal);font-weight:700;text-decoration:none">Health Tracker → Meds tab</a>
+      </div>
+    </div>
+
+    <!-- Upcoming stressor field -->
+    <div class="section-card" id="sec-stressor">
+      <div class="sec-label">😰 Anything coming up you're anxious about? <span style="font-weight:400;color:var(--muted)">(optional)</span></div>
+      <textarea id="stressor-note" class="ftextarea" rows="2" placeholder="An upcoming call, appointment, deadline, interaction… Getting it out of your head helps."></textarea>
+      <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:10px;color:var(--muted);font-weight:700;">Route to:</span>
+        <button onclick="routeStressor('dump')" class="stressor-route-btn">🫙 Thought Jar</button>
+        <button onclick="routeStressor('firebird')" class="stressor-route-btn">🔥 Firebird</button>
+        <button onclick="routeStressor('none')" class="stressor-route-btn">💭 Keep here only</button>
+      </div>
+    </div>
+
+    <!-- Save — button hidden; sticky bar at bottom handles save -->
+    <div class="save-btn-spacer" aria-hidden="true"></div>
+
+  </div><!-- /checkin-form -->
+
+  <!-- Weekly Pattern Summary -->
+  <div id="weekly-pattern" style="margin-top:16px;display:none">
+    <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">📊 Your 7-Day Pattern</div>
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;">
+      <div id="weekly-pattern-text" style="font-size:12px;color:var(--text2);line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div style="margin-top:20px">
+    <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px;display:flex;align-items:center;gap:7px">Recent Check-ins <span style="flex:1;height:1px;background:var(--border);display:block"></span></div>
+    <div id="checkin-history"></div>
+  </div>
+
+</div><!-- /content-inner -->
+
+<!-- Bottom nav injected by hq-core.js -->
+<!-- Sidenav injected by hq-core.js -->
+
+<script>window.HQ_CURRENT_PAGE = 'checkin';</script>
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+<!-- Phase B: Symptom Pool System -->
+<script src="data/symptoms/category-registry.js"></script>
+<script src="data/symptoms/symptom-registry.js"></script>
+<script src="data/symptoms/condition-pools.js"></script>
+<script src="core/symptom-utils.js"></script>
+<script src="core/symptom-search.js"></script>
+<script src="core/symptom-filters.js"></script>
+<script src="setup-symptoms.js"></script>
+<!-- Phase B4: Optimization layer -->
+<script src="core/symptom-index.js"></script>
+<script src="core/symptom-cache.js"></script>
+<script src="core/symptom-lazy.js"></script>
+<script src="core/symptom-history-store.js"></script>
+<script src="pages/checkin.js"></script>
+<script src="core/hq-notifications.js"></script>
+<!-- removed duplicate core/hq-notifications.js -->
+
+
+<!-- END-OF-WEEK / END-OF-MONTH OVERLAY -->
+<div id="eow-overlay" class="eow-overlay modal-bg">
+  <div class="eow-box modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:17px;font-weight:900" id="eow-overlay-title">📅 End-of-Week Check-In</div>
+      <button onclick="closeEOW()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="eow-overlay-range"></div>
+    <div id="eow-key-row" style="display:flex;align-items:center;gap:7px;margin-bottom:14px;background:rgba(var(--primary-rgb),.07);border:1px solid rgba(var(--primary-rgb),.2);border-radius:8px;padding:7px 10px">
+      <span style="font-size:10px;font-weight:800;color:var(--muted);white-space:nowrap" id="eow-key-label">Week key</span>
+      <input id="eow-key-input" style="flex:1;background:transparent;border:none;outline:none;font-size:12px;font-weight:700;color:var(--text);font-family:inherit" placeholder="e.g. 2025-W21 or 2025-05" title="Edit to log for a past week or month">
+      <span style="font-size:9px;color:var(--muted);white-space:nowrap">✏️ editable</span>
+    </div>
+
+    <!-- LOOKING BACK -->
+    <div class="eow-section-hd">👀 Looking Back</div>
+
+    <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:6px">Overall — how did this week feel?</div>
+    <div class="eow-tone-grid" id="eow-tone-grid">
+      <button class="eow-tone-btn" data-tone="strong"      onclick="selEOWTone('strong',this)">💪 Strong</button>
+      <button class="eow-tone-btn" data-tone="productive"  onclick="selEOWTone('productive',this)" aria-label="Complete">✅ Productive</button>
+      <button class="eow-tone-btn" data-tone="balanced"    onclick="selEOWTone('balanced',this)">⚖️ Balanced</button>
+      <button class="eow-tone-btn" data-tone="mixed"       onclick="selEOWTone('mixed',this)">🌤 Mixed</button>
+      <button class="eow-tone-btn" data-tone="survival"    onclick="selEOWTone('survival',this)">🛡 Survival</button>
+      <button class="eow-tone-btn" data-tone="hard"        onclick="selEOWTone('hard',this)">🌧 Hard</button>
+    </div>
+
+    <div style="margin:12px 0 6px;font-size:11px;font-weight:800;color:var(--text2)">Mood this week (overall)</div>
+    <div style="display:flex;gap:7px" id="eow-mood-row" role="group" aria-label="Weekly mood">
+      <button class="energy-btn" data-em="1" onclick="selEOWMood(1,this)" title="Very hard week" aria-label="Mood: Very hard">😭</button>
+      <button class="energy-btn" data-em="2" onclick="selEOWMood(2,this)" title="Tough week" aria-label="Mood: Tough">😔</button>
+      <button class="energy-btn" data-em="3" onclick="selEOWMood(3,this)" title="Mixed week" aria-label="Mood: Mixed">😐</button>
+      <button class="energy-btn" data-em="4" onclick="selEOWMood(4,this)" title="Good week" aria-label="Mood: Good">🙂</button>
+      <button class="energy-btn" data-em="5" onclick="selEOWMood(5,this)" title="Great week" aria-label="Mood: Great">🤩</button>
+      <span class="energy-label" id="eow-mood-label">Tap to set</span>
+    </div>
+
+    <div style="margin:12px 0 6px;font-size:11px;font-weight:800;color:var(--text2)">Energy this week (overall)</div>
+    <div style="display:flex;gap:7px" id="eow-energy-row" role="group" aria-label="Weekly energy">
+      <button class="energy-btn" data-ee="1" onclick="selEOWEnergy(1,this)" title="Empty — crashed and burned" aria-label="Energy: Empty">🪫</button>
+      <button class="energy-btn" data-ee="2" onclick="selEOWEnergy(2,this)" title="Low — running on fumes" aria-label="Energy: Low">😴</button>
+      <button class="energy-btn" data-ee="3" onclick="selEOWEnergy(3,this)" title="Okay — managed" aria-label="Energy: Okay">😐</button>
+      <button class="energy-btn" data-ee="4" onclick="selEOWEnergy(4,this)" title="Good — solid week" aria-label="Energy: Good">😊</button>
+      <button class="energy-btn" data-ee="5" onclick="selEOWEnergy(5,this)" title="High — firing on all cylinders" aria-label="Energy: High">🚀</button>
+      <span class="energy-label" id="eow-energy-label">Tap to set</span>
+    </div>
+
+    <!-- Confidence by life area -->
+    <div class="eow-section-hd">💜 Confidence by Life Area</div>
+    <div id="eow-confidence-rows"></div>
+
+    <!-- Reflection -->
+    <div class="eow-section-hd">💬 Reflection</div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">What worked</div>
+      <textarea id="eow-went-well" class="ftextarea" rows="2" placeholder="Wins, moments that clicked, things that helped…"></textarea>
+    </div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">What was hard</div>
+      <textarea id="eow-hard" class="ftextarea" rows="2" placeholder="Friction, blocks, hard moments…"></textarea>
+    </div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Carry forward</div>
+      <input id="eow-carry" class="ftextarea" style="padding:8px 10px;border-radius:8px;resize:none" placeholder="One thing to bring into next week…">
+    </div>
+
+    <!-- LOOKING AHEAD -->
+    <div class="eow-section-hd">🔭 Looking Ahead</div>
+
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Focus areas next week</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="eow-focus-chips">
+        <button class="eow-focus-chip" data-f="work"       onclick="togEOWFocus('work',this)">💼 Work</button>
+        <button class="eow-focus-chip" data-f="health"     onclick="togEOWFocus('health',this)">🏥 Health</button>
+        <button class="eow-focus-chip" data-f="home"       onclick="togEOWFocus('home',this)">🏠 Home</button>
+        <button class="eow-focus-chip" data-f="social"     onclick="togEOWFocus('social',this)">👥 Social</button>
+        <button class="eow-focus-chip" data-f="finance"    onclick="togEOWFocus('finance',this)">💰 Finance</button>
+        <button class="eow-focus-chip" data-f="self"       onclick="togEOWFocus('self',this)">✨ Self-care</button>
+        <button class="eow-focus-chip" data-f="creativity" onclick="togEOWFocus('creativity',this)">🎨 Creativity</button>
+      </div>
+    </div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">One concrete thing next week</div>
+      <input id="eow-one-thing" class="ftextarea" style="padding:8px 10px;border-radius:8px" placeholder="Specific, small, achievable…">
+    </div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Energy budget for next week</div>
+      <div class="eow-energy-budget" id="eow-budget-row">
+        <button class="eow-budget-btn" data-b="low"    onclick="selEOWBudget('low',this)">🪫 Low<br><span style="font-size:9px;opacity:.7">Survival mode</span></button>
+        <button class="eow-budget-btn" data-b="medium" onclick="selEOWBudget('medium',this)">⚡ Medium<br><span style="font-size:9px;opacity:.7">Steady pace</span></button>
+        <button class="eow-budget-btn" data-b="high"   onclick="selEOWBudget('high',this)">🚀 High<br><span style="font-size:9px;opacity:.7">Full output</span></button>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="eow-section-hd">📝 Notes for Report</div>
+    <textarea id="eow-notes" class="ftextarea" rows="2" placeholder="Any additional context for your records or provider…"></textarea>
+
+    <div style="display:flex;gap:9px;margin-top:16px">
+      <button onclick="closeEOW()" style="background:var(--surface);border:1.5px solid var(--border);color:var(--muted);border-radius:10px;padding:10px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveEOW()" style="flex:1;background:var(--purple);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit" aria-label="Save">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="core/hq-deploy-gate.js"></script>
+
+  <!-- H-05: Sticky save bar — always visible at bottom -->
+  <div class="sticky-save-bar" id="sticky-save-bar">
+    <button class="sticky-save-btn" id="save-btn" onclick="saveCheckin()">⚡ Save Check-in</button>
+  </div>
+
+<!-- H-02: Progressive disclosure — collapsible section cards -->
+<script>
+(function(){
+  // Sections that start OPEN (high-priority / always relevant)
+  var OPEN_BY_DEFAULT = ['sec-presets','sec-feeling','sec-mood','sec-energy'];
+  // Sections that start COLLAPSED (secondary / situational)
+  // sec-sleep and sec-work-time are already slot-conditional; still collapse them
+  var COLLAPSE_BY_DEFAULT = ['sec-body','sec-walk','sec-sleep','sec-work-time','sec-notes','sec-meds-confirm','sec-stressor'];
+
+  function initCollapseCard(card) {
+    var labelEl = card.querySelector(':scope > .sec-label');
+    if (!labelEl) return; // already wrapped or no label (mode-hidden guard)
+
+    // Build toggle wrapper
+    var toggle = document.createElement('div');
+    toggle.className = 'sec-collapse-toggle';
+    card.insertBefore(toggle, labelEl);
+    toggle.appendChild(labelEl);
+
+    var caret = document.createElement('span');
+    caret.className = 'sec-caret';
+    caret.setAttribute('aria-hidden','true');
+    caret.textContent = '▾';
+    toggle.appendChild(caret);
+
+    // Wrap remaining children in sec-body
+    var body = document.createElement('div');
+    body.className = 'sec-body';
+    // Move all remaining direct children (after toggle) into body
+    while (card.children.length > 1) {
+      body.appendChild(card.children[1]);
+    }
+    card.appendChild(body);
+
+    // Set initial state
+    var id = card.id;
+    if (COLLAPSE_BY_DEFAULT.indexOf(id) !== -1) {
+      card.classList.add('collapsed');
+    }
+
+    // Toggle on header click
+    toggle.addEventListener('click', function(){
+      card.classList.toggle('collapsed');
+    });
+  }
+
+  // Auto-expand a card when it gets the 'active' class (JS fills data into it)
+  var _origToggleClass = null;
+  function watchActiveClass(card) {
+    var observer = new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        if (m.attributeName === 'class') {
+          if (card.classList.contains('active') && card.classList.contains('collapsed')) {
+            card.classList.remove('collapsed');
+          }
+        }
+      });
+    });
+    observer.observe(card, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // Mark a card as having data (shows purple dot when collapsed)
+  function markHasData(card) {
+    card.classList.add('has-data');
+  }
+
+  // Expose helper for checkin.js to call when a section receives data
+  window._ciMarkSectionFilled = function(secId) {
+    var el = document.getElementById(secId);
+    if (el) markHasData(el);
+  };
+  window._ciExpandSection = function(secId) {
+    var el = document.getElementById(secId);
+    if (el) el.classList.remove('collapsed');
+  };
+
+  // Run after DOM is ready
+  function run() {
+    var cards = document.querySelectorAll('.section-card');
+    cards.forEach(function(card){
+      initCollapseCard(card);
+      watchActiveClass(card);
+    });
+
+    // Patch: auto-expand body/walk/notes/stressor when they receive interaction
+    // Listen for any input/click inside a collapsed card's body → auto-expand
+    document.addEventListener('click', function(e){
+      var body = e.target.closest('.sec-body');
+      if (!body) return;
+      var card = body.closest('.section-card');
+      if (card && card.classList.contains('collapsed')) {
+        card.classList.remove('collapsed');
+      }
+    }, true);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    // Small defer so checkin.js has finished its own DOMContentLoaded
+    setTimeout(run, 0);
+  }
+})();
+</script>
+</body>
+</html>

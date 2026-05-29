@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#120f24">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+<title>🧠 AuDHD HQ — Feature Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"><script src="core/hq-keys.js"></script>
+<script src="core/hq-store.js"></script><!-- H-NEW-2 fix: hq-migrate requires HQStore -->
+<script src="core/hq-migrate.js"></script>
+<script src="core/hq-ready.js"></script>
+<script src="core/hq-deploy-gate.js"></script>
+<link rel="stylesheet" href="pages/audhdhq-feature-guide.css">
+</head>
+<body>
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth();
+</script>
+
+<!-- PRINT BAR -->
+<div class="print-bar">
+  <span class="print-bar-title">🧠 AuDHD HQ — Feature Guide</span>
+  <button class="print-btn" onclick="window.print()" aria-label="Save as PDF">🖨️ Save as PDF</button>
+</div>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR TOC ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="toc-label">Contents</div>
+
+    <div class="toc-section-head">Overview</div>
+    <a class="toc-link" href="#how-it-works">How it works</a>
+    <a class="toc-link" href="#data-flow">Data flow</a>
+    <a class="toc-link" href="#home-screen">Home screen</a>
+
+    <div class="toc-section-head">🌅 Daily</div>
+    <a class="toc-link" href="#checkin">Check-In</a>
+    <a class="toc-link" href="#thought-jar">Thought Jar</a>
+    <a class="toc-link" href="#timeline">Timeline</a>
+    <a class="toc-link" href="#daybuilder">DayBuilder</a>
+    <a class="toc-link" href="#routines">Routines + Prepwork</a>
+
+    <div class="toc-section-head">🧠 Core Brains</div>
+    <a class="toc-link" href="#project-brain">Project Brain</a>
+    <a class="toc-link" href="#money-brain">Money Brain</a>
+    <a class="toc-link" href="#kitchen-brain">Kitchen Brain</a>
+
+    <div class="toc-section-head">🗂 Planning</div>
+    <a class="toc-link" href="#taskboard">Taskboard</a>
+    <a class="toc-link" href="#monthly-planner">Monthly Planner</a>
+    <a class="toc-link" href="#weekly-planner">Weekly Planner</a>
+
+    <div class="toc-section-head">❤️ Health</div>
+    <a class="toc-link" href="#health-tracker">Health Tracker</a>
+    <a class="toc-link" href="#dream-journal">Dream Journal</a>
+    <a class="toc-link" href="#walking-tracker">Walking Tracker</a>
+    <a class="toc-link" href="#firebird">Firebird Protocol</a>
+    <a class="toc-link" href="#survival-mode">Survival Mode</a>
+
+    <div class="toc-section-head">⭐ Specialty</div>
+    <a class="toc-link" href="#life-admin">Life Admin Brain</a>
+    <a class="toc-link" href="#social-brain">Social Brain</a>
+    <a class="toc-link" href="#idea-studio">Idea Studio</a>
+    <a class="toc-link" href="#deep-clean">Deep Clean</a>
+    <a class="toc-link" href="#global-data">Global Data</a>
+
+    <div class="toc-section-head">⚙️ Settings</div>
+    <a class="toc-link" href="#customize">Customize</a>
+    <a class="toc-link" href="#data-sync">Data Sync</a>
+    <a class="toc-link" href="#other-tools">Other Tools</a>
+
+    <div class="toc-section-head">Reference</div>
+    <a class="toc-link" href="#quick-ref">Tool Quick-Ref</a>
+    <a class="toc-link" href="#tips">AuDHD Tips</a>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="doc">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+      <div class="doc-eyebrow">Feature Guide</div>
+      <h1 class="doc-title">How AuDHD HQ<br><em>actually works.</em></h1>
+      <p class="doc-tagline">A detailed reference for every tool in the system — what each one does, what data it stores, how the pieces connect, and what to use when you're in different brain states.</p>
+      <div class="doc-version">audhd-hq.web.app · Feature Guide v2 · Phase 6 complete · 29 tools documented</div>
+    </div>
+
+    <!-- ═══ OVERVIEW ═══════════════════════════════════════════════ -->
+    <div class="chapter" id="how-it-works">
+      <div class="chapter-eyebrow">Overview</div>
+      <h2 class="chapter-title">How the system works</h2>
+      <p class="chapter-intro">AuDHD HQ is a modular system — each tool is a standalone page, but they share data and signal each other through a common storage layer. Here's the architecture in plain terms.</p>
+
+      <div class="tool-card">
+        <div class="tool-head" onclick="toggleTool(this)" style="cursor:default">
+          <div class="tool-ico">🏗️</div>
+          <div class="tool-head-info">
+            <div class="tool-name">The Architecture</div>
+            <div class="tool-tagline">Storage · Signals · Shared Shell</div>
+          </div>
+        </div>
+        <div class="tool-body open" style="display:block; padding: 18px 22px 20px;">
+          <div class="tb-section">
+            <div class="tb-label">Storage (hq-store.js)</div>
+            <div class="tb-text">All data lives in your browser's <code style="font-size:12px;background:var(--card2);padding:1px 6px;border-radius:4px">localStorage</code>. Every tool reads and writes using the <strong>HQStore</strong> layer — a key registry that prevents typos and manages storage quota automatically. If storage gets above 80% full, it auto-evicts old check-in entries. If it hits 90%, you'll see a warning toast.</div>
+          </div>
+          <div class="tb-section">
+            <div class="tb-label">Signals (HQBus)</div>
+            <div class="tb-text">Tools communicate via a BroadcastChannel bus. When you save something in one tab, other open tabs update automatically. Channels include: <code style="font-size:12px;background:var(--card2);padding:1px 6px;border-radius:4px">db-signal</code> (DayBuilder data changed), <code style="font-size:12px;background:var(--card2);padding:1px 6px;border-radius:4px">cascade-signal</code> (monthly/weekly cascade), <code style="font-size:12px;background:var(--card2);padding:1px 6px;border-radius:4px">flags-updated</code>, <code style="font-size:12px;background:var(--card2);padding:1px 6px;border-radius:4px">energy-updated</code>.</div>
+          </div>
+          <div class="tb-section">
+            <div class="tb-label">Shell (hq-core.js + hq-shell.css)</div>
+            <div class="tb-text">Every page loads the same core shell, which injects the sidenav, topbar, and theme system. Themes shift automatically based on time of day (morning / afternoon / night) with smooth opacity transitions. You can override this in Customize.</div>
+          </div>
+          <div class="callout purple">
+            <span class="callout-ico">💜</span>
+            <div class="callout-text"><strong>Key principle:</strong> Nothing is sent to a server. All 29 tools share one localStorage space on your device. Export regularly via Data Sync to keep a backup.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA FLOW -->
+    <div class="chapter" id="data-flow">
+      <div class="chapter-eyebrow">Overview</div>
+      <h2 class="chapter-title">How data flows between tools</h2>
+      <p class="chapter-intro">Check-In is the data hub. Thought Jar is the capture hub. Most other tools either feed into one of these or draw from them. Here's how the main data connections work.</p>
+
+      <div class="flow-diagram">
+        <div class="flow-title">🔄 Core Data Flow</div>
+        <div class="flow-grid">
+          <div class="flow-col">
+            <div class="flow-label">Inputs</div>
+            <div class="flow-node input">✅ Check-In</div>
+            <div class="flow-node input">📋 Taskboard</div>
+            <div class="flow-node input">🗓 Monthly Planner</div>
+            <div class="flow-node input">👟 Walking Tracker</div>
+            <div class="flow-node input">💰 Money Brain</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-col">
+            <div class="flow-label">Hub</div>
+            <div class="flow-node hub">🏠 Home Screen<br><small style="font-weight:400;font-size:10px">Aggregates everything</small></div>
+            <div class="flow-node hub">🌍 Global Data<br><small style="font-weight:400;font-size:10px">Cross-module stats</small></div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-col">
+            <div class="flow-label">Outputs / Displays</div>
+            <div class="flow-node output">📊 Health Tracker<br><small style="font-weight:400;font-size:10px">Trends from check-ins</small></div>
+            <div class="flow-node output">📅 Timeline<br><small style="font-weight:400;font-size:10px">Draws from planner</small></div>
+            <div class="flow-node output">🗓 Weekly Planner<br><small style="font-weight:400;font-size:10px">Cascade from monthly</small></div>
+            <div class="flow-node output">🏥 Provider Report<br><small style="font-weight:400;font-size:10px">Health summary export</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-diagram" style="margin-top:14px">
+        <div class="flow-title">🫙 Capture + Routing Flow (Phase 2)</div>
+        <div class="flow-grid">
+          <div class="flow-col">
+            <div class="flow-label">Source</div>
+            <div class="flow-node input">✅ Check-In<br><small style="font-weight:400;font-size:10px">Capture Panel (Note/Win/Worry/Reminder)</small></div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-col">
+            <div class="flow-label">Always passes through</div>
+            <div class="flow-node hub">🫙 Thought Jar<br><small style="font-weight:400;font-size:10px">audhd-hq-braindump LS key</small></div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-col">
+            <div class="flow-label">Optional secondary destinations</div>
+            <div class="flow-node output">📆 Weekly inbox</div>
+            <div class="flow-node output">🗓 Monthly inbox</div>
+            <div class="flow-node output">🩺 Health notes</div>
+            <div class="flow-node output">🏆 Wins log</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout gold">
+        <span class="callout-ico">💡</span>
+        <div class="callout-text"><strong>Cascade system:</strong> Goals you set in the Monthly Planner can cascade down to Weekly Planner → Taskboard. This is how high-level intentions turn into today's tasks without manual re-entry.</div>
+      </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="chapter" id="home-screen">
+      <div class="chapter-eyebrow">Overview</div>
+      <h2 class="chapter-title">What the home screen shows</h2>
+      <div class="callout purple" style="margin-bottom:16px">
+        <span class="callout-ico">🏠</span>
+        <div class="callout-text">The home screen at <strong>index.html</strong> is a live dashboard. It reads from every other tool and shows you the most important information without you having to open each one.</div>
+      </div>
+      <table class="qr-table">
+        <thead><tr><th>Element</th><th>What it shows</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Greeting + Vibe Strip</td><td>Your name, time-based greeting, current energy state, cognitive load, emotional load, win count</td><td>Profile, Check-In, Thought Jar</td></tr>
+          <tr><td>Capacity Bar</td><td>Today's capacity level based on your last check-in ratings</td><td>Check-In log</td></tr>
+          <tr><td>Metrics Strip</td><td>Week summary, check-in streak, tasks done, miles walked</td><td>Check-In, Taskboard, Walking Tracker</td></tr>
+          <tr><td>Priority Stack</td><td>Your highest-priority uncompleted tasks</td><td>Taskboard</td></tr>
+          <tr><td>Coming Up</td><td>Upcoming scheduled events</td><td>Monthly Planner</td></tr>
+          <tr><td>Flagged Urgent</td><td>Items you've flagged as urgent across any tool</td><td>Flags system (hq-flags)</td></tr>
+          <tr><td>I Am Right Now</td><td>Quick-state buttons: Overwhelmed, Can't Start, Shutting Down, Actually Okay</td><td>Links to Survival Mode, Firebird Protocol, Check-In</td></tr>
+          <tr><td>Walking Strip</td><td>Miles logged vs 2026 goal, pace needed</td><td>Walking Tracker</td></tr>
+          <tr><td>Alerts Box</td><td>Budget alerts, health flags, reminders</td><td>Money Brain, Health Tracker, Notifications</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ═══ DAILY ═════════════════════════════════════════════════ -->
+    <div class="chapter" id="daily">
+      <div class="chapter-eyebrow">🌅 Daily Tools</div>
+      <h2 class="chapter-title">Daily tools</h2>
+      <p class="chapter-intro">These are the tools you'll use most often — ideally once a day, though they're built to be forgiving when you miss days.</p>
+    </div>
+
+    <!-- CHECK-IN -->
+    <div class="tool-card" id="checkin">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">✅</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Check-In <span class="tool-url">checkin.html</span></div>
+          <div class="tool-tagline">Mood · Energy · Body · Sleep · Workday · AM Checklist · Capture Panel · Weekly/Monthly summary</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>The Check-In is the heartbeat of AuDHD HQ. It's a structured daily self-assessment that takes under two minutes. You log your mood (Blah/Fine/Good/Great), physical energy, emotional/cognitive energy, body sensations, sleep hours and quality, workday rating, miles walked, and a free-text note. Once a week (or month), it also prompts for a broader review — both can be triggered manually at any time.</p>
+          <p>Your entries build over time and feed into the Health Tracker's trend graphs, the home screen's capacity bar and metrics strip, and the Provider Report export.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Day streak counter — tracks consecutive days you've checked in</li>
+            <li><strong>Body chips split into Physical and Emotional sections</strong> — rate each independently; sensory and anxiety chips include a "Not Applicable" option</li>
+            <li><strong>AM Morning Checklist</strong> — meds taken, teeth brushed, cat fed, water; only visible in the morning time slot</li>
+            <li>Meds logging — mark medications taken, links to Health Tracker meds tab</li>
+            <li><strong>Capture Panel (Notes)</strong> — type selector lets you tag a note as Win / Worry / Note / Reminder; route chips send it to Thought Jar, Weekly inbox, Monthly inbox, or Health notes; everything passes through Thought Jar first</li>
+            <li>Route to: — route a thought directly to Thought Jar, Worry Time, or Wins from within the check-in</li>
+            <li>Recent check-ins — scrollable history at the bottom</li>
+            <li>Weekly review — an extra section on Sundays (or your chosen day) for week-level reflection; <strong>can now be triggered manually any day</strong> (shows dashed border when in manual mode)</li>
+            <li>Monthly review — similarly unlocked; both weekly and monthly triggers no longer locked to specific calendar positions</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Health Tracker (trends)</span>
+            <span class="tb-tag connects">Home screen (capacity, streak)</span>
+            <span class="tb-tag connects">Global Data</span>
+            <span class="tb-tag connects">Provider Report</span>
+            <span class="tb-tag connects">Thought Jar</span>
+          </div>
+        </div>
+        <div class="callout green">
+          <span class="callout-ico">💡</span>
+          <div class="callout-text">You don't have to fill in every field every day. Even a partial check-in (just mood + energy) is useful and counts toward your streak.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THOUGHT JAR -->
+    <div class="tool-card" id="thought-jar">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🫙</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Thought Jar (Brain Dump) <span class="tool-url">brain-dump.html</span></div>
+          <div class="tool-tagline">Capture anything — route it anywhere — clear your head fast</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A zero-friction capture tool. When something is rattling around your head — a task, a worry, an idea, an observation — you dump it here. The Thought Jar doesn't judge, organize, or require categories. You just write. Later (when you have capacity), you can route entries to the right place.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>One-tap entry — just type and hit add</li>
+            <li>Entry types: Task, Worry, Idea, Vent, Win, Note</li>
+            <li>Route to: send an entry to Taskboard, Worry Time, Wins, Idea Studio, or just archive it</li>
+            <li>Badge on home screen shows how many unprocessed entries you have</li>
+            <li>Full history with search and filter by type</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Taskboard</span>
+            <span class="tb-tag connects">Idea Studio</span>
+            <span class="tb-tag connects">Home screen badge</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="tool-card" id="timeline">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">📅</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Timeline <span class="tool-url">day-view.html</span></div>
+          <div class="tool-tagline">Read-only day view · Recurring events · All-day banner</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A visual, read-only view of your day. The Timeline pulls events from the Monthly Planner (including recurring events) and displays them in chronological order. It's the "what's happening today" view — not a place to edit, just to see.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Today's events pulled from Monthly Planner</li>
+            <li>Recurring events appear automatically (daily, weekly, monthly, yearly)</li>
+            <li>All-day events pinned to a banner at the top</li>
+            <li>Time-based positioning on a visual timeline</li>
+            <li>Navigate forward/backward to other days</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Monthly Planner (event source)</span>
+            <span class="tb-tag connects">Recurring Events system</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAYBUILDER -->
+    <div class="tool-card" id="daybuilder">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🗓</div>
+        <div class="tool-head-info">
+          <div class="tool-name">DayBuilder <span class="tool-url">day-view.html#plan</span></div>
+          <div class="tool-tagline">Visual block schedule · Time-slot planning · Build your day intentionally</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>Where the Timeline is read-only, DayBuilder is interactive. You build your day in time blocks — assigning tasks, breaks, appointments, and buffer time to specific slots. It's a visual block planner that makes time feel tangible rather than abstract.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Drag-and-resize time blocks across a visual day grid</li>
+            <li>Block types: Focus, Break, Admin, Appointment, Buffer, Free</li>
+            <li>Pull tasks from Taskboard directly into the day</li>
+            <li>Signals changes to other open tabs via db-signal bus</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Taskboard</span>
+            <span class="tb-tag connects">Home screen quick access</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUTINES -->
+    <div class="tool-card" id="routines">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🔁</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Routines + Prepwork <span class="tool-url">routines-prepwork.html</span></div>
+          <div class="tool-tagline">Morning · Night prep · End-of-day · Custom routines</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>Structured checklists for your recurring routines. AuDHD brains often need externalized sequences for things that neurotypical people do "automatically" — morning prep, night wind-down, getting-out-of-the-house. This tool holds those sequences so you don't have to hold them in your head.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Built-in routine types: Morning, Night Prep, End-of-Day</li>
+            <li>Customizable steps — add, remove, reorder</li>
+            <li>Check-off mode — tap through your routine step by step</li>
+            <li>Resets daily so it's fresh the next morning</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ═══ CORE BRAINS ══════════════════════════════════════════ -->
+    <div class="chapter" id="core-brains">
+      <div class="chapter-eyebrow">🧠 Core Brains</div>
+      <h2 class="chapter-title">Core brains</h2>
+      <p class="chapter-intro">These are the big-topic life management tools. Each one handles a major domain that otherwise takes up background cognitive load.</p>
+    </div>
+
+    <!-- PROJECT BRAIN -->
+    <div class="tool-card" id="project-brain">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🗂</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Project Brain <span class="tool-url">project-brain.html</span></div>
+          <div class="tool-tagline">Projects · Milestones · Tasks · Timeline bars · Ideas</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A project management tool designed for the AuDHD experience — which means it accommodates non-linear progress, hyperfocus bursts, and the fact that "projects" often start as vague ideas before they have a structure. You can track multiple active projects with milestones, tasks, ideas, and a visual timeline bar.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Projects with title, status, start date, and visual timeline bar</li>
+            <li>Milestones and sub-tasks per project</li>
+            <li>Inline concept title editing</li>
+            <li>Ideas tab — capture project-adjacent thoughts without committing them to tasks</li>
+            <li>Export/import mechanism for individual project data</li>
+            <li>Status options: Active, Paused, Completed, Archived</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Taskboard (task routing)</span>
+            <span class="tb-tag connects">Idea Studio</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONEY BRAIN -->
+    <div class="tool-card" id="money-brain">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">💰</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Money Brain <span class="tool-url">money-brain.html</span></div>
+          <div class="tool-tagline">Budget · Bills · Income · Savings · Debt · Subscriptions · Transactions</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A comprehensive personal finance manager built specifically to reduce the executive function load of managing money. Money Brain handles the full picture: what's coming in, what's going out, what's due, what you've saved, and where you're in debt. It's particularly useful for irregular income — it has an income-smoothing feature for people who don't get consistent paychecks.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Tabs</div>
+          <ul class="tb-list">
+            <li><strong>📊 Overview</strong> — cash flow snapshot, alerts, coming due</li>
+            <li><strong>📋 Bills</strong> — recurring bills, due dates, autopay tracking</li>
+            <li><strong>🔁 Expenses</strong> — recurring expense tracking</li>
+            <li><strong>💵 Income</strong> — income sources and schedule</li>
+            <li><strong>🎯 Savings</strong> — savings goals with progress bars</li>
+            <li><strong>💳 Transactions</strong> — manual transaction log</li>
+            <li><strong>📺 Subscriptions</strong> — subscription tracker with cost summary</li>
+            <li><strong>💳 Debt</strong> — debt accounts, balances, minimum payments</li>
+            <li><strong>📈 Income Smoothing</strong> — average income over time for budgeting</li>
+            <li><strong>🏦 Finance Setup</strong> — configure accounts and preferences</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Home screen (alerts)</span>
+            <span class="tb-tag connects">Global Data</span>
+          </div>
+        </div>
+        <div class="callout gold">
+          <span class="callout-ico">💡</span>
+          <div class="callout-text">The cash flow view has three modes: This Month, Next 30 Days, and History. "Next 30 Days" is the one that reduces anxiety — it shows you exactly what's hitting your account before it happens.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KITCHEN BRAIN -->
+    <div class="tool-card" id="kitchen-brain">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🍳</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Kitchen Brain <span class="tool-url">kitchen-brain.html</span></div>
+          <div class="tool-tagline">Meal planning · Fridge tracker · Recipes · Grocery list · Receipt cost tracking</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>The "what do I eat and what do I have" tool. Kitchen Brain tracks what's in your fridge, helps you plan meals for the week, stores recipes you actually use, and generates a shopping list from your plan. It addresses the classic AuDHD problem of standing in front of the fridge unable to decide, then ordering delivery because planning feels impossible.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Fridge/pantry inventory with expiry date tracking — <strong>faster item entry</strong> in Phase 6B</li>
+            <li>Weekly meal plan grid (breakfast, lunch, dinner, snacks)</li>
+            <li>Recipe library — save and retrieve what works for you</li>
+            <li>Auto-generated grocery list from the meal plan</li>
+            <li>Safe foods list — things you can always fall back on</li>
+            <li><strong>Receipt/invoice upload foundation</strong> — upload grocery receipts to track actual spend by item; groundwork for grocery cost trends</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ═══ PLANNING ═══════════════════════════════════════════════ -->
+    <div class="chapter" id="planning">
+      <div class="chapter-eyebrow">🗂 Planning + Organizing</div>
+      <h2 class="chapter-title">Planning tools</h2>
+      <p class="chapter-intro">These tools handle time at different scales — from this month's big goals down to today's task list. They're designed to cascade: set a goal once at the top level and it flows down.</p>
+    </div>
+
+    <!-- TASKBOARD -->
+    <div class="tool-card" id="taskboard">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">📋</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Taskboard <span class="tool-url">taskboard.html</span></div>
+          <div class="tool-tagline">Daily · Weekly · Monthly lanes · Priority flags · Tags</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>The central task management hub. Tasks live in three lanes by time horizon: Daily, Weekly, Monthly. Within each lane, tasks can be prioritized, tagged, and flagged urgent. Your Priority Stack on the home screen pulls from here automatically, surfacing your most important uncomplete tasks without you having to open the Taskboard.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Three lanes: Today, This Week, This Month</li>
+            <li>Priority flags (High/Medium/Low) and urgent flag</li>
+            <li>Custom tags from your tag library (configured in Customize)</li>
+            <li>Subtasks within each task</li>
+            <li>Archive completed tasks rather than permanently deleting</li>
+            <li>Drag to reorder within a lane</li>
+            <li>Filter by tag, priority, or status</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Home screen (Priority Stack)</span>
+            <span class="tb-tag connects">DayBuilder</span>
+            <span class="tb-tag connects">Monthly/Weekly Planner (cascade)</span>
+            <span class="tb-tag connects">Flags system</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY PLANNER -->
+    <div class="tool-card" id="monthly-planner">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🗓️</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Monthly Planner <span class="tool-url">monthly-planner.html</span></div>
+          <div class="tool-tagline">Monthly goals · Appointments · Recurring events · Cascade to weekly</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>High-level monthly planning. Set goals for the month, add appointments and events to the calendar, configure recurring events, and cascade goals down to the Weekly Planner. It's the 30,000-foot view of your life in a given month.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Monthly goal list with categories</li>
+            <li>Calendar view with event dots</li>
+            <li>Recurring events: daily, weekly, monthly, yearly, custom frequencies</li>
+            <li>All-day events that pin to the Timeline banner</li>
+            <li>Cascade: push monthly goals to Weekly Planner</li>
+            <li>Events feed into Timeline view automatically</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Timeline (event source)</span>
+            <span class="tb-tag connects">Weekly Planner (cascade)</span>
+            <span class="tb-tag connects">Home screen (Coming Up)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY PLANNER -->
+    <div class="tool-card" id="weekly-planner">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">📆</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Weekly Planner <span class="tool-url">weekly-planner.html</span></div>
+          <div class="tool-tagline">Week view · Inbox pull · Review · Focus intentions</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>Mid-level weekly planning. The Weekly Planner bridges your month-level goals and your daily tasks. It gives you a structured space to plan the week ahead, review the week that just ended, and set focus intentions for each day. Tasks can be pulled in from the Taskboard inbox or cascaded from the Monthly Planner.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>7-day view with per-day task lists</li>
+            <li>Inbox pull — drag tasks from Taskboard into the week</li>
+            <li>Weekly review tab — what went well, what didn't, what carries forward</li>
+            <li>Focus intentions — one-sentence daily priority</li>
+            <li>Recurring events appear automatically</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Monthly Planner (cascade source)</span>
+            <span class="tb-tag connects">Taskboard (inbox)</span>
+            <span class="tb-tag connects">Recurring Events</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ═══ HEALTH ══════════════════════════════════════════════════ -->
+    <div class="chapter" id="health">
+      <div class="chapter-eyebrow">❤️ Health + Wellness</div>
+      <h2 class="chapter-title">Health + wellness tools</h2>
+      <p class="chapter-intro">These tools help you track patterns, manage hard states, and build evidence about your own health over time — including data you can share with providers.</p>
+    </div>
+
+    <!-- HEALTH TRACKER -->
+    <div class="tool-card" id="health-tracker">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🩺</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Health Tracker <span class="tool-url">health-tracker.html</span></div>
+          <div class="tool-tagline">Period · Headaches · Sleep · Meds · Energy · Provider Report · Trends · Conditions Setup</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>The most comprehensive tool in AuDHD HQ. Health Tracker aggregates data from your daily check-ins and adds dedicated tracking for health-specific patterns. It's organized into tabs, each covering a different health domain. The Provider Report tab generates a clinical summary you can bring to a doctor or therapist.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Tabs</div>
+          <ul class="tb-list">
+            <li><strong>📊 Overview</strong> — health summary dashboard</li>
+            <li><strong>🩸 Period</strong> — cycle tracking, flow, symptoms</li>
+            <li><strong>🧠 Headaches</strong> — migraine/headache log with triggers and severity</li>
+            <li><strong>😴 Sleep</strong> — hours, quality, patterns from check-ins</li>
+            <li><strong>🌙 Dreams</strong> — linked to Dream Journal</li>
+            <li><strong>🩺 Symptoms</strong> — custom symptom tracking; symptoms can be flagged to push into your daily Check-In</li>
+            <li><strong>⚡ Check-ins</strong> — full check-in history view</li>
+            <li><strong>🔋 Energy</strong> — energy patterns over time</li>
+            <li><strong>🏥 Provider Report</strong> — exportable clinical summary</li>
+            <li><strong>💊 Meds</strong> — medication list, schedule, log</li>
+            <li><strong>🩻 Doctor Prep</strong> — questions to bring to appointments</li>
+            <li><strong>📈 Trends</strong> — graphs across all tracked metrics</li>
+            <li><strong>⚙️ Setup</strong> — configure conditions, healthcare providers, and medications; the foundation for provider report pre-population and push-to-check-in flags</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Check-In (data source for all trends)</span>
+            <span class="tb-tag connects">Dream Journal</span>
+            <span class="tb-tag connects">Data Sync (Provider Report export)</span>
+          </div>
+        </div>
+        <div class="callout green">
+          <span class="callout-ico">🏥</span>
+          <div class="callout-text"><strong>Provider Report:</strong> The report pulls from the last 2 weeks, 30 days, or 3 months of data and formats it as a clinical summary. You can select which categories to include: mental/emotional, physical, sleep, and energy. Export from here or from Data Sync → Provider Data Export.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DREAM JOURNAL -->
+    <div class="tool-card" id="dream-journal">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">💭</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Dream Journal <span class="tool-url">dream-journal.html</span></div>
+          <div class="tool-tagline">Log dreams · Track symbols · Pattern analysis</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A dedicated journal for logging and analyzing dreams. Beyond simple notes, it lets you tag recurring symbols and themes, track emotional tone, and see patterns emerge over time. Dream data also surfaces in the Health Tracker's Sleep and Dreams tabs.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Quick-capture mode for recording dreams immediately on waking</li>
+            <li>Symbol library — build your own dictionary of recurring symbols</li>
+            <li>Emotional tone tags (vivid, anxious, peaceful, strange, etc.)</li>
+            <li>Pattern analysis — which symbols appear most, which emotions correlate</li>
+            <li>Links to Health Tracker's Dreams tab</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALKING TRACKER -->
+    <div class="tool-card" id="walking-tracker">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">👟</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Walking Tracker <span class="tool-url">walking-tracker.html</span></div>
+          <div class="tool-tagline">Miles log · 2026 annual goal · Heatmap · Pace engine · Intensity zones · Streaks · Quick-add templates</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>Tracks walking mileage toward an annual goal. Log a walk with date, distance, duration, and optional notes. The pace engine automatically calculates MPH and min/mile from your entries and places your walk in an intensity zone. The home screen shows a live progress bar toward your 2026 goal, along with how many miles you need per day to stay on track. The heatmap shows which days had activity across the year.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Annual mileage goal (default: 3,100 mi for 2026)</li>
+            <li>Daily log with distance, duration, and notes</li>
+            <li><strong>Pace engine</strong> — calculates MPH and min/mile automatically from your entries</li>
+            <li><strong>Walking intensity zones</strong> — light / moderate / brisk / vigorous based on pace</li>
+            <li><strong>Walking streak tracking</strong> — consecutive active days</li>
+            <li><strong>Quick-add walk templates</strong> — save frequent walks (distance + route) for one-tap logging</li>
+            <li><strong>Daily history</strong> — scrollable log of past walks with pace and zone displayed</li>
+            <li>Year heatmap — color intensity by miles</li>
+            <li>Pace calculation — miles/day needed to hit goal</li>
+            <li>Pulls walk miles from daily Check-In if entered there</li>
+            <li>Unit toggle: miles or kilometers</li>
+            <li>Weather integration scaffold — ready for live weather data hookup</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Home screen (walking strip)</span>
+            <span class="tb-tag connects">Check-In (miles field)</span>
+            <span class="tb-tag connects">Global Data</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIREBIRD PROTOCOL -->
+    <div class="tool-card" id="firebird">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🔥</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Firebird Protocol <span class="tool-url">firebird-protocol.html</span></div>
+          <div class="tool-tagline">Task initiation · Coping scripts · Trusted people · Breathing · Grounding</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A crisis-adjacent support tool specifically for the "I can't start" state — executive dysfunction, task initiation failure, freeze response. The Firebird Protocol gives you structured steps to break through, including coping scripts, grounding exercises, breathing prompts, and a list of trusted people to contact when you need external support.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Grounding exercises (5-4-3-2-1 and variations)</li>
+            <li>Breathing guides with timed animations</li>
+            <li>Coping scripts — pre-written self-talk for common stuck states</li>
+            <li>Trusted People list — names, phone numbers, notes</li>
+            <li>One-sentence task prompts to get moving on the hardest task</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">When to use</div>
+          <div class="tb-tags">
+            <span class="tb-tag tip">When you can't start anything</span>
+            <span class="tb-tag tip">Freeze/shutdown approaching</span>
+            <span class="tb-tag tip">Overwhelm + paralysis</span>
+          </div>
+        </div>
+        <div class="callout purple">
+          <span class="callout-ico">🔥</span>
+          <div class="callout-text">The "Can't start" button on the home screen quick-state strip goes directly here. You never have to navigate when you're already stuck.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SURVIVAL MODE -->
+    <div class="tool-card" id="survival-mode">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🛟</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Survival Mode <span class="tool-url">survival-mode.html</span></div>
+          <div class="tool-tagline">Floor tasks · Hard days · Migraine protocol · Shutdown support</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>For days when functioning normally isn't possible. Survival Mode shows you only the absolute minimum floor tasks — the things that keep you alive and safe without requiring executive function. It also includes a Migraine Protocol tab for when you're in physical pain and can barely look at a screen.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Floor tasks list — pre-configured minimal survival checklist</li>
+            <li>One-sentence "just do this next" prompts</li>
+            <li>Migraine Protocol tab — low-light, minimal text, very simple steps</li>
+            <li>Session summary — log what you managed to do</li>
+            <li>Customizable floor tasks to match your actual needs</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">When to use</div>
+          <div class="tb-tags">
+            <span class="tb-tag tip">Autistic burnout</span>
+            <span class="tb-tag tip">ADHD paralysis</span>
+            <span class="tb-tag tip">Migraine / chronic pain flare</span>
+            <span class="tb-tag tip">Shutdown or meltdown recovery</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ═══ SPECIALTY ════════════════════════════════════════════ -->
+    <div class="chapter" id="specialty">
+      <div class="chapter-eyebrow">⭐ Specialty Tools</div>
+      <h2 class="chapter-title">Specialty tools</h2>
+      <p class="chapter-intro">These tools handle specific life domains that take up disproportionate cognitive space — social interactions, life admin, deep interests, and household maintenance.</p>
+    </div>
+
+    <!-- LIFE ADMIN -->
+    <div class="tool-card" id="life-admin">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">📑</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Life Admin Brain <span class="tool-url">life-admin.html</span></div>
+          <div class="tool-tagline">Documents · Contacts · Deadlines · Call prep · Government stuff · Setup tab</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>"Adult stuff" in one place. Life Admin Brain is for the category of tasks that are urgent, high-stakes, confusing, and rarely enjoyable — insurance claims, government forms, medical paperwork, important contacts, upcoming deadlines. It's particularly useful for phone calls and appointments: the Call Prep feature helps you organize exactly what you need to say before you dial.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Document vault — track important documents, where they are (physical / virtual / both), and expiry dates</li>
+            <li>Contact directory — key numbers and notes (insurance, doctor, landlord)</li>
+            <li>Deadline tracker with urgency flags</li>
+            <li>Call prep template — script out what to say, what to ask, what info to have ready</li>
+            <li>Task log for completed admin tasks</li>
+            <li><strong>Setup tab</strong> — pre-configure your admin landscape so the module knows your recurring tasks and document categories from day one</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOCIAL BRAIN -->
+    <div class="tool-card" id="social-brain">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">💬</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Social Brain <span class="tool-url">social-brain.html</span></div>
+          <div class="tool-tagline">People directory · Scripts · Social energy tracking · Relationship taxonomy · Contact import</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>An external social memory system. AuDHD brains often struggle with social recall — forgetting what someone told you, not knowing what to say in a situation, losing track of where a relationship stands. Social Brain stores notes about people, pre-written scripts for common social situations, and tracks how much social energy you have left.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>People directory with notes, <strong>relationship type taxonomy</strong> (friend / family / colleague / acquaintance / provider / etc.), and last contact</li>
+            <li><strong>Contact import</strong> — bring in contacts from existing sources to seed your directory</li>
+            <li>Social scripts — pre-written responses for tricky situations</li>
+            <li>Social energy gauge — track how depleted you are</li>
+            <li>Upcoming social commitments tracker</li>
+            <li>Recovery time estimates post-social events</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDEA STUDIO -->
+    <div class="tool-card" id="idea-studio">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">💡</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Idea Studio <span class="tool-url">idea-studio.html</span></div>
+          <div class="tool-tagline">Interests · Hyperfocus topics · Ideas · Rabbit holes</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>A place for the ADHD brain's most natural state: intensely interested in something. Idea Studio lets you track current hyperfocus topics, capture ideas before they disappear, log rabbit holes you went down, and maintain a library of interests — current and past. It's permission to take your interests seriously as data about yourself.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Current interests with intensity rating and notes</li>
+            <li>Idea capture — quick add from Thought Jar routing</li>
+            <li>Rabbit hole log — "I went here, found this"</li>
+            <li>Interest archive — where old hyperfocuses live</li>
+            <li>Link ideas to projects</li>
+          </ul>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">Thought Jar (routing destination)</span>
+            <span class="tb-tag connects">Project Brain</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEEP CLEAN -->
+    <div class="tool-card" id="deep-clean">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🧹</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Deep Clean <span class="tool-url">deep-clean.html</span></div>
+          <div class="tool-tagline">Room-by-room protocol · Cleaning scheduler · Task breakdown</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>Household cleaning, broken down into manageable room-by-room protocols. For AuDHD people, "clean the house" is an overwhelmingly vague instruction. Deep Clean turns it into a sequence of specific steps you can execute without having to plan anything. It also includes a scheduler for recurring cleaning tasks.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li>Pre-built room protocols: Kitchen, Bathroom, Bedroom, Living Room, etc.</li>
+            <li>Step-by-step check-off mode per room</li>
+            <li>Cleaning scheduler — set frequency per task</li>
+            <li>Customizable task lists for each room</li>
+            <li>Session history — when you last cleaned each room</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- GLOBAL DATA -->
+    <div class="tool-card" id="global-data">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🌍</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Global Data <span class="tool-url">global-tracker.html</span></div>
+          <div class="tool-tagline">Cross-module statistics · Historical data · Trends across everything</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>The analytics dashboard for your whole life in AuDHD HQ. Global Data aggregates statistics from every module — how many check-ins you've done, total miles walked, tasks completed, money tracked, dreams logged — and presents it as a single reference view. Useful for seeing the big picture and noticing long-term patterns.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Connects to</div>
+          <div class="tb-tags">
+            <span class="tb-tag connects">All modules (read-only aggregation)</span>
+            <span class="tb-tag connects">Home screen quick-access</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ═══ SETTINGS ═══════════════════════════════════════════════ -->
+    <div class="chapter" id="settings">
+      <div class="chapter-eyebrow">⚙️ Settings + Utilities</div>
+      <h2 class="chapter-title">Settings + utilities</h2>
+    </div>
+
+    <!-- CUSTOMIZE -->
+    <div class="tool-card" id="customize">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">⚙️</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Customize <span class="tool-url">customize.html</span></div>
+          <div class="tool-tagline">Name · Theme · Tags · Reminders · Preferences</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>Central settings for your AuDHD HQ experience. This is where you set your name, configure the theme schedule, build your custom tag library (used across Taskboard, Thought Jar, and other tools), and manage reminder settings. You can also export/import the entire tag engine as a backup.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key settings</div>
+          <ul class="tb-list">
+            <li><strong>Profile</strong> — name (shown in greeting), pronouns, preferences</li>
+            <li><strong>Theme</strong> — automatic time-based (morning/afternoon/night) or manual override</li>
+            <li><strong>Tag Library</strong> — create and manage custom tags for Taskboard, Thought Jar, etc.</li>
+            <li><strong>Reminders</strong> — configure notification schedule for check-in reminders</li>
+            <li><strong>Import/Export</strong> — tag engine backup as separate .json file</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA SYNC -->
+    <div class="tool-card" id="data-sync">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🔄</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Data Sync <span class="tool-url">data-sync.html</span></div>
+          <div class="tool-tagline">Export all · Selective export · Import · Provider Report · Key browser</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text"><p>The backup and migration center for all your AuDHD HQ data. From here you can export everything to a single .json file, export only specific modules, import a previous backup, browse all your localStorage keys with sizes and statuses, and generate a Provider Report for medical appointments.</p></div>
+        </div>
+        <div class="tb-section">
+          <div class="tb-label">Key features</div>
+          <ul class="tb-list">
+            <li><strong>Full Export</strong> — one .json file with everything; download or copy to clipboard</li>
+            <li><strong>Selective Export</strong> — pick specific modules to export (useful for moving one module to another device)</li>
+            <li><strong>Import</strong> — merge or replace import from a previous .json backup</li>
+            <li><strong>Provider Data Export</strong> — clinical health summary for the last 2 weeks / month / 3 months</li>
+            <li><strong>Key Browser</strong> — see all localStorage keys, their module, size, and status</li>
+          </ul>
+        </div>
+        <div class="callout red">
+          <span class="callout-ico">⚠️</span>
+          <div class="callout-text"><strong>Replace import is destructive.</strong> It overwrites your current data with the imported file. Use Merge import unless you specifically want to reset. Always export first before importing anything.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTHER TOOLS -->
+    <div class="chapter" id="other-tools">
+      <div class="chapter-eyebrow">Other Tools</div>
+      <h2 class="chapter-title">Other tools</h2>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">📦</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Box Tracker <span class="tool-url">box-tracker.html</span></div>
+          <div class="tool-tagline">Track what's in physical boxes and storage locations <span style="color:var(--muted);font-size:11px;">(page accessible · removed from main nav in Phase 1)</span></div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text">Tracks the contents of physical boxes, drawers, and storage locations so you never have to excavate your closet trying to remember where something is. Create named locations, add items to each, and search across all locations.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-head" onclick="toggleTool(this)">
+        <div class="tool-ico">🔔</div>
+        <div class="tool-head-info">
+          <div class="tool-name">Notifications <span class="tool-url">notifications.html</span></div>
+          <div class="tool-tagline">Manage all app reminders and alerts</div>
+        </div>
+        <div class="tool-toggle">▼</div>
+      </div>
+      <div class="tool-body">
+        <div class="tb-section">
+          <div class="tb-label">What it does</div>
+          <div class="tb-text">Central management for all notification and reminder settings across AuDHD HQ. Configure check-in reminders, bill-due alerts, medication reminders, and routine prompts. Note: browser notifications require permission grant on first use.</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- QUICK REF TABLE -->
+    <div class="chapter" id="quick-ref">
+      <div class="chapter-eyebrow">Reference</div>
+      <h2 class="chapter-title">Tool quick-reference</h2>
+      <p class="chapter-intro">All 22 main nav tools in one table — plus Walking Tracker's expanded Phase 6 features. Sort by how often you'll use them, or scan by category.</p>
+
+      <table class="qr-table">
+        <thead><tr><th>Tool</th><th>URL</th><th>Primary use</th><th>How often</th></tr></thead>
+        <tbody>
+          <tr><td>✅ Check-In</td><td>checkin.html</td><td>Daily mood/energy/body log</td><td>Daily</td></tr>
+          <tr><td>🫙 Thought Jar</td><td>brain-dump.html</td><td>Capture anything, route later</td><td>Anytime</td></tr>
+          <tr><td>📋 Taskboard</td><td>taskboard.html</td><td>Task management, priority stack</td><td>Daily</td></tr>
+          <tr><td>🗓 DayBuilder</td><td>day-view.html#plan</td><td>Visual time-block schedule</td><td>Daily</td></tr>
+          <tr><td>📅 Timeline</td><td>day-view.html</td><td>Read-only today view</td><td>Daily</td></tr>
+          <tr><td>💰 Money Brain</td><td>money-brain.html</td><td>Budget, bills, cash flow</td><td>Weekly/as needed</td></tr>
+          <tr><td>🍳 Kitchen Brain</td><td>kitchen-brain.html</td><td>Meals, fridge, grocery list</td><td>Weekly</td></tr>
+          <tr><td>🗂 Project Brain</td><td>project-brain.html</td><td>Projects, milestones, tasks</td><td>As needed</td></tr>
+          <tr><td>🗓️ Monthly Planner</td><td>monthly-planner.html</td><td>Month-level goals + events</td><td>Monthly</td></tr>
+          <tr><td>📆 Weekly Planner</td><td>weekly-planner.html</td><td>Week planning + review</td><td>Weekly</td></tr>
+          <tr><td>🔁 Routines</td><td>routines-prepwork.html</td><td>Morning/night routine checklists</td><td>Daily</td></tr>
+          <tr><td>🩺 Health Tracker</td><td>health-tracker.html</td><td>Health trends + provider report</td><td>Weekly/as needed</td></tr>
+          <tr><td>💭 Dream Journal</td><td>dream-journal.html</td><td>Log and analyze dreams</td><td>Morning as needed</td></tr>
+          <tr><td>👟 Walking Tracker</td><td>walking-tracker.html</td><td>Miles log, pace engine, intensity zones, streaks, templates</td><td>Daily</td></tr>
+          <tr><td>🔥 Firebird Protocol</td><td>firebird-protocol.html</td><td>Can't-start coping tools</td><td>When stuck</td></tr>
+          <tr><td>🛟 Survival Mode</td><td>survival-mode.html</td><td>Floor tasks for hard days</td><td>Hard days only</td></tr>
+          <tr><td>📑 Life Admin Brain</td><td>life-admin.html</td><td>Docs, contacts, call prep</td><td>As needed</td></tr>
+          <tr><td>💬 Social Brain</td><td>social-brain.html</td><td>People notes, scripts, energy</td><td>As needed</td></tr>
+          <tr><td>💡 Idea Studio</td><td>idea-studio.html</td><td>Interests, hyperfocus, ideas</td><td>When inspired</td></tr>
+          <tr><td>🧹 Deep Clean</td><td>deep-clean.html</td><td>Room-by-room cleaning protocol</td><td>As needed</td></tr>
+          <tr><td>⚙️ Customize</td><td>customize.html</td><td>Name, theme, tags, reminders</td><td>Setup + occasionally</td></tr>
+          <tr><td>🔄 Data Sync</td><td>data-sync.html</td><td>Export, import, backup</td><td>Every few weeks</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="divider">
+
+    <!-- AUDHD TIPS -->
+    <div class="chapter" id="tips">
+      <div class="chapter-eyebrow">Reference</div>
+      <h2 class="chapter-title">AuDHD design principles in this app</h2>
+      <p class="chapter-intro">AuDHD HQ was designed with specific principles that distinguish it from generic productivity apps. Understanding these helps you use it more effectively.</p>
+
+      <div class="tool-card" style="margin-bottom:14px">
+        <div class="tool-head" style="cursor:default">
+          <div class="tool-ico">🧩</div>
+          <div class="tool-head-info">
+            <div class="tool-name">Low friction entry</div>
+            <div class="tool-tagline">Every tool prioritizes getting something in over getting it perfect</div>
+          </div>
+        </div>
+        <div class="tool-body open" style="display:block;padding:14px 22px 18px">
+          <div class="tb-text">Partial check-ins still count. You can Brain Dump without categorizing. Tasks can be added with zero metadata. The system is designed to accept whatever you can give and work with it — not reject incomplete data.</div>
+        </div>
+      </div>
+
+      <div class="tool-card" style="margin-bottom:14px">
+        <div class="tool-head" style="cursor:default">
+          <div class="tool-ico">🔄</div>
+          <div class="tool-head-info">
+            <div class="tool-name">State-aware navigation</div>
+            <div class="tool-tagline">Different brain states → different tools</div>
+          </div>
+        </div>
+        <div class="tool-body open" style="display:block;padding:14px 22px 18px">
+          <div class="tb-text">The "I am right now…" strip on the home screen routes you to the right tool for your current state. Overwhelmed → Survival Mode. Can't start → Firebird Protocol. Shutting down → Survival Mode. Actually okay → Check-In. You don't have to figure out which tool to use when you're already struggling.</div>
+        </div>
+      </div>
+
+      <div class="tool-card" style="margin-bottom:14px">
+        <div class="tool-head" style="cursor:default">
+          <div class="tool-ico">📊</div>
+          <div class="tool-head-info">
+            <div class="tool-name">Externalized pattern recognition</div>
+            <div class="tool-tagline">The app notices patterns so you don't have to</div>
+          </div>
+        </div>
+        <div class="tool-body open" style="display:block;padding:14px 22px 18px">
+          <div class="tb-text">Check-in data feeds into trend graphs in Health Tracker. Walking data appears on the home screen without you having to look. The app holds historical context so your brain doesn't have to. This is especially useful for noticing health patterns that are invisible day-to-day but obvious over weeks.</div>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-head" style="cursor:default">
+          <div class="tool-ico">🌊</div>
+          <div class="tool-head-info">
+            <div class="tool-name">Forgiving of inconsistency</div>
+            <div class="tool-tagline">Missing days doesn't break anything</div>
+          </div>
+        </div>
+        <div class="tool-body open" style="display:block;padding:14px 22px 18px">
+          <div class="tb-text">The streak counter resets, but you can log a backdated check-in. The walking goal adjusts its pace calculation. Plans can be revised. There is no penalty for disappearing for a week and coming back. The system meets you where you are rather than punishing you for where you weren't.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="text-align:center;padding-top:16px">
+      <div style="font-size:26px;margin-bottom:10px">🧠</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);margin-bottom:8px">Every tool was built for a real problem.</div>
+      <div style="font-size:13px;color:var(--muted);max-width:420px;margin:0 auto;line-height:1.65">If something in AuDHD HQ resonates deeply, that's not an accident. Use what works. The rest will wait.</div>
+      <div style="margin-top:18px;font-size:11px;color:var(--muted)">audhd-hq.web.app · Feature Guide v2 · Phase 6 complete · See Setup Guide for getting started</div>
+    </div>
+
+  </main>
+</div><!-- /layout -->
+
+<script>
+  // ── TOOL TOGGLE ──
+  function toggleTool(head) {
+    const body = head.nextElementSibling;
+    const toggle = head.querySelector('.tool-toggle');
+    if (!body || !toggle) return;
+    const isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+  }
+
+  // ── SIDEBAR ACTIVE LINK on scroll ──
+  (function() {
+    const links = document.querySelectorAll('.toc-link');
+    const targets = Array.from(links)
+      .map(l => { const id = l.getAttribute('href').slice(1); return { link: l, el: document.getElementById(id) }; })
+      .filter(x => x.el);
+
+    function onScroll() {
+      const scrollY = window.scrollY + 80;
+      let active = targets[0];
+      targets.forEach(t => { if (t.el.offsetTop <= scrollY) active = t; });
+      links.forEach(l => l.classList.remove('active'));
+      if (active) active.link.classList.add('active');
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+
+</body>
+</html>

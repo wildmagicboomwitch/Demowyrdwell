@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+<head>
+    <meta charset="UTF-8">
+<meta name="theme-color" content="#120f24">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AuDHD HQ">
+    <title>IconForge — AuDHD HQ</title>
+        <script>
+    window.HQ_CURRENT_PAGE = 'iconforge';
+    window.HQ_PAGE_CONFIG = {
+      centerHTML: '<span style="font-size:13px;font-weight:800;color:var(--purple);letter-spacing:.04em;">🎨 ICONFORGE</span>',
+    };
+    </script>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="core/hq-shell.css">
+<link rel="stylesheet" href="core/hq-tokens.css">
+<link rel="stylesheet" href="core/hq-modal.css">
+<link rel="stylesheet" href="core/hq-components.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><link rel="stylesheet" href="pages/iconforge.css">
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+<!-- ═══════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════ -->
+<header class="forge-header shrink-0">
+    <div class="flex items-center gap-2 shrink-0">
+        <a href="index.html" style="background:var(--card);border:1px solid var(--border);color:var(--text2);width:30px;height:30px;border-radius:7px;font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .2s;flex-shrink:0;" title="HQ Home">🏠</a>
+        <div class="hidden sm:flex flex-col" style="line-height:1.2;">
+            <span style="font-size:13px;font-weight:800;color:var(--purple);letter-spacing:.03em;">ICONFORGE</span>
+            <span style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.05em;">AuDHD HQ</span>
+        </div>
+    </div>
+    <input type="text" id="masterSearch" oninput="filterAssets()" placeholder="🔍 Search..."
+        class="forge-input" style="flex:1;min-width:60px;max-width:280px;">
+    <!-- Theme pills -->
+    <div class="flex gap-1 shrink-0 hidden sm:flex">
+        <button class="t-pill" data-t="morning" onclick="setTheme('morning')" title="Morning" aria-label="Button">☀️</button>
+        <button class="t-pill" data-t="afternoon" onclick="setTheme('afternoon')" title="Afternoon" aria-label="Button">🌤</button>
+        <button class="t-pill active" data-t="night" onclick="setTheme('night')" title="Night" aria-label="Button">🌙</button>
+    </div>
+    <div class="flex gap-1 shrink-0">
+
+
+
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════
+     COLLECTION MANAGER BAR
+═══════════════════════════════════════════════ -->
+<div id="collectionBar" class="shrink-0 flex items-center gap-2 px-4 py-2 overflow-x-auto" style="background:var(--surface);border-bottom:1px solid var(--border);">
+    <!-- chips rendered by JS -->
+</div>
+<!-- Storage indicator -->
+<div id="storageBar" class="shrink-0 px-4 py-1" style="background:var(--surface);border-bottom:1px solid var(--border);min-height:22px;"></div>
+
+<!-- ═══════════════════════════════════════════════
+     TABS
+═══════════════════════════════════════════════ -->
+<div class="shrink-0 flex overflow-x-auto" style="background:var(--surface);border-bottom:1px solid var(--border);align-items:center;">
+    <button class="tab-btn active" id="tab-emoji" onclick="setMode('emoji')">😀 Emojis</button>
+    <button class="tab-btn" id="tab-icons" onclick="setMode('icons')">🔷 Bootstrap</button>
+    <button class="tab-btn" id="tab-collection" onclick="setMode('collection')">📦 Collection <span id="colCount" style="color:var(--purple)">0</span></button>
+    <!-- Import / Export buttons — moved here from hidden forge-header -->
+    <div style="margin-left:auto;display:flex;gap:4px;padding:0 8px;flex-shrink:0;align-items:center;">
+        <label class="btn-secondary" style="cursor:pointer;font-size:11px;padding:5px 9px;display:flex;align-items:center;gap:4px;" title="Import ZIP of icon images">
+            <i class="bi bi-file-earmark-zip"></i><span class="hidden sm:inline">ZIP</span>
+            <input type="file" id="zipImporter" class="hidden" accept=".zip" onchange="handleZipImport(event)" aria-label="Import icon collection ZIP">
+        </label>
+        <label class="btn-secondary" style="cursor:pointer;font-size:11px;padding:5px 9px;display:flex;align-items:center;gap:4px;" title="Import HQ backup or IconForge JSON">
+            <i class="bi bi-upload"></i><span class="hidden sm:inline">Import</span>
+            <input type="file" id="hqImporter" class="hidden" accept=".json" onchange="handleHQImport(event)" aria-label="Import HQ icon JSON">
+        </label>
+        <button onclick="openExportModal()" class="btn-secondary" style="font-size:11px;padding:5px 9px;display:flex;align-items:center;gap:4px;" title="Export">
+            <i class="bi bi-box-arrow-up"></i><span class="hidden sm:inline">Export</span>
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CATEGORY FILTER BAR (collection mode)
+═══════════════════════════════════════════════ -->
+<div id="catFilterBar" class="hidden shrink-0 flex gap-2 px-4 py-2 overflow-x-auto" style="background:var(--card);border-bottom:1px solid var(--border);">
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SELECT-ALL BAR
+═══════════════════════════════════════════════ -->
+<div id="selectAllBar" class="shrink-0 flex items-center gap-2 px-4 py-2 flex-wrap" style="background:var(--card);border-bottom:1px solid var(--border);">
+    <button onclick="selectAll()" class="pill pill-accent"><i class="bi bi-check-all"></i> Select All</button>
+    <button onclick="selectNone()" class="pill pill-muted"><i class="bi bi-x"></i> Clear</button>
+    <span id="selCount" class="pill pill-muted mono" style="font-size:10px;">0 selected</span>
+    <button onclick="addSelectionToCollection()" class="pill pill-green" id="addToColBtn"><i class="bi bi-plus"></i> Add to Collection</button>
+    <button onclick="removeSelected()" class="pill pill-red" id="removeSelBtn" style="display:none;"><i class="bi bi-trash"></i> Remove</button>
+    <button onclick="editSingleSelected()" class="pill pill-accent" id="editOneBtn" style="display:none;"><i class="bi bi-pencil"></i> Edit</button>
+    <span id="selHint">Dblclick or right-click to edit · Ctrl+Alt+drag to lasso · Del to remove</span>
+</div>
+
+<!-- Context menu -->
+<div id="ctxMenu" style="position:fixed;z-index:2000;display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:6px;min-width:160px;box-shadow:0 8px 30px var(--shadow-lg,var(--shadow));"></div>
+
+<!-- Drag lasso overlay -->
+<div id="dragLasso"></div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN RENDER AREA
+═══════════════════════════════════════════════ -->
+<div id="renderArea" class="flex-1 overflow-y-auto p-4 asset-grid" style="align-content:start;background:var(--bg);">
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SELECTION BOTTOM BAR
+═══════════════════════════════════════════════ -->
+<div id="selectionBar">
+    <span class="mono text-xs" style="color:var(--green);font-weight:700;" id="selBarCount">0 selected</span>
+    <div class="flex gap-2 flex-wrap">
+        <button onclick="openExportModal('selection')" class="pill pill-green"><i class="bi bi-box-arrow-up"></i> Export Selection</button>
+        <button onclick="pushSelectionToHQ()" class="pill" style="background:rgba(var(--primary-rgb),.12);border:1px solid rgba(var(--primary-rgb),.3);color:var(--purple);font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;cursor:pointer;" id="selBarPushHQ"> 🏠 Push to HQ</button>
+        <button onclick="removeSelected()" class="pill pill-red" id="selBarDelHint" style="display:none;"><i class="bi bi-trash"></i> Delete <span class="mono" style="font-size:9px;opacity:0.7;">Del</span></button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TOAST
+═══════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL: ADD / EDIT ITEM
+═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="editorModal">
+    <div class="modal-box" style="max-width:460px;">
+        <div class="flex items-center justify-between mb-4">
+            <span id="editorModalTitle" style="font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--purple)">ADD TO COLLECTION</span>
+            <button onclick="closeEditor()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;" aria-label="Close" title="Close">✕</button>
+        </div>
+
+        <!-- Preview -->
+        <div id="previewBox" class="flex items-center justify-center rounded-xl mb-4" style="background:var(--card2);border:1.5px solid var(--border);min-height:90px;font-size:3rem;"></div>
+
+        <div class="space-y-3">
+
+            <!-- Name -->
+            <div>
+                <label style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;">NAME / LABEL</label>
+                <input type="text" id="attr-name" class="forge-input" placeholder="e.g. Brain Dump, Urgent, Home…">
+            </div>
+
+            <!-- Asset type + Category row -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;">ASSET TYPE</label>
+                    <select id="attr-type" class="forge-input" aria-label="ASSET TYPE">
+                        <option value="emoji">Emoji</option>
+                        <option value="icon">Icon</option>
+                        <option value="imported">Imported</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;">CATEGORY</label>
+                    <div class="flex gap-1">
+                        <select id="attr-cat" class="forge-input" style="flex:1;min-width:0;" aria-label="Attr Cat"><option value="">None</option></select>
+                        <button onclick="promptNewCategory()" class="btn-secondary" style="padding:8px;font-size:12px;" aria-label="Add">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── ROLE TYPE ── -->
+            <div>
+                <label style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">ROLE <span style="font-weight:400;font-size:9px;opacity:.7;">— what is this icon for?</span></label>
+                <div class="grid grid-cols-2 gap-2" id="roleTypeGrid">
+                    <button class="role-btn active" data-role="cosmetic" onclick="setRole('cosmetic')">
+                        <span style="font-size:1.1rem;">✨</span>
+                        <div style="font-size:11px;font-weight:700;">Cosmetic</div>
+                        <div style="font-size:9px;opacity:.7;">Display only — no action</div>
+                    </button>
+                    <button class="role-btn" data-role="flag" onclick="setRole('flag')">
+                        <span style="font-size:1.1rem;">🚩</span>
+                        <div style="font-size:11px;font-weight:700;">Flag / Action</div>
+                        <div style="font-size:9px;opacity:.7;">Linked to HQ flag system</div>
+                    </button>
+                    <button class="role-btn" data-role="page-default" onclick="setRole('page-default')">
+                        <span style="font-size:1.1rem;">🗂</span>
+                        <div style="font-size:11px;font-weight:700;">Page Default</div>
+                        <div style="font-size:9px;opacity:.7;">Default icon for a page</div>
+                    </button>
+                    <button class="role-btn" data-role="category-default" onclick="setRole('category-default')">
+                        <span style="font-size:1.1rem;">🏷</span>
+                        <div style="font-size:11px;font-weight:700;">Category Default</div>
+                        <div style="font-size:9px;opacity:.7;">Default icon for a group</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Role-specific sub-panel (shown conditionally) -->
+            <div id="roleSubPanel"></div>
+
+            <!-- Target collection -->
+            <div>
+                <label style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;">TARGET COLLECTION</label>
+                <select id="attr-collection" class="forge-input" aria-label="TARGET COLLECTION"></select>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;">NOTES <span style="font-weight:400;opacity:.6;">(optional)</span></label>
+                <input type="text" id="attr-notes" class="forge-input" placeholder="Any context about this icon…">
+            </div>
+
+            <button onclick="saveToCollection()" class="btn-primary" style="width:100%;justify-content:center;">
+                <i class="bi bi-plus-circle"></i> <span id="editorSaveLabel">Add to Collection</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL: EXPORT
+═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="exportModal">
+    <div class="modal-box" style="max-width:480px;">
+        <div class="flex items-center justify-between mb-4">
+            <span class="mono text-xs font-bold" style="color:var(--purple)">EXPORT</span>
+            <button onclick="closeExportModal()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;" aria-label="Close" title="Close">✕</button>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Source -->
+            <div>
+                <label class="mono text-xs font-bold mb-2 block" style="color:var(--muted)">SOURCE</label>
+                <div class="flex flex-col gap-2" id="exportSourceOptions">
+                    <!-- rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Format -->
+            <div>
+                <label class="mono text-xs font-bold mb-2 block" style="color:var(--muted)">FORMAT</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="export-card selected-card" onclick="setExportFormat('hq_json')" id="fmt-hq_json">
+                        <div class="text-lg mb-1">🏠</div>
+                        <div class="text-xs font-bold" style="color:var(--green)">AuDHD HQ JSON</div>
+                        <div class="text-xs mt-1" style="color:var(--muted)">Drops into HQ data-sync as <code style="font-size:9px;color:var(--purple)">audhd-hq-iconforge</code></div>
+                    </div>
+                    <div class="export-card" onclick="setExportFormat('json')" id="fmt-json">
+                        <div class="text-lg mb-1">📄</div>
+                        <div class="text-xs font-bold">JSON</div>
+                        <div class="text-xs mt-1" style="color:var(--muted)">Full structured data</div>
+                    </div>
+                    <div class="export-card" onclick="setExportFormat('plain')" id="fmt-plain">
+                        <div class="text-lg mb-1">📋</div>
+                        <div class="text-xs font-bold">Plain Text</div>
+                        <div class="text-xs mt-1" style="color:var(--muted)">Emoji chars / icon names</div>
+                    </div>
+                    <div class="export-card" onclick="setExportFormat('js')" id="fmt-js">
+                        <div class="text-lg mb-1">⚙️</div>
+                        <div class="text-xs font-bold">JS Array</div>
+                        <div class="text-xs mt-1" style="color:var(--muted)">Paste into your code</div>
+                    </div>
+                    <div class="export-card" onclick="setExportFormat('csv')" id="fmt-csv">
+                        <div class="text-lg mb-1">📊</div>
+                        <div class="text-xs font-bold">CSV</div>
+                        <div class="text-xs mt-1" style="color:var(--muted)">Spreadsheet friendly</div>
+                    </div>
+                    <div class="export-card" onclick="setExportFormat('copy')" id="fmt-copy">
+                        <div class="text-lg mb-1">📌</div>
+                        <div class="text-xs font-bold">Copy to Clipboard</div>
+                        <div class="text-xs mt-1" style="color:var(--muted)">Paste anywhere</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div>
+                <label class="mono text-xs font-bold mb-1 block" style="color:var(--muted)">PREVIEW</label>
+                <div id="exportPreview" class="forge-input" style="min-height:80px;max-height:140px;overflow-y:auto;font-size:11px;font-family:'Plus Jakarta Sans',monospace;white-space:pre-wrap;word-break:break-all;color:var(--green)"></div>
+                <div class="text-xs mt-1" style="color:var(--muted)" id="exportItemCount"></div>
+            </div>
+
+            <button onclick="runExport()" class="btn-primary" style="width:100%;justify-content:center;">
+                <i class="bi bi-box-arrow-up"></i> Export Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL: NEW COLLECTION
+═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="newColModal">
+    <div class="modal-box" style="max-width:340px;">
+        <div class="flex items-center justify-between mb-4">
+            <span class="mono text-xs font-bold" style="color:var(--purple)">NEW COLLECTION</span>
+            <button onclick="closeNewColModal()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;" aria-label="Close" title="Close">✕</button>
+        </div>
+        <input type="text" id="newColName" class="forge-input mb-3" placeholder="Collection name..." maxlength="40">
+        <div class="flex gap-2">
+            <button onclick="createCollection()" class="btn-primary" style="flex:1;justify-content:center;">Create</button>
+            <button onclick="closeNewColModal()" class="btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL: BULK ADD TO COLLECTION
+═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="bulkAddModal">
+    <div class="modal-box" style="max-width:360px;">
+        <div class="flex items-center justify-between mb-4">
+            <span class="mono text-xs font-bold" style="color:var(--purple)">ADD SELECTION TO COLLECTION</span>
+            <button onclick="document.getElementById('bulkAddModal').classList.remove('open')" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;" aria-label="Close" title="Close">✕</button>
+        </div>
+        <div id="bulkSelPreview" class="flex flex-wrap gap-1 mb-3 p-3 rounded-lg" style="background:var(--card2);max-height:80px;overflow-y:auto;"></div>
+        <label class="mono text-xs font-bold mb-1 block" style="color:var(--muted)">TARGET COLLECTION</label>
+        <select id="bulkTargetCol" class="forge-input mb-2" aria-label="TARGET COLLECTION"></select>
+        <label class="mono text-xs font-bold mb-1 block" style="color:var(--muted)">CATEGORY (optional)</label>
+        <div class="flex gap-1 mb-4">
+            <select id="bulkCatSelect" class="forge-input" style="flex:1;min-width:0;" aria-label="Bulk Cat Select">
+                <option value="">None</option>
+            </select>
+            <button onclick="promptNewCategory('bulk')" class="btn-secondary" style="padding:8px;font-size:12px;" aria-label="Add">+</button>
+        </div>
+        <button onclick="confirmBulkAdd()" class="btn-primary" style="width:100%;justify-content:center;">
+            <i class="bi bi-plus-circle"></i> Add All to Collection
+        </button>
+    </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════════════
+let state = {
+    mode: 'emoji',
+    activeCollection: null,     // id of active collection
+    selected: new Set(),        // selected asset keys (for current view)
+    activeCatFilter: 'all',
+    exportFormat: 'hq_json',
+    exportScope: 'all',         // 'all' | 'collection:<id>' | 'selection'
+    exportSelectionSnapshot: []
+};
+
+// DB shape:
+// { collections: [{id, name, items:[{id,name,type,cat,data,tags}]}], categories: [] }
+function loadDB() {
+    try {
+        // Key migration: iconforge_v5 → audhd-hq-iconforge
+        (function(){
+            const old = localStorage.getItem('iconforge_v5');
+            if (old && !localStorage.getItem('audhd-hq-iconforge')) {
+                localStorage.setItem('audhd-hq-iconforge', old);
+                localStorage.removeItem('iconforge_v5');
+            } else if (old) {
+                localStorage.removeItem('iconforge_v5');
+            }
+        })();
+        const raw = window.HQStore
+            ? HQStore.get('audhd-hq-iconforge', null)
+            : localStorage.getItem('audhd-hq-iconforge');
+        if (raw) return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch(e) {}
+    return {
+        collections: [{ id: 'default', name: 'My Collection', items: [] }],
+        categories: ['UI', 'Nature', 'Food', 'Mood', 'Work', 'Health']
+    };
+}
+// Max bytes per image stored as base64 (~75KB decoded = ~100KB base64)
+const MAX_IMAGE_BYTES = 100 * 1024;
+// Warn if ZIP uncompressed estimate exceeds this
+const ZIP_WARN_MB = 8;
+// localStorage soft target — warn above this
+const LS_WARN_BYTES = 4 * 1024 * 1024;
+
+function saveDB() {
+    try {
+        if (window.HQStore) { HQStore.set('audhd-hq-iconforge', db); }
+        else { localStorage.setItem('audhd-hq-iconforge', JSON.stringify(db)); }
+        updateStorageBar();
+    } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            showToast('⚠️ Storage full — export your data then clear space', 5000);
+            // Try saving without image data as fallback
+            try {
+                const stripped = JSON.parse(JSON.stringify(db));
+                stripped.collections.forEach(col => {
+                    col.items.forEach(item => {
+                        if (item.type === 'imported' && item.data) {
+                            item.data = null;
+                            item.dataless = true;
+                        }
+                    });
+                });
+                if (window.HQStore) { HQStore.set('audhd-hq-iconforge', stripped); }
+                else { localStorage.setItem('audhd-hq-iconforge', JSON.stringify(stripped)); }
+                showToast('⚠️ Saved — image data dropped to fit storage. Export now.', 6000);
+                updateStorageBar();
+            } catch(e2) {
+                showToast('🚨 Cannot save — storage completely full. Export immediately!', 8000);
+            }
+        } else {
+            console.error('saveDB error:', e);
+            showToast('⚠️ Save failed: ' + e.message);
+        }
+    }
+}
+
+function getStorageUsedBytes() {
+    try {
+        const val = window.HQStore ? HQStore.get('audhd-hq-iconforge', null) : localStorage.getItem('audhd-hq-iconforge');
+        const raw = val ? (typeof val === 'string' ? val : JSON.stringify(val)) : '';
+        return new Blob([raw]).size;
+    } catch(e) { return 0; }
+}
+
+function updateStorageBar() {
+    const el = document.getElementById('storageBar');
+    if (!el) return;
+    const used = getStorageUsedBytes();
+    const pct = Math.min(100, Math.round((used / (5 * 1024 * 1024)) * 100));
+    const kb = used < 1024 ? used + ' B' : used < 1024*1024 ? (used/1024).toFixed(1) + ' KB' : (used/1024/1024).toFixed(2) + ' MB';
+    const color = pct > 85 ? 'var(--red)' : pct > 60 ? 'var(--gold)' : 'var(--green)';
+    el.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+            <span class="mono" style="font-size:9px;color:var(--muted)">STORAGE</span>
+            <span class="mono" style="font-size:9px;color:${color}">${kb} / ~5 MB</span>
+        </div>
+        <div style="height:4px;border-radius:4px;background:var(--border);overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width 0.4s;"></div>
+        </div>
+    `;
+}
+
+
+let db = loadDB();
+if (!db.categories) db.categories = ['UI', 'Nature', 'Food', 'Mood', 'Work', 'Health'];
+if (!db.collections || db.collections.length === 0) {
+    db.collections = [{ id: 'default', name: 'My Collection', items: [] }];
+}
+if (!state.activeCollection) state.activeCollection = db.collections[0].id;
+
+// ═══════════════════════════════════════════════════════════════
+//  EMOJI & ICON LISTS
+// ═══════════════════════════════════════════════════════════════
+const emojiGroups = {
+    "😊 Faces": ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿"],
+    "👋 Hands": ["🤲","👐","🙌","👏","🤝","👍","👎","👊","✊","🤛","🤜","🤞","✌️","🤟","🤘","👌","🤌","🤏","👈","👉","👆","👇","🖐","✋","🖖","👋","✍️","🙏","💅","🤳","💪"],
+    "🐶 Animals": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐒","🐔","🐧","🦆","🦅","🦉","🦇","🐺","🐝","🦋","🐌","🐞","🐜","🐢","🐍","🦎","🐙","🦑","🐬","🐋","🦈","🐊","🐅","🐆","🦓","🐘","🦛","🦒","🦘","🐕","🐈","🐇","🦝","🦔","🐉"],
+    "🌿 Nature": ["🌸","🌺","🌻","🌹","🌷","🍀","🌿","🍃","🍂","🍁","🌾","🌵","🌴","🌳","🌲","🌱","🌾","🍄","🌰","🪨","🌊","💧","🔥","🌪","⛄","🌈","☀️","🌙","⭐","🌟","✨","⚡","❄️","🌍","🌎","🌏"],
+    "🍎 Food": ["🍎","🍊","🍋","🍇","🍓","🫐","🍑","🍒","🥝","🍉","🍌","🍍","🥭","🍆","🥑","🥦","🌽","🍅","🥕","🫑","🧅","🧄","🍞","🥐","🧀","🥚","🍳","🥓","🍗","🌮","🍜","🍣","🍩","🎂","🍫","☕","🧃","🍵","🥤","🍷","🍺"],
+    "🏠 Objects": ["🏠","🏢","⛺","🚗","🚀","✈️","🚂","⛵","🚲","📱","💻","🖥","⌨️","🖨","📺","📷","🎮","🎧","📻","🔋","💡","🔦","🕯","🪞","🛋","🪑","🚿","🛁","🪥","🧹","🪣","🧺","🧻","🪤","🗑","🛒","🎁","📦","📫","📬","🔑","🗝","🔒","🔓","🔨","⚙️","🧲","🪝","🧪","🩺","💊","🩹"],
+    "🎉 Activities": ["⚽","🏀","🏈","⚾","🎾","🏐","🎱","🏓","🥊","🥋","🏋","🚴","🏊","🤸","🧘","🏄","🎯","🎳","🎲","🎭","🎨","🖼","🎪","🎬","🎤","🎸","🥁","🎹","🎺","🎻","🪗","🎷","🎵","🎶","🎧"],
+    "💯 Symbols": ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☯️","🔱","⚜️","🔰","♻️","✅","❎","💠","🔶","🔷","🔸","🔹","▶️","⏩","🔔","💬","💭","🗯","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🏁","🚩","🎌","🏳","🏴","⭐","🌟","💫","✨","🔥","💥","❓","❗","💯","🆕","🆒","🆙","🆓","🔞"],
+};
+
+const bootstrapIcons = ["alarm","archive","arrow-repeat","at","bag-check","bank","bar-chart","basket","bell","bicycle","bluetooth","book","bookmark","box-seam","brightness-high","broadcast","bug","calculator","calendar-date","camera","cart","cash-stack","chat-dots","check-circle","cloud-sun","code-slash","command","compass","cpu","credit-card","cup-hot","database","display","droplet","egg-fried","envelope","eye","file-earmark","fingerprint","flag","folder","gear","gift","globe","graph-up","hammer","hand-thumbs-up","hash","headphones","heart","house","image","info-circle","key","laptop","layers","lightbulb","link","lock","magic","map","megaphone","mic","moon-stars","music-note","palette","pencil","person","phone","pin","play","plus-circle","printer","qr-code","question-diamond","robot","rocket","search","send","shield-check","shop","slack","sliders","snow","speaker","speedometer","star","sun","tag","terminal","trash","trophy","truck","tv","umbrella","unlock","wallet","watch","wifi","wrench","youtube"];
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+window.onload = () => {
+    initTheme();
+    renderCollectionBar();
+    render();
+    updateStorageBar();
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  COLLECTION BAR
+// ═══════════════════════════════════════════════════════════════
+function renderCollectionBar() {
+    const bar = document.getElementById('collectionBar');
+    bar.innerHTML = '';
+    db.collections.forEach(col => {
+        const wrap = document.createElement('div');
+        wrap.className = 'col-chip-wrap shrink-0';
+
+        const chip = document.createElement('button');
+        chip.className = 'col-chip' + (col.id === state.activeCollection ? ' active' : '');
+        chip.textContent = `${col.name} (${col.items.length})`;
+        chip.onclick = () => {
+            state.activeCollection = col.id;
+            state.activeCatFilter = 'all'; // reset filter when switching collections
+            if (state.mode === 'collection') {
+                renderCatFilterBar();
+                render();
+            }
+            renderCollectionBar();
+        };
+        // Desktop: double-click to rename
+        chip.ondblclick = (e) => { e.preventDefault(); startRename(col.id, chip, wrap); };
+        // Mobile: long-press 400ms = reveal delete; 700ms = rename
+        let pressTimer400, pressTimer700;
+        chip.addEventListener('touchstart', () => {
+            pressTimer400 = setTimeout(() => wrap.classList.add('editing'), 400);
+            pressTimer700 = setTimeout(() => startRename(col.id, chip, wrap), 700);
+        }, { passive: true });
+        chip.addEventListener('touchend', () => { clearTimeout(pressTimer400); clearTimeout(pressTimer700); }, { passive: true });
+        chip.addEventListener('touchmove', () => { clearTimeout(pressTimer400); clearTimeout(pressTimer700); }, { passive: true });
+        // Click outside editing chip clears editing state
+        document.addEventListener('touchstart', (ev) => {
+            if (!wrap.contains(ev.target)) wrap.classList.remove('editing');
+        }, { passive: true });
+        // Mobile: long-press rename
+        let pressTimer;
+        chip.addEventListener('touchstart', () => { pressTimer = setTimeout(() => startRename(col.id, chip, wrap), 600); }, { passive: true });
+        chip.addEventListener('touchend', () => clearTimeout(pressTimer), { passive: true });
+        chip.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'col-del-btn';
+        delBtn.innerHTML = '✕';
+        delBtn.title = 'Delete collection';
+        delBtn.onclick = (e) => { e.stopPropagation(); deleteCollection(col.id); };
+
+        wrap.appendChild(chip);
+        if (db.collections.length > 1) wrap.appendChild(delBtn);
+        bar.appendChild(wrap);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'col-chip add-col shrink-0';
+    addBtn.innerHTML = '+ New';
+    addBtn.onclick = () => openNewColModal();
+    bar.appendChild(addBtn);
+}
+
+function startRename(id, chip, wrap) {
+    wrap.classList.add('editing');
+    const col = db.collections.find(c => c.id === id);
+    if (!col) return;
+    const input = document.createElement('input');
+    input.className = 'col-rename-input';
+    input.value = col.name;
+    chip.style.display = 'none';
+    wrap.insertBefore(input, chip);
+    input.focus();
+    input.select();
+    const commit = () => {
+        const name = input.value.trim();
+        if (name) { col.name = name; saveDB(); }
+        renderCollectionBar();
+    };
+    input.onblur = commit;
+    input.onkeydown = (e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderCollectionBar(); };
+}
+
+function activeCollection() {
+    return db.collections.find(c => c.id === state.activeCollection) || db.collections[0];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════
+function setMode(mode) {
+    state.mode = mode;
+    state.selected.clear();
+    _lastClickedKey = null;
+    updateSelectionUI();
+    ['emoji','icons','collection'].forEach(m => {
+        const tab = document.getElementById(`tab-${m}`);
+        if (tab) tab.className = 'tab-btn' + (m === mode ? ' active' : '');
+    });
+    // In collection mode: show remove, hide add-to-collection
+    const addBtn = document.getElementById('addToColBtn');
+    const rmBtn = document.getElementById('removeSelBtn');
+    if (addBtn) addBtn.style.display = (mode === 'collection') ? 'none' : 'inline-flex';
+    if (rmBtn)  rmBtn.style.display  = (mode === 'collection') ? 'inline-flex' : 'none';
+    // Cat filter bar
+    document.getElementById('catFilterBar').classList.toggle('hidden', mode !== 'collection');
+    if (mode === 'collection') renderCatFilterBar();
+    render();
+}
+
+function render(filter) {
+    const q = (filter !== undefined ? filter : document.getElementById('masterSearch').value || '').toLowerCase();
+    const container = document.getElementById('renderArea');
+    container.innerHTML = '';
+
+    if (state.mode === 'emoji') {
+        renderEmojis(container, q);
+    } else if (state.mode === 'icons') {
+        renderIcons(container, q);
+    } else {
+        renderCollection(container, q);
+    }
+    document.getElementById('colCount').textContent = db.collections.reduce((s,c) => s + c.items.length, 0);
+}
+
+function renderEmojis(container, q) {
+    Object.entries(emojiGroups).forEach(([group, emojis]) => {
+        const filtered = emojis.filter(e => q ? e.includes(q) : true);
+        if (!filtered.length) return;
+
+        const hdr = document.createElement('div');
+        hdr.className = 'cat-header';
+        hdr.innerHTML = `<span class="cat-label">${group}</span><button class="pill pill-muted" style="font-size:10px;" onclick="selectGroup(this)">Select all</button>`;
+        hdr.dataset.group = group;
+        container.appendChild(hdr);
+
+        filtered.forEach(emoji => {
+            container.appendChild(makeAssetBtn(emoji, 'emoji', emoji));
+        });
+    });
+}
+
+function renderIcons(container, q) {
+    const filtered = bootstrapIcons.filter(i => q ? i.includes(q) : true);
+    if (!filtered.length) { container.appendChild(emptyState('No icons match your search.', '🔍')); return; }
+
+    // Chunk into alpha groups
+    const groups = {};
+    filtered.forEach(i => {
+        const letter = i[0].toUpperCase();
+        if (!groups[letter]) groups[letter] = [];
+        groups[letter].push(i);
+    });
+    Object.entries(groups).forEach(([letter, icons]) => {
+        const hdr = document.createElement('div');
+        hdr.className = 'cat-header';
+        hdr.innerHTML = `<span class="cat-label">${letter}</span><button class="pill pill-muted" style="font-size:10px;" onclick="selectGroup(this)">Select all</button>`;
+        hdr.dataset.group = letter;
+        container.appendChild(hdr);
+        icons.forEach(icon => container.appendChild(makeAssetBtn(icon, 'icon', `<i class="bi bi-${icon}"></i>`)));
+    });
+}
+
+function renderCollection(container, q) {
+    const col = activeCollection();
+    let items = col.items.filter(item => {
+        const searchable = (item.name + ' ' + item.cat + ' ' + (item.tags || []).join(' ')).toLowerCase();
+        return q ? searchable.includes(q) : true;
+    });
+    if (state.activeCatFilter !== 'all') {
+        items = items.filter(i => i.cat === state.activeCatFilter);
+    }
+    if (!items.length) { container.appendChild(emptyState('No items yet. Browse Emojis or Bootstrap and add some!', '📭')); return; }
+
+    // Group by category
+    const cats = {};
+    items.forEach(item => {
+        const c = item.cat || 'Uncategorized';
+        if (!cats[c]) cats[c] = [];
+        cats[c].push(item);
+    });
+    Object.entries(cats).forEach(([cat, catItems]) => {
+        const hdr = document.createElement('div');
+        hdr.className = 'cat-header';
+        hdr.innerHTML = `<span class="cat-label">${cat} (${catItems.length})</span><button class="pill pill-muted" style="font-size:10px;" onclick="selectGroup(this)">Select all</button>`;
+        hdr.dataset.group = cat;
+        container.appendChild(hdr);
+        catItems.forEach(item => {
+            let display;
+            if (item.type === 'imported') {
+                if (item.data) {
+                    display = `<img src="${item.data}" style="width:28px;height:28px;object-fit:contain;">`;
+                } else {
+                    display = `<span style="font-size:9px;color:var(--muted);text-align:center;line-height:1.2;padding:2px;word-break:break-all;">${item.name.slice(0,8)}<br><span style="color:var(--gold);font-size:8px;">⚠ no img</span></span>`;
+                }
+            } else if (item.type === 'icon') {
+                display = `<i class="bi bi-${item.name}"></i>`;
+            } else {
+                display = item.name;
+            }
+            const btn = makeAssetBtn(item.id, 'col-item', display, item);
+            // Role badge
+            if (item.role && item.role !== 'cosmetic') {
+                const roleEmojis = { flag:'🚩', 'page-default':'🗂', 'category-default':'🏷' };
+                const badge = document.createElement('div');
+                badge.className = 'role-badge';
+                badge.textContent = roleEmojis[item.role] || '';
+                btn.appendChild(badge);
+            }
+            container.appendChild(btn);
+        });
+    });
+}
+
+function makeAssetBtn(key, type, display, meta = null) {
+    const btn = document.createElement('button');
+    btn.className = 'asset-btn' + (state.selected.has(String(key)) ? ' selected' : '');
+    btn.dataset.key = key;
+    btn.dataset.type = type;
+    if (meta) btn.dataset.meta = JSON.stringify(meta);
+
+    // Tooltip
+    if (meta && meta.name) {
+        const roleLabel = meta.role && meta.role !== 'cosmetic'
+            ? { flag:'🚩 Flag/Action', 'page-default':'🗂 Page Default', 'category-default':'🏷 Category Default' }[meta.role] || ''
+            : '';
+        let tip = meta.name;
+        if (roleLabel) tip += `\n${roleLabel}`;
+        if (meta.pageTarget) {
+            const p = HQ_PAGES.find(x => x.id === meta.pageTarget);
+            if (p) tip += ` → ${p.emoji} ${p.name}`;
+        }
+        if (meta.categoryTarget) {
+            tip += ` → ${meta.categoryTarget}`;
+            if (meta.subcategoryTarget) {
+                const hqTags = getHQTags();
+                const catObj = hqTags.categories.find(c => c.id === meta.categoryTarget || c.name === meta.categoryTarget);
+                const sub = catObj?.subcategories?.find(s => s.id === meta.subcategoryTarget);
+                if (sub) tip += ` / ${sub.emoji} ${sub.name}`;
+            }
+        }
+        if (meta.flagLinks?.length) {
+            const names = meta.flagLinks.map(id => {
+                const f = findHQFlag(id);
+                return f ? `${f.emoji} ${f.name}` : id;
+            });
+            tip += `\nFlags: ${names.join(', ')}`;
+        }
+        if (meta.behaviors?.length) {
+            const names = meta.behaviors.map(id => {
+                const b = getHQBehaviors().find(x => x.id === id);
+                return b ? `${b.emoji} ${b.name}` : id;
+            });
+            tip += `\nBehaviors: ${names.join(', ')}`;
+        }
+        if (meta.notes) tip += `\n📝 ${meta.notes}`;
+        tip += '\n\nDblclick or right-click to edit';
+        btn.title = tip;
+    }
+
+    if (typeof display === 'string' && display.startsWith('<')) {
+        btn.innerHTML = display;
+    } else {
+        btn.textContent = display;
+    }
+
+    const badge = document.createElement('div');
+    badge.className = 'check-badge';
+    badge.textContent = '✓';
+    btn.appendChild(badge);
+
+    // Single click = select/deselect
+    btn.onclick = (e) => handleAssetClick(btn, key, type, meta, e);
+
+    // Desktop: double-click on collection items opens editor
+    if (type === 'col-item' && meta) {
+        btn.ondblclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            openEditor(meta.name, meta.type, meta.data || null, meta);
+        };
+
+        // Right-click context menu
+        btn.oncontextmenu = (e) => {
+            e.preventDefault();
+            showItemContextMenu(e, meta);
+        };
+
+        // Mobile: long-press opens editor
+        let _editTimer;
+        btn.addEventListener('touchstart', () => {
+            _editTimer = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate(40);
+                openEditor(meta.name, meta.type, meta.data || null, meta);
+            }, 600);
+        }, { passive: true });
+        btn.addEventListener('touchend', () => clearTimeout(_editTimer), { passive: true });
+        btn.addEventListener('touchmove', () => clearTimeout(_editTimer), { passive: true });
+    }
+
+    // Browse mode (emoji/icon tabs): right-click/long-press → Push to HQ directly
+    if (type === 'emoji' || type === 'icon') {
+        btn.oncontextmenu = (e) => {
+            e.preventDefault();
+            openPushToHQ({ name: key, type: type, data: null });
+        };
+        let _pushTimer;
+        btn.addEventListener('touchstart', () => {
+            _pushTimer = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate(40);
+                openPushToHQ({ name: key, type: type, data: null });
+            }, 700);
+        }, { passive: true });
+        btn.addEventListener('touchend',  () => clearTimeout(_pushTimer), { passive: true });
+        btn.addEventListener('touchmove', () => clearTimeout(_pushTimer), { passive: true });
+    }
+
+    return btn;
+}
+
+function emptyState(msg, icon = '📭') {
+    const div = document.createElement('div');
+    div.className = 'empty-state';
+    div.innerHTML = `<span class="empty-icon">${icon}</span>${msg}`;
+    return div;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SELECTION — click, Ctrl+Alt range, drag lasso, keyboard Del
+// ═══════════════════════════════════════════════════════════════
+
+let _lastClickedKey = null; // for Ctrl+Alt range select
+
+function handleAssetClick(btn, key, type, meta, e) {
+    const k = String(key);
+
+    // Ctrl+Alt held: range select from last clicked to this one
+    if (e.ctrlKey && e.altKey && _lastClickedKey !== null) {
+        rangeSelect(_lastClickedKey, k);
+        _lastClickedKey = k;
+        updateSelectionUI();
+        return;
+    }
+
+    // Normal toggle
+    if (state.selected.has(k)) {
+        state.selected.delete(k);
+        btn.classList.remove('selected');
+    } else {
+        state.selected.add(k);
+        btn.classList.add('selected');
+    }
+    _lastClickedKey = k;
+    updateSelectionUI();
+}
+
+function rangeSelect(fromKey, toKey) {
+    const allBtns = Array.from(document.querySelectorAll('#renderArea .asset-btn'));
+    const fromIdx = allBtns.findIndex(b => String(b.dataset.key) === String(fromKey));
+    const toIdx   = allBtns.findIndex(b => String(b.dataset.key) === String(toKey));
+    if (fromIdx === -1 || toIdx === -1) return;
+    const lo = Math.min(fromIdx, toIdx);
+    const hi = Math.max(fromIdx, toIdx);
+    allBtns.slice(lo, hi + 1).forEach(b => {
+        state.selected.add(String(b.dataset.key));
+        b.classList.add('selected', 'range-flash');
+        setTimeout(() => b.classList.remove('range-flash'), 220);
+    });
+}
+
+// ── Keyboard handlers ─────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+    // Ctrl+Alt: activate lasso mode cursor
+    if (e.ctrlKey && e.altKey) document.body.classList.add('lasso-mode');
+
+    // Delete / Backspace: remove selected (collection mode only)
+    if ((e.key === 'Delete' || e.key === 'Backspace') && state.mode === 'collection' && state.selected.size > 0) {
+        // Don't fire if user is typing in an input
+        if (document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+        e.preventDefault();
+        removeSelected();
+    }
+
+    // Escape: clear selection
+    if (e.key === 'Escape' && state.selected.size > 0) {
+        if (document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+        selectNone();
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (!e.ctrlKey || !e.altKey) document.body.classList.remove('lasso-mode');
+});
+
+// ── Drag-lasso (mouse) ────────────────────────────────────────
+const lasso = document.getElementById('dragLasso');
+let _drag = { active: false, startX: 0, startY: 0 };
+
+document.getElementById('renderArea').addEventListener('mousedown', (e) => {
+    // Only start lasso when Ctrl+Alt held, or right-button never
+    if (!e.ctrlKey || !e.altKey) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+    _drag.active = true;
+    _drag.startX = e.clientX;
+    _drag.startY = e.clientY;
+    lasso.style.left   = e.clientX + 'px';
+    lasso.style.top    = e.clientY + 'px';
+    lasso.style.width  = '0px';
+    lasso.style.height = '0px';
+    lasso.classList.add('active');
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!_drag.active) return;
+    const x  = Math.min(e.clientX, _drag.startX);
+    const y  = Math.min(e.clientY, _drag.startY);
+    const w  = Math.abs(e.clientX - _drag.startX);
+    const h  = Math.abs(e.clientY - _drag.startY);
+    lasso.style.left   = x + 'px';
+    lasso.style.top    = y + 'px';
+    lasso.style.width  = w + 'px';
+    lasso.style.height = h + 'px';
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (!_drag.active) return;
+    _drag.active = false;
+    lasso.classList.remove('active');
+    // Collect all btns intersecting the lasso rect
+    const rect = lasso.getBoundingClientRect();
+    if (rect.width < 4 && rect.height < 4) return; // too small — treat as click
+    applyLassoSelection(rect);
+});
+
+// ── Drag-lasso (touch) — two-finger not required; just hold Ctrl (external kbd) or use the lasso button ──
+// On mobile: long-press + drag on renderArea activates lasso
+let _touch = { active: false, startX: 0, startY: 0, timer: null };
+
+document.getElementById('renderArea').addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    _touch.startX = t.clientX;
+    _touch.startY = t.clientY;
+    _touch.timer = setTimeout(() => {
+        // Long-press: activate lasso drag
+        _touch.active = true;
+        lasso.style.left   = t.clientX + 'px';
+        lasso.style.top    = t.clientY + 'px';
+        lasso.style.width  = '0px';
+        lasso.style.height = '0px';
+        lasso.classList.add('active');
+        // Haptic if available
+        if (navigator.vibrate) navigator.vibrate(30);
+    }, 350);
+}, { passive: true });
+
+document.getElementById('renderArea').addEventListener('touchmove', (e) => {
+    if (!_touch.active) { clearTimeout(_touch.timer); return; }
+    e.preventDefault();
+    const t = e.touches[0];
+    const x = Math.min(t.clientX, _touch.startX);
+    const y = Math.min(t.clientY, _touch.startY);
+    lasso.style.left   = x + 'px';
+    lasso.style.top    = y + 'px';
+    lasso.style.width  = Math.abs(t.clientX - _touch.startX) + 'px';
+    lasso.style.height = Math.abs(t.clientY - _touch.startY) + 'px';
+}, { passive: false });
+
+document.getElementById('renderArea').addEventListener('touchend', (e) => {
+    clearTimeout(_touch.timer);
+    if (!_touch.active) return;
+    _touch.active = false;
+    lasso.classList.remove('active');
+    const rect = lasso.getBoundingClientRect();
+    if (rect.width > 4 || rect.height > 4) applyLassoSelection(rect);
+}, { passive: true });
+
+function applyLassoSelection(lassoRect) {
+    let count = 0;
+    document.querySelectorAll('#renderArea .asset-btn').forEach(btn => {
+        const r = btn.getBoundingClientRect();
+        // Intersect test
+        if (r.right  > lassoRect.left &&
+            r.left   < lassoRect.right &&
+            r.bottom > lassoRect.top &&
+            r.top    < lassoRect.bottom) {
+            state.selected.add(String(btn.dataset.key));
+            btn.classList.add('selected', 'range-flash');
+            setTimeout(() => btn.classList.remove('range-flash'), 220);
+            count++;
+        }
+    });
+    if (count) {
+        _lastClickedKey = null; // reset range anchor after lasso
+        updateSelectionUI();
+    }
+}
+
+function selectAll() {
+    document.querySelectorAll('.asset-btn').forEach(btn => {
+        state.selected.add(btn.dataset.key);
+        btn.classList.add('selected');
+    });
+    _lastClickedKey = null;
+    updateSelectionUI();
+}
+
+function selectNone() {
+    state.selected.clear();
+    document.querySelectorAll('.asset-btn').forEach(btn => btn.classList.remove('selected'));
+    _lastClickedKey = null;
+    updateSelectionUI();
+}
+
+function selectGroup(btn) {
+    const hdr = btn.closest('.cat-header');
+    if (!hdr) return;
+    const container = document.getElementById('renderArea');
+    const allNodes = Array.from(container.children);
+    const hdrIdx = allNodes.indexOf(hdr);
+    let i = hdrIdx + 1;
+    while (i < allNodes.length && !allNodes[i].classList.contains('cat-header')) {
+        const node = allNodes[i];
+        if (node.classList.contains('asset-btn')) {
+            state.selected.add(node.dataset.key);
+            node.classList.add('selected');
+        }
+        i++;
+    }
+    _lastClickedKey = null;
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    const n = state.selected.size;
+    document.getElementById('selCount').textContent = `${n} selected`;
+    document.getElementById('selBarCount').textContent = `${n} selected`;
+    const bar = document.getElementById('selectionBar');
+    if (n > 0) bar.classList.add('visible'); else bar.classList.remove('visible');
+
+    // Edit button: only when exactly 1 collection item selected in collection mode
+    const editBtn = document.getElementById('editOneBtn');
+    if (editBtn) {
+        editBtn.style.display = (n === 1 && state.mode === 'collection') ? 'inline-flex' : 'none';
+    }
+
+    // Delete button hint in bottom bar when in collection mode with selection
+    const delHint = document.getElementById('selBarDelHint');
+    if (delHint) delHint.style.display = (n > 0 && state.mode === 'collection') ? 'inline-flex' : 'none';
+}
+
+function editSingleSelected() {
+    if (state.selected.size !== 1) return;
+    const key = Array.from(state.selected)[0];
+    const col = activeCollection();
+    const item = col.items.find(i => String(i.id) === String(key));
+    if (!item) return;
+    openEditor(item.name, item.type, item.data || null, item);
+}
+
+function showItemContextMenu(e, item) {
+    const menu = document.getElementById('ctxMenu');
+    menu.innerHTML = '';
+
+    // Build push payload: for collection items use item obj, for browse mode use raw val
+    const pushPayload = item
+        ? { name: item.name, type: item.type, data: item.data || null }
+        : null; // browse-mode right-clicks don't reach here (they use handleAssetClick)
+
+    const menuItems = [
+        ...(item ? [{ icon: '✏️', label: 'Edit item', action: () => openEditor(item.name, item.type, item.data || null, item) }] : []),
+        { icon: '🏠', label: 'Push to HQ',      action: () => { openPushToHQ(pushPayload || { name: item?.name || '', type: item?.type || 'emoji', data: null }); } },
+        { icon: '📋', label: 'Copy name',       action: () => { navigator.clipboard.writeText(item?.name || ''); showToast('📋 Copied!'); } },
+        { icon: '✅', label: item.selected ? 'Deselect' : 'Select', action: () => {
+            const btn = document.querySelector(`.asset-btn[data-key="${CSS.escape(String(item.id))}"]`);
+            if (btn) handleAssetClick(btn, item.id, 'col-item', item, { ctrlKey: false, altKey: false });
+        }},
+        null, // divider
+        { icon: '🗑', label: 'Delete',          action: async () => {
+            if (!(await HQConfirm.ask(`Delete "${item.name}"?`, { danger: true, confirmLabel: 'Delete' }))) return;
+            const col = activeCollection();
+            col.items = col.items.filter(i => String(i.id) !== String(item.id));
+            state.selected.delete(String(item.id));
+            saveDB(); renderCollectionBar(); render(); updateSelectionUI();
+            showToast('🗑 Deleted: ' + item.name);
+        }, danger: true },
+    ];
+
+    menuItems.forEach(mi => {
+        if (!mi) {
+            const hr = document.createElement('div');
+            hr.style.cssText = 'height:1px;background:var(--border);margin:4px 0;';
+            menu.appendChild(hr);
+            return;
+        }
+        const btn = document.createElement('button');
+        btn.style.cssText = `display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:none;background:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;color:${mi.danger ? 'var(--red)' : 'var(--text)'};text-align:left;`;
+        btn.innerHTML = `<span style="font-size:14px;">${mi.icon}</span>${mi.label}`;
+        btn.onmouseenter = () => btn.style.background = mi.danger ? 'rgba(255,107,107,.1)' : 'var(--card2)';
+        btn.onmouseleave = () => btn.style.background = 'none';
+        btn.onclick = () => { hideContextMenu(); mi.action(); };
+        menu.appendChild(btn);
+    });
+
+    // Position: keep inside viewport
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const mw = 180, mh = 200;
+    let x = e.clientX, y = e.clientY;
+    if (x + mw > vw) x = vw - mw - 8;
+    if (y + mh > vh) y = vh - mh - 8;
+    menu.style.left = x + 'px';
+    menu.style.top  = y + 'px';
+    menu.style.display = 'block';
+}
+
+function hideContextMenu() {
+    document.getElementById('ctxMenu').style.display = 'none';
+}
+
+// Hide context menu on any click outside it
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('ctxMenu');
+    if (menu && !menu.contains(e.target)) hideContextMenu();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideContextMenu();
+});
+
+function addSelectionToCollection() {
+    if (!state.selected.size) { showToast('Nothing selected'); return; }
+    openBulkAddModal();
+}
+
+async function removeSelected() {
+    const count = state.selected.size;
+    if (!count) return;
+    if (!(await HQConfirm.ask(`Remove ${count} item${count > 1 ? 's' : ''} from this collection?`, { confirmLabel: 'Remove' }))) return;
+    const col = activeCollection();
+    const ids = Array.from(state.selected);
+    col.items = col.items.filter(i => !ids.includes(String(i.id)));
+    saveDB();
+    state.selected.clear();
+    updateSelectionUI();
+    render();
+    renderCollectionBar();
+    showToast(`🗑 Removed ${count} item${count > 1 ? 's' : ''}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HQ DATA CONSTANTS — exact schema from audhd-hq-tags / hq-core
+// ═══════════════════════════════════════════════════════════════
+
+// ── Built-in categories — local fallback only (P12: live source is HQStore.getCategories()) ──
+const _LOCAL_DEFAULT_CATS = [
+    {id:'work',      name:'Work',          emoji:'💼', color:'#645EB7', builtIn:true, subcategories:[
+        {id:'work-dayjob',   name:'Day Job',      emoji:'🏢'},
+        {id:'work-organize', name:'Organizing',   emoji:'📁'},
+        {id:'work-tools',    name:'Tool Building',emoji:'🔧'},
+    ]},
+    {id:'home',      name:'Home',          emoji:'🏠', color:'#8BB698', builtIn:true, subcategories:[
+        {id:'home-decor',    name:'Decor',        emoji:'🎨'},
+        {id:'home-repair',   name:'Repair',       emoji:'🔨'},
+        {id:'home-organize', name:'Organize',     emoji:'📦'},
+    ]},
+    {id:'creative',  name:'Creative',      emoji:'🎨', color:'#FF6BA8', builtIn:true, subcategories:[
+        {id:'cre-visual',    name:'Visual',       emoji:'🖼️'},
+        {id:'cre-writing',   name:'Writing',      emoji:'✍️'},
+        {id:'cre-prod',      name:'Productivity', emoji:'⚡'},
+    ]},
+    {id:'friends',   name:'For Friends',   emoji:'💌', color:'#4ECDC4', builtIn:true, subcategories:[
+        {id:'fr-tools',      name:'Tool Building',emoji:'🔧'},
+        {id:'fr-gifts',      name:'Gifts',        emoji:'🎁'},
+        {id:'fr-other',      name:'Other',        emoji:'💬'},
+    ]},
+    {id:'fun',       name:'Fun',           emoji:'🎉', color:'#F4CA00', builtIn:true, subcategories:[
+        {id:'fun-general',   name:'General',      emoji:'🎲'},
+        {id:'fun-creative',  name:'Creative',     emoji:'🎭'},
+    ]},
+    {id:'life-plan', name:'Life Plan',     emoji:'🌱', color:'#06D6A0', builtIn:true, subcategories:[
+        {id:'lp-career',     name:'Career',       emoji:'💼'},
+        {id:'lp-money',      name:'Money',        emoji:'💰'},
+        {id:'lp-kids',       name:'Kids',         emoji:'👶'},
+    ]},
+    {id:'health',    name:'Health',        emoji:'🏥', color:'#EF5886', builtIn:true, subcategories:[]},
+    {id:'finance',   name:'Finance',       emoji:'💰', color:'#C49A00', builtIn:true, subcategories:[]},
+    {id:'admin',     name:'Admin',         emoji:'📋', color:'#A8AAA9', builtIn:true, subcategories:[]},
+    {id:'self',      name:'Self & Growth', emoji:'🧠', color:'#C8BAFF', builtIn:true, subcategories:[]},
+    {id:'personal',  name:'Personal',      emoji:'🌿', color:'#ABD7BF', builtIn:true, subcategories:[]},
+];
+
+// ── Flags — local fallback only (P12: live source is HQStore.getFlags()) ──
+const _LOCAL_FLAGS = {
+    priority:[
+        {id:'critical', name:'Critical',    emoji:'🔴', color:'#B53030', desc:'Must happen — failure has real consequences'},
+        {id:'high',     name:'High',        emoji:'🟠', color:'#C96020', desc:'Important, should happen today or this week'},
+        {id:'medium',   name:'Medium',      emoji:'🟡', color:'#C49A00', desc:'Matters but timing is flexible'},
+        {id:'low',      name:'Low',         emoji:'🟢', color:'#2A7A4E', desc:'Nice to do, no urgency'},
+        {id:'none',     name:'No Priority', emoji:'⚪', color:'#789A88', desc:'Default — priority unset'},
+    ],
+    energy:[
+        {id:'high-energy',   name:'High Energy',   emoji:'🔴', color:'#B53030', desc:'High focus needed — cosmetic sort only'},
+        {id:'medium-energy', name:'Medium Energy', emoji:'🟡', color:'#C49A00', desc:'Manageable — cosmetic sort only'},
+        {id:'low-energy',    name:'Low Energy',    emoji:'🟢', color:'#2A7A4E', desc:'Doable anytime — cosmetic sort only'},
+    ],
+    time:[
+        {id:'time-locked', name:'Time-Locked', emoji:'⏰', color:'#B53030', desc:'Must happen at a specific time'},
+        {id:'date-locked', name:'Date-Locked', emoji:'📅', color:'#C96020', desc:'Specific date, flexible time'},
+        {id:'week-locked', name:'Week-Locked', emoji:'📆', color:'#C49A00', desc:'Must happen this week'},
+        {id:'flexible',    name:'Flexible',    emoji:'🌊', color:'#2A8A85', desc:'No hard deadline'},
+    ],
+    context:[
+        {id:'home-only',       name:'Home Only',      emoji:'🏠', color:'#8BB698', desc:'Can only be done at home'},
+        {id:'remote-ok',       name:'Remote OK',      emoji:'💻', color:'#3A70B0', desc:'Can be done anywhere'},
+        {id:'requires-call',   name:'Requires Call',  emoji:'📞', color:'#C96020', desc:'Involves a phone call'},
+        {id:'requires-travel', name:'Requires Travel',emoji:'🚗', color:'#645EB7', desc:'Requires leaving home'},
+    ],
+    system:[
+        {id:'deferred',  name:'Deferred',  emoji:'🔄', color:'#789A88', desc:'Kicked to unassigned',         readOnly:true},
+        {id:'prep-task', name:'Prep Task', emoji:'📎', color:'#4ECDC4', desc:'Linked to an appointment',     readOnly:true},
+        {id:'cascaded',  name:'Cascaded',  emoji:'⬆️', color:'#C8BAFF', desc:'Came from monthly or weekly', readOnly:true},
+        {id:'new',       name:'New',       emoji:'🆕', color:'#06D6A0', desc:'Entered today',                readOnly:true},
+        {id:'recurring', name:'Recurring', emoji:'🔁', color:'#F4CA00', desc:'Repeats on a pattern',         readOnly:true},
+    ],
+};
+
+// ── Behaviors — local fallback only (P12: live source is HQStore.BEHAVIORS) ──
+// getHQBehaviors() always returns the live registry; this array is the safety net.
+const _LOCAL_BEHAVIORS = [
+    {id:'surface-index',   emoji:'🏠', name:'Surface on Index',     desc:'Appears in hero alert panel'},
+    {id:'surface-checkin', emoji:'✅', name:'Surface in Check-In',   desc:'Prompts during relevant check-in stage'},
+    {id:'energy-gate',     emoji:'🔋', name:'Energy Gate',           desc:'Hidden on survival-mode days'},
+    {id:'block-cascade',   emoji:'🛑', name:'Block Cascade',         desc:'Marks as blocking in Project Brain, surfaces as urgent'},
+    {id:'auto-defer',      emoji:'🔄', name:'Auto-Defer',            desc:'Pushed to tomorrow in DayBuilder if unresolved'},
+    {id:'notify-save',     emoji:'🔔', name:'Notify on Save',        desc:'Toast shown when this flag is applied'},
+    {id:'cascade-signal',  emoji:'📡', name:'Cascade Signal',        desc:'Notifies weekly planner + brain dump of change'},
+    {id:'pin-daybuilder',  emoji:'📌', name:'Pin in DayBuilder',     desc:"Pinned to top of today's schedule, can't be displaced"},
+    {id:'weekly-review',   emoji:'📆', name:'Add to Weekly Review',  desc:'Appears in end-of-week review even if unscheduled'},
+    {id:'survival-safe',   emoji:'🛡', name:'Survival Safe',         desc:'Always shown, even on crash days — opposite of Energy Gate'},
+];
+
+/** P12: Always read behaviors from HQStore; fall back to local copy if unavailable. */
+function getHQBehaviors() {
+    return (window.HQStore && window.HQStore.BEHAVIORS && window.HQStore.BEHAVIORS.length)
+        ? window.HQStore.BEHAVIORS
+        : _LOCAL_BEHAVIORS;
+}
+
+// ── Modules (appliesTo field on custom flags/categories) ──
+const HQ_MODULES = [
+    {id:'all',        name:'All Modules',    emoji:'🌐'},
+    {id:'planning',   name:'Planning',       emoji:'📅'},
+    {id:'health',     name:'Health Tracker', emoji:'🏥'},
+    {id:'finance',    name:'Finance',        emoji:'💰'},
+    {id:'brain-dump', name:'Thought Jar',     emoji:'🧠'},
+    {id:'projects',   name:'Project Brain',  emoji:'🗂'},
+    {id:'survival',   name:'Survival Mode',  emoji:'🛡️'},
+    {id:'taskboard',  name:'Taskboards',     emoji:'📋'},
+];
+
+// ── HQ color palette (canonical 15 colors from customize.html) ──
+const HQ_PALETTE = [
+    '#645EB7','#3A70B0','#4ECDC4','#2A7A4E','#8BB698',
+    '#EF5886','#C96020','#B53030','#C49A00','#F4CA00',
+    '#C8BAFF','#A8AAA9','#ABD7BF','#06D6A0','#FF6BA8',
+];
+
+// ── Pages (sidenav from hq-core.js) ──
+const HQ_PAGES = [
+    {id:'index',      name:'Home',                emoji:'🏠', href:'index.html'},
+    {id:'timeline',   name:'Today\'s Timeline',   emoji:'📅', href:'day-view.html'},
+    {id:'checkin',    name:'Check-In',            emoji:'✅', href:'checkin.html'},
+    {id:'routines',   name:'Prepwork + Routines', emoji:'🔁', href:'routines-prepwork.html'},
+    {id:'braindump',  name:'Thought Jar',          emoji:'🧠', href:'brain-dump.html'},
+    {id:'money',      name:'Money Brain',         emoji:'💰', href:'money-brain.html'},
+    {id:'projects',   name:'Project Brain',       emoji:'🗂', href:'project-brain.html'},
+    {id:'kitchen',    name:'Kitchen Brain',       emoji:'🍳', href:'kitchen-brain.html'},
+    {id:'daybuilder', name:'DayBuilder',          emoji:'🗓', href:'day-view.html#plan'},
+    {id:'monthly',    name:'Monthly Planner',     emoji:'🗓', href:'monthly-planner.html'},
+    {id:'weekly',     name:'Weekly Planner',      emoji:'📆', href:'weekly-planner.html'},
+    {id:'taskboard',  name:'Taskboards',          emoji:'📋', href:'taskboard.html'},
+    {id:'box',        name:'Box Tracker',         emoji:'📦', href:'box-tracker.html'},
+    {id:'deepclean',  name:'Deep Clean',          emoji:'🧹', href:'deep-clean.html'},
+    {id:'walking',    name:'Walking Tracker',     emoji:'🚶', href:'walking-tracker.html'},
+    {id:'health',     name:'Health Tracker',      emoji:'❤️', href:'health-tracker.html'},
+    {id:'dream',      name:'Dream Journal',       emoji:'💭', href:'dream-journal.html'},
+    {id:'firebird',   name:'Firebird Protocol',   emoji:'🔥', href:'firebird-protocol.html'},
+    {id:'survival',   name:'Survival Mode',       emoji:'🛡️', href:'survival-mode.html'},
+    {id:'customize',  name:'Customize',           emoji:'⚙️', href:'customize.html'},
+    {id:'sync',       name:'Data Sync',           emoji:'🔄', href:'data-sync.html'},
+];
+
+// ── Nav sections ──
+const HQ_NAV_SECTIONS = [
+    {id:'DAILY',       label:'DAILY'},
+    {id:'CORE_BRAINS', label:'CORE BRAINS'},
+    {id:'PLANNING',    label:'PLANNING + ORGANIZING'},
+    {id:'HEALTH',      label:'HEALTH + WELLNESS'},
+    {id:'SETTINGS',    label:'SETTINGS'},
+];
+
+// ── Read live HQ tags (categories + custom flags) ──
+// P12: Now reads through HQStore.getTagDB() — eliminates direct localStorage access.
+function getHQTags() {
+    try {
+        // P12: prefer HQStore (loaded before this script runs in page context)
+        if (window.HQStore) {
+            const db = window.HQStore.getTagDB();
+            const cats = (db.categories && db.categories.length) ? db.categories : _LOCAL_DEFAULT_CATS;
+            const flags = Object.keys(db.flags || {}).length ? db.flags : _LOCAL_FLAGS;
+            return {
+                categories: cats,
+                flags,
+                customFlags: flags.custom || [],
+            };
+        }
+        // fallback: direct read (no HQStore — shouldn't happen after P1)
+        const raw = localStorage.getItem('audhd-hq-tags');
+        if (!raw) return { categories: _LOCAL_DEFAULT_CATS, flags: _LOCAL_FLAGS, customFlags: [] };
+        const parsed = JSON.parse(raw);
+        return {
+            categories: (parsed.categories && parsed.categories.length) ? parsed.categories : _LOCAL_DEFAULT_CATS,
+            flags: parsed.flags || _LOCAL_FLAGS,
+            customFlags: parsed.flags?.custom || parsed.customFlags || [],
+        };
+    } catch(e) {
+        return { categories: _LOCAL_DEFAULT_CATS, flags: _LOCAL_FLAGS, customFlags: [] };
+    }
+}
+
+// ── Get all flag IDs across all groups ──
+function getAllHQFlagIds() {
+    const groups = ['priority','energy','time','context','system'];
+    const all = groups.flatMap(g => (_LOCAL_FLAGS[g] || []).map(f => f.id));
+    const custom = getHQTags().customFlags.map(f => f.id);
+    return [...all, ...custom];
+}
+
+// ── Find a flag def by id across all sources ──
+function findHQFlag(id) {
+    const groups = ['priority','energy','time','context','system'];
+    for (const g of groups) {
+        const f = (_LOCAL_FLAGS[g] || []).find(x => x.id === id);
+        if (f) return f;
+    }
+    return getHQTags().customFlags.find(f => f.id === id) || null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EDITOR MODAL — role-aware open/save
+// ═══════════════════════════════════════════════════════════════
+let _pendingItem = null;
+let _editingItemId = null; // null = add mode, string = edit mode
+let _currentRole = 'cosmetic';
+
+function openEditor(val, type, data = null, existingItem = null) {
+    _pendingItem = { val, type, data };
+    _editingItemId = existingItem ? existingItem.id : null;
+    _currentRole = existingItem?.role || 'cosmetic';
+
+    // Title
+    document.getElementById('editorModalTitle').textContent = existingItem ? 'EDIT ITEM' : 'ADD TO COLLECTION';
+    document.getElementById('editorSaveLabel').textContent = existingItem ? 'Save Changes' : 'Add to Collection';
+
+    // Preview
+    const pb = document.getElementById('previewBox');
+    if (data) pb.innerHTML = `<img src="${data}" style="max-height:80px;max-width:80px;object-fit:contain;">`;
+    else if (type === 'icon') pb.innerHTML = `<i class="bi bi-${val}" style="font-size:3rem;color:var(--text)"></i>`;
+    else pb.textContent = val;
+
+    // Fields
+    document.getElementById('attr-name').value = existingItem?.name || val || '';
+    document.getElementById('attr-type').value = existingItem?.type || type;
+    document.getElementById('attr-notes').value = existingItem?.notes || '';
+    populateCategorySelects();
+    document.getElementById('attr-cat').value = existingItem?.cat || '';
+    populateCollectionSelects();
+    if (existingItem) {
+        // In edit mode, pre-select the item's own collection
+        const col = db.collections.find(c => c.items.some(i => String(i.id) === String(existingItem.id)));
+        if (col) document.getElementById('attr-collection').value = col.id;
+    }
+
+    // Role buttons
+    setRole(_currentRole, existingItem);
+
+    document.getElementById('editorModal').classList.add('open');
+}
+
+function closeEditor() {
+    document.getElementById('editorModal').classList.remove('open');
+    _editingItemId = null;
+}
+
+function setRole(role, existingItem) {
+    _currentRole = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role === role));
+    renderRoleSubPanel(role, existingItem);
+}
+
+function renderRoleSubPanel(role, existingItem) {
+    const panel = document.getElementById('roleSubPanel');
+
+    if (role === 'cosmetic') {
+        panel.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;line-height:1.6;">
+            ✨ <strong>Display only</strong> — this icon is purely decorative. No HQ behavior is triggered when applied.
+        </div>`;
+        return;
+    }
+
+    if (role === 'flag') {
+        const hqTags = getHQTags();
+        const customFlags = hqTags.customFlags.filter(f => f && f.name);
+        const selFlags = existingItem?.flagLinks || [];
+        const selBehaviors = existingItem?.behaviors || [];
+
+        const flagGroupHTML = (label, flags, readOnly = false) => `
+            <div>
+                <span class="sub-label">${label}${readOnly ? ' <span style="font-weight:400;opacity:.55;">(read-only / system)</span>' : ''}</span>
+                <div class="flag-scroll">
+                    ${flags.map(f => {
+                        const isActive = selFlags.includes(f.id);
+                        const isRO = readOnly || f.readOnly;
+                        return `<button
+                            class="flag-chip ${isActive ? 'active' : ''} ${isRO ? 'ro-flag' : ''}"
+                            data-flag="${f.id}"
+                            title="${f.desc || f.name}"
+                            style="${isActive ? `background:${f.color};color:#fff;border-color:transparent;` : ''}${isRO ? 'opacity:.55;cursor:default;' : ''}"
+                            onclick="${isRO ? 'void(0)' : `toggleFlagChip(this,'${f.id}','${f.color}')`}">
+                            ${f.emoji} ${f.name}
+                        </button>`;
+                    }).join('')}
+                </div>
+            </div>`;
+
+        const behaviorHTML = () => `
+            <div>
+                <span class="sub-label">🔄 BEHAVIORS <span style="font-weight:400;opacity:.6;">— what HQ does when this flag is applied</span></span>
+                <div class="flag-scroll">
+                    ${getHQBehaviors().map(b => {
+                        const isActive = selBehaviors.includes(b.id);
+                        return `<button
+                            class="flag-chip ${isActive ? 'active' : ''}"
+                            data-behavior="${b.id}"
+                            title="${b.desc}"
+                            style="${isActive ? 'background:var(--purple);color:#fff;border-color:transparent;' : ''}"
+                            onclick="toggleBehaviorChip(this,'${b.id}')">
+                            ${b.emoji} ${b.name}
+                        </button>`;
+                    }).join('')}
+                </div>
+            </div>`;
+
+        panel.innerHTML = `
+            <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+                ${flagGroupHTML('⚡ PRIORITY', _LOCAL_FLAGS.priority)}
+                ${flagGroupHTML('🔋 ENERGY COST', _LOCAL_FLAGS.energy)}
+                ${flagGroupHTML('📅 TIME SENSITIVITY', _LOCAL_FLAGS.time)}
+                ${flagGroupHTML('🗺️ CONTEXT', _LOCAL_FLAGS.context)}
+                ${flagGroupHTML('🔄 SYSTEM STATE', _LOCAL_FLAGS.system, true)}
+                ${customFlags.length ? flagGroupHTML('✨ YOUR CUSTOM FLAGS', customFlags) : `
+                    <div style="font-size:10px;color:var(--muted);padding:4px 0;">
+                        No custom flags found in <code style="font-size:9px;color:var(--purple)">audhd-hq-tags</code>.
+                        <a href="customize.html" style="color:var(--purple);text-decoration:none;">Create one in Customize →</a>
+                    </div>`}
+                ${behaviorHTML()}
+            </div>`;
+        return;
+    }
+
+    if (role === 'page-default') {
+        const selPage = existingItem?.pageTarget || '';
+        // Group pages by nav section
+        const sections = [
+            { label:'🌅 DAILY',                   ids:['timeline','checkin','routines','braindump'] },
+            { label:'🧠 CORE BRAINS',              ids:['money','projects','kitchen'] },
+            { label:'📅 PLANNING + ORGANIZING',    ids:['daybuilder','monthly','weekly','taskboard','box','deepclean'] },
+            { label:'❤️ HEALTH + WELLNESS',        ids:['walking','health','dream','firebird','survival'] },
+            { label:'⚙️ SETTINGS',                 ids:['customize','sync'] },
+            { label:'🏠 HOME',                     ids:['index'] },
+        ];
+        panel.innerHTML = `
+            <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;">
+                <input type="hidden" id="rolePageTarget" value="${selPage}">
+                ${sections.map(sec => {
+                    const pages = sec.ids.map(id => HQ_PAGES.find(p => p.id === id)).filter(Boolean);
+                    return `<div style="margin-bottom:8px;">
+                        <span class="sub-label">${sec.label}</span>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+                            ${pages.map(p => `
+                                <button class="page-tile ${selPage === p.id ? 'active' : ''}"
+                                    data-page="${p.id}"
+                                    onclick="selectPageTile(this,'${p.id}')">
+                                    <span style="font-size:1.1rem;">${p.emoji}</span>
+                                    <span style="font-size:11px;">${p.name}</span>
+                                </button>`).join('')}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        return;
+    }
+
+    if (role === 'category-default') {
+        const selCat = existingItem?.categoryTarget || '';
+        const selSub = existingItem?.subcategoryTarget || '';
+        const hqTags = getHQTags();
+        const allCats = hqTags.categories; // full live categories with subcategories
+
+        // Also include plain string categories from collections
+        const collectionCats = [...new Set(
+            db.collections.flatMap(c => c.items.map(i => i.cat)).filter(Boolean)
+        )];
+        const plainCatsNotInHQ = collectionCats.filter(
+            name => !allCats.some(c => c.name === name || c.id === name)
+        );
+        const navSectionLabels = HQ_NAV_SECTIONS.map(s => s.label);
+
+        panel.innerHTML = `
+            <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;">
+                <input type="hidden" id="roleCatTarget" value="${selCat}">
+                <input type="hidden" id="roleSubTarget" value="${selSub}">
+
+                <span class="sub-label">🏷 HQ CATEGORIES <span style="font-weight:400;opacity:.6;">(from audhd-hq-tags)</span></span>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+                    ${allCats.map(c => `
+                        <button class="flag-chip ${selCat === c.id || selCat === c.name ? 'active' : ''}"
+                            data-catval="${c.id}"
+                            title="${(c.subcategories||[]).length ? 'Subcategories: ' + c.subcategories.map(s=>s.name).join(', ') : c.name}"
+                            style="${selCat === c.id || selCat === c.name ? `background:${c.color};color:#fff;border-color:transparent;` : `border-color:${c.color};color:${c.color};`}"
+                            onclick="selectCatTarget(this,'${c.id}','${c.color}')">
+                            ${c.emoji} ${c.name}
+                        </button>`).join('')}
+                </div>
+
+                <!-- Subcategory picker — shown when a category with subs is selected -->
+                <div id="subCatPicker" style="display:none;margin-bottom:8px;">
+                    <span class="sub-label">↳ SUBCATEGORY <span style="font-weight:400;opacity:.6;">(optional)</span></span>
+                    <div id="subCatChips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+                </div>
+
+                ${navSectionLabels.length ? `
+                <span class="sub-label" style="margin-top:8px;">🗂 NAV SECTIONS</span>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+                    ${navSectionLabels.map(label => `
+                        <button class="flag-chip ${selCat === label ? 'active' : ''}"
+                            data-catval="${label}"
+                            style="${selCat === label ? 'background:var(--purple);color:#fff;border-color:transparent;' : ''}"
+                            onclick="selectCatTarget(this,'${label}','var(--purple)')">
+                            ${label}
+                        </button>`).join('')}
+                </div>` : ''}
+
+                ${plainCatsNotInHQ.length ? `
+                <span class="sub-label" style="margin-top:4px;">📦 FROM YOUR COLLECTIONS</span>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+                    ${plainCatsNotInHQ.map(name => `
+                        <button class="flag-chip ${selCat === name ? 'active' : ''}"
+                            data-catval="${name}"
+                            style="${selCat === name ? 'background:var(--purple);color:#fff;border-color:transparent;' : ''}"
+                            onclick="selectCatTarget(this,'${name}','var(--purple)')">
+                            ${name}
+                        </button>`).join('')}
+                </div>` : ''}
+
+                <span class="sub-label" style="margin-top:4px;">✏️ CUSTOM / FREE TEXT</span>
+                <input type="text" id="roleCatCustom" class="forge-input" style="font-size:12px;" placeholder="Or type any custom category name…" value="${selCat}">
+            </div>`;
+
+        // Wire custom input
+        setTimeout(() => {
+            const inp = document.getElementById('roleCatCustom');
+            if (inp) inp.oninput = () => {
+                document.getElementById('roleCatTarget').value = inp.value;
+                // Deselect chips when typing custom
+                document.querySelectorAll('#roleSubPanel .flag-chip[data-catval], #roleSubPanel .page-tile[data-page]').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = b.dataset.catcolor ? '' : '';
+                });
+            };
+
+            // Restore subcategory picker if a category with subs was already selected
+            const selCatObj = hqTags.categories.find(c => c.id === selCat || c.name === selCat);
+            if (selCatObj && (selCatObj.subcategories || []).length) {
+                renderSubCatPicker(selCatObj, selSub);
+            }
+        }, 0);
+        return;
+    }
+}
+
+function renderSubCatPicker(catObj, currentSub) {
+    const picker = document.getElementById('subCatPicker');
+    const chips = document.getElementById('subCatChips');
+    if (!picker || !chips || !(catObj.subcategories || []).length) {
+        if (picker) picker.style.display = 'none';
+        return;
+    }
+    picker.style.display = 'block';
+    chips.innerHTML = catObj.subcategories.map(s => `
+        <button class="flag-chip ${currentSub === s.id ? 'active' : ''}"
+            data-subval="${s.id}"
+            style="${currentSub === s.id ? 'background:var(--purple);color:#fff;border-color:transparent;' : ''}"
+            onclick="selectSubCatTarget(this,'${s.id}')">
+            ${s.emoji} ${s.name}
+        </button>`).join('');
+}
+
+function selectSubCatTarget(btn, subId) {
+    document.querySelectorAll('#subCatChips .flag-chip').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+    });
+    const isDeselect = btn.dataset.subval === document.getElementById('roleSubTarget')?.value;
+    if (!isDeselect) {
+        btn.classList.add('active');
+        btn.style.background = 'var(--purple)'; btn.style.color = '#fff'; btn.style.borderColor = 'transparent';
+    }
+    const hidden = document.getElementById('roleSubTarget');
+    if (hidden) hidden.value = isDeselect ? '' : subId;
+}
+
+function toggleFlagChip(btn, flagId, color) {
+    const isActive = btn.classList.toggle('active');
+    btn.style.background = isActive ? color : '';
+    btn.style.color = isActive ? '#fff' : '';
+    btn.style.borderColor = isActive ? 'transparent' : '';
+}
+
+function toggleBehaviorChip(btn, behaviorId) {
+    const isActive = btn.classList.toggle('active');
+    btn.style.background = isActive ? 'var(--purple)' : '';
+    btn.style.color = isActive ? '#fff' : '';
+    btn.style.borderColor = isActive ? 'transparent' : '';
+}
+
+function selectPageTile(btn, pageId) {
+    document.querySelectorAll('#roleSubPanel .page-tile').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const hidden = document.getElementById('rolePageTarget');
+    if (hidden) hidden.value = pageId;
+}
+
+function selectCatTarget(btn, catVal, color) {
+    // Deselect all cat chips
+    document.querySelectorAll('#roleSubPanel .flag-chip[data-catval]').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+    });
+    btn.classList.add('active');
+    const resolvedColor = (color || 'var(--purple)').replace('var(--purple)', getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#C8BAFF');
+    btn.style.background = resolvedColor;
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'transparent';
+
+    const hidden = document.getElementById('roleCatTarget');
+    const inp = document.getElementById('roleCatCustom');
+    if (hidden) hidden.value = catVal;
+    if (inp) inp.value = catVal;
+
+    // Clear sub selection
+    const subHidden = document.getElementById('roleSubTarget');
+    if (subHidden) subHidden.value = '';
+
+    // Show subcategory picker if this HQ category has subs
+    const hqTags = getHQTags();
+    const catObj = hqTags.categories.find(c => c.id === catVal || c.name === catVal);
+    if (catObj && (catObj.subcategories || []).length) {
+        renderSubCatPicker(catObj, '');
+    } else {
+        const picker = document.getElementById('subCatPicker');
+        if (picker) picker.style.display = 'none';
+    }
+}
+
+function getRoleMeta() {
+    const meta = { role: _currentRole };
+    if (_currentRole === 'flag') {
+        meta.flagLinks  = Array.from(document.querySelectorAll('#roleSubPanel .flag-chip.active[data-flag]')).map(b => b.dataset.flag);
+        meta.behaviors  = Array.from(document.querySelectorAll('#roleSubPanel .flag-chip.active[data-behavior]')).map(b => b.dataset.behavior);
+    }
+    if (_currentRole === 'page-default') {
+        meta.pageTarget = document.getElementById('rolePageTarget')?.value || '';
+    }
+    if (_currentRole === 'category-default') {
+        meta.categoryTarget    = document.getElementById('roleCatTarget')?.value || document.getElementById('roleCatCustom')?.value || '';
+        meta.subcategoryTarget = document.getElementById('roleSubTarget')?.value || '';
+    }
+    return meta;
+}
+
+function saveToCollection() {
+    const name = document.getElementById('attr-name').value.trim();
+    const type = document.getElementById('attr-type').value;
+    const cat = document.getElementById('attr-cat').value;
+    const notes = document.getElementById('attr-notes').value.trim();
+    const colId = document.getElementById('attr-collection').value;
+    const col = db.collections.find(c => c.id === colId) || activeCollection();
+    if (!name) { showToast('⚠️ Name is required'); return; }
+
+    const roleMeta = getRoleMeta();
+
+    if (_editingItemId) {
+        // Edit mode — find and update in place across all collections
+        let found = false;
+        db.collections.forEach(c => {
+            const idx = c.items.findIndex(i => String(i.id) === String(_editingItemId));
+            if (idx !== -1) {
+                c.items[idx] = { ...c.items[idx], name, type, cat: cat || '', notes, ...roleMeta, updated: new Date().toISOString() };
+                found = true;
+            }
+        });
+        if (!found) showToast('⚠️ Item not found');
+        else { saveDB(); renderCollectionBar(); if (state.mode === 'collection') render(); closeEditor(); showToast(`✅ Saved: ${name}`); }
+        return;
+    }
+
+    col.items.push({
+        id: uid(),
+        name,
+        type,
+        cat: cat || '',
+        notes,
+        data: _pendingItem?.data || null,
+        tags: [],
+        added: new Date().toISOString(),
+        ...roleMeta
+    });
+    saveDB();
+    renderCollectionBar();
+    if (state.mode === 'collection') render();
+    closeEditor();
+    showToast(`✅ Added to ${col.name}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BULK ADD MODAL
+// ═══════════════════════════════════════════════════════════════
+let _bulkAddSnapshot = [];
+
+function openBulkAddModal() {
+    // Snapshot selection NOW before any re-render can clear it
+    _bulkAddSnapshot = getSelectedItems();
+    if (_bulkAddSnapshot.length === 0) { showToast('Nothing selected'); return; }
+
+    populateCategorySelects('bulk');
+    populateCollectionSelects('bulk');
+
+    const preview = document.getElementById('bulkSelPreview');
+    preview.innerHTML = '';
+    _bulkAddSnapshot.slice(0, 30).forEach(item => {
+        const span = document.createElement('span');
+        span.style.cssText = 'font-size:1.3rem;line-height:1.4;';
+        if (item.type === 'icon') span.innerHTML = `<i class="bi bi-${item.val || item.name}"></i>`;
+        else span.textContent = item.val || item.name || '?';
+        preview.appendChild(span);
+    });
+    if (_bulkAddSnapshot.length > 30) {
+        const more = document.createElement('span');
+        more.style.cssText = 'font-size:11px;color:var(--muted);align-self:center;';
+        more.textContent = ` +${_bulkAddSnapshot.length - 30} more`;
+        preview.appendChild(more);
+    }
+    document.getElementById('bulkAddModal').classList.add('open');
+}
+
+function confirmBulkAdd() {
+    const colId = document.getElementById('bulkTargetCol').value;
+    const cat = document.getElementById('bulkCatSelect').value;
+    const col = db.collections.find(c => c.id === colId) || activeCollection();
+    // Use the snapshot captured when modal opened, not live DOM (which may have re-rendered)
+    const items = _bulkAddSnapshot;
+    if (!items || items.length === 0) {
+        document.getElementById('bulkAddModal').classList.remove('open');
+        showToast('Nothing to add');
+        return;
+    }
+
+    items.forEach(item => {
+        col.items.push({
+            id: uid(),
+            name: item.val || item.name || '',
+            type: item.type || 'emoji',
+            cat: cat || '',
+            data: item.data || null,
+            tags: [],
+            added: new Date().toISOString()
+        });
+    });
+    saveDB();
+    state.selected.clear();
+    _bulkAddSnapshot = [];
+    updateSelectionUI();
+    renderCollectionBar();
+    if (state.mode === 'collection') render();
+    document.getElementById('bulkAddModal').classList.remove('open');
+    showToast(`✅ Added ${items.length} to ${col.name}`);
+}
+
+function getSelectedItems() {
+    const results = [];
+    document.querySelectorAll('.asset-btn.selected').forEach(btn => {
+        const key = btn.dataset.key;
+        const type = btn.dataset.type;
+        if (type === 'emoji') results.push({ val: key, type: 'emoji' });
+        else if (type === 'icon') results.push({ val: key, type: 'icon' });
+        else if (type === 'col-item') {
+            try { const meta = JSON.parse(btn.dataset.meta); results.push(meta); }
+            catch(e) {}
+        }
+    });
+    return results;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COLLECTION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function openNewColModal() {
+    document.getElementById('newColName').value = '';
+    document.getElementById('newColModal').classList.add('open');
+    setTimeout(() => document.getElementById('newColName').focus(), 100);
+}
+function closeNewColModal() { document.getElementById('newColModal').classList.remove('open'); }
+
+function createCollection() {
+    const name = document.getElementById('newColName').value.trim();
+    if (!name) return;
+    const col = { id: 'col_' + Date.now(), name, items: [] };
+    db.collections.push(col);
+    state.activeCollection = col.id;
+    saveDB();
+    renderCollectionBar();
+    closeNewColModal();
+    showToast('Collection created: ' + name);
+}
+
+function renameCollection(id) {
+    // Handled inline via startRename() — this is kept as a fallback reference
+    const chip = document.querySelector(`.col-chip-wrap`);
+    if (chip) startRename(id, chip.querySelector('.col-chip'), chip);
+}
+
+async function deleteCollection(id) {
+    if (db.collections.length <= 1) { showToast("Can't delete last collection"); return; }
+    if (!(await HQConfirm.ask('Delete this collection and all its items?', { danger: true, confirmLabel: 'Delete' }))) return;
+    db.collections = db.collections.filter(c => c.id !== id);
+    state.activeCollection = db.collections[0].id;
+    saveDB();
+    renderCollectionBar();
+    if (state.mode === 'collection') render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CATEGORIES
+// ═══════════════════════════════════════════════════════════════
+function populateCategorySelects(scope = 'editor') {
+    const sel = document.getElementById(scope === 'bulk' ? 'bulkCatSelect' : 'attr-cat');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">None</option>';
+    db.categories.forEach(c => {
+        const o = document.createElement('option'); o.value = c; o.textContent = c;
+        sel.appendChild(o);
+    });
+}
+
+function promptNewCategory(scope = 'editor') {
+    const name = prompt('New category name:');
+    if (!name || !name.trim()) return;
+    const cat = name.trim();
+    if (!db.categories.includes(cat)) {
+        db.categories.push(cat);
+        saveDB();
+    }
+    populateCategorySelects(scope);
+    const sel = document.getElementById(scope === 'bulk' ? 'bulkCatSelect' : 'attr-cat');
+    if (sel) sel.value = cat;
+    if (state.mode === 'collection') renderCatFilterBar();
+}
+
+function renderCatFilterBar() {
+    const bar = document.getElementById('catFilterBar');
+    bar.innerHTML = '';
+    const col = activeCollection();
+    const usedCats = ['all', ...new Set(col.items.map(i => i.cat || 'Uncategorized').filter(Boolean))];
+    usedCats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-filter shrink-0' + (state.activeCatFilter === cat ? ' active' : '');
+        btn.textContent = cat === 'all' ? '✦ All' : cat;
+        btn.onclick = () => { state.activeCatFilter = cat; renderCatFilterBar(); render(); };
+        bar.appendChild(btn);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COLLECTION SELECTS (shared util)
+// ═══════════════════════════════════════════════════════════════
+function populateCollectionSelects(scope = 'editor') {
+    const sel = document.getElementById(scope === 'bulk' ? 'bulkTargetCol' : 'attr-collection');
+    if (!sel) return;
+    sel.innerHTML = '';
+    db.collections.forEach(col => {
+        const o = document.createElement('option');
+        o.value = col.id;
+        o.textContent = col.name;
+        if (col.id === state.activeCollection) o.selected = true;
+        sel.appendChild(o);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT MODAL
+// ═══════════════════════════════════════════════════════════════
+function openExportModal(scope = 'all') {
+    if (scope === 'selection') {
+        const snap = getSelectedItems();
+        if (!snap.length) { showToast('Nothing selected to export'); return; }
+        state.exportSelectionSnapshot = snap;
+        state.exportScope = 'selection';
+    } else {
+        state.exportScope = scope;
+        // Don't clear snapshot — keep it available as a source option if populated
+    }
+    renderExportSources();
+    updateExportPreview();
+    document.getElementById('exportModal').classList.add('open');
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('open');
+    // Reset scope to 'all' for next open; keep snapshot until cleared by new selection
+    if (state.exportScope === 'selection') state.exportScope = 'all';
+}
+
+function renderExportSources() {
+    const container = document.getElementById('exportSourceOptions');
+    container.innerHTML = '';
+
+    const sources = [
+        { id: 'all', label: '📦 All Collections', count: db.collections.reduce((s,c)=>s+c.items.length,0) },
+        ...db.collections.map(col => ({ id: 'col_' + col.id, label: `📂 ${col.name}`, count: col.items.length })),
+    ];
+    if (state.exportSelectionSnapshot.length) {
+        sources.unshift({ id: 'selection', label: `✅ Current Selection`, count: state.exportSelectionSnapshot.length });
+    }
+
+    sources.forEach(src => {
+        const div = document.createElement('div');
+        div.className = 'export-card' + (state.exportScope === src.id ? ' selected-card' : '');
+        div.style.padding = '10px 14px'; div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.justifyContent = 'space-between';
+        div.innerHTML = `<span style="font-size:13px;font-weight:600;">${src.label}</span><span class="pill pill-muted mono" style="font-size:10px;">${src.count}</span>`;
+        div.onclick = () => {
+            state.exportScope = src.id;
+            container.querySelectorAll('.export-card').forEach(c => c.classList.remove('selected-card'));
+            div.classList.add('selected-card');
+            updateExportPreview();
+        };
+        container.appendChild(div);
+    });
+}
+
+function setExportFormat(fmt) {
+    state.exportFormat = fmt;
+    document.querySelectorAll('[id^="fmt-"]').forEach(c => c.classList.remove('selected-card'));
+    document.getElementById('fmt-' + fmt)?.classList.add('selected-card');
+    updateExportPreview();
+}
+
+function getExportItems() {
+    if (state.exportScope === 'selection') return state.exportSelectionSnapshot;
+    if (state.exportScope === 'all') return db.collections.flatMap(c => c.items);
+    if (state.exportScope.startsWith('col_')) {
+        const colId = state.exportScope.slice(4);
+        const col = db.collections.find(c => c.id === colId);
+        return col ? col.items : [];
+    }
+    return [];
+}
+
+function buildExportPayload(fmt) {
+    const items = getExportItems();
+
+    if (fmt === 'hq_json') {
+        // AuDHD HQ compatible — wrapped as audhd-hq-iconforge key
+        // HQ's importData() only accepts {audhd-hq-*: ...} shaped JSON.
+        // We store the full iconforge payload as the value of that key.
+        let exportCollections;
+        if (state.exportScope === 'selection') {
+            exportCollections = [{
+                id: 'selection_' + Date.now().toString(36),
+                name: 'Imported Selection',
+                items: items.map(item => normaliseItem(item))
+            }];
+        } else if (state.exportScope === 'all') {
+            exportCollections = db.collections.map(col => ({
+                id: col.id,
+                name: col.name,
+                items: col.items.map(item => normaliseItem(item))
+            })).filter(c => c.items.length > 0);
+        } else {
+            const colId = state.exportScope.slice(4);
+            const col = db.collections.find(c => c.id === colId);
+            exportCollections = col ? [{ id: col.id, name: col.name, items: col.items.map(normaliseItem) }] : [];
+        }
+
+        const iconforgePayload = {
+            source: 'IconForge v5',
+            schema_version: '1.0',
+            type: 'iconforge_collection',
+            collections: exportCollections
+        };
+
+        // HQ envelope — importData() accepts this directly
+        const hqEnvelope = {
+            _meta: {
+                exported: new Date().toISOString(),
+                app: 'AuDHD HQ + IconForge',
+                keyCount: 1
+            },
+            'audhd-hq-iconforge': iconforgePayload
+        };
+
+        return JSON.stringify(hqEnvelope, null, 2);
+    }
+
+    if (fmt === 'json') {
+        return JSON.stringify({ exported: new Date().toISOString(), items: items.map(normaliseItem) }, null, 2);
+    }
+
+    if (fmt === 'plain') {
+        return items.map(i => i.name || i.val || '').filter(Boolean).join('\n');
+    }
+
+    if (fmt === 'js') {
+        const arr = items.map(i => JSON.stringify({ name: i.name || i.val, type: i.type, category: i.cat || i.category || '' }));
+        return `const iconForgeCollection = [\n  ${arr.join(',\n  ')}\n];`;
+    }
+
+    if (fmt === 'csv') {
+        const header = 'name,type,category,role,flagLinks,behaviors,pageTarget,categoryTarget,subcategoryTarget,notes,tags,added';
+        const rows = items.map(i => [
+            `"${((i.name || i.val) || '').replace(/"/g, '""')}"`,
+            i.type || '',
+            `"${((i.cat || i.category) || '').replace(/"/g, '""')}"`,
+            i.role || 'cosmetic',
+            `"${(i.flagLinks || []).join(';')}"`,
+            `"${(i.behaviors || []).join(';')}"`,
+            i.pageTarget || '',
+            `"${(i.categoryTarget || '').replace(/"/g, '""')}"`,
+            `"${(i.subcategoryTarget || '').replace(/"/g, '""')}"`,
+            `"${(i.notes || '').replace(/"/g, '""')}"`,
+            `"${(i.tags || []).join(';')}"`,
+            i.added || ''
+        ].join(','));
+        return [header, ...rows].join('\n');
+    }
+
+    if (fmt === 'copy') {
+        return items.map(i => i.name || i.val || '').filter(Boolean).join('  ');
+    }
+
+    return '';
+}
+
+// Normalise any item shape to the full IconForge+HQ schema
+// Used for all export formats — ensures complete round-trip
+function normaliseItem(item) {
+    const out = {
+        id:       item.id ? String(item.id) : uid(),
+        name:     item.name || item.val || '',
+        type:     item.type || 'emoji',
+        category: item.cat || item.category || '',
+        notes:    item.notes || '',
+        tags:     item.tags || [],
+        data:     item.data || null,
+        dataless: item.dataless || false,
+        added:    item.added || new Date().toISOString(),
+        // Role metadata — always include so round-trip is lossless
+        role:     item.role || 'cosmetic',
+    };
+    // Role-specific fields
+    if (out.role === 'flag') {
+        out.flagLinks  = item.flagLinks  || [];
+        out.behaviors  = item.behaviors  || [];
+    }
+    if (out.role === 'page-default') {
+        out.pageTarget = item.pageTarget || '';
+    }
+    if (out.role === 'category-default') {
+        out.categoryTarget    = item.categoryTarget    || '';
+        out.subcategoryTarget = item.subcategoryTarget || '';
+    }
+    return out;
+}
+
+function updateExportPreview() {
+    const payload = buildExportPayload(state.exportFormat);
+    const preview = document.getElementById('exportPreview');
+    preview.textContent = payload.substring(0, 500) + (payload.length > 500 ? '\n...' : '');
+    document.getElementById('exportItemCount').textContent = `${getExportItems().length} items`;
+}
+
+function runExport() {
+    const fmt = state.exportFormat;
+    const payload = buildExportPayload(fmt);
+
+    if (fmt === 'copy') {
+        navigator.clipboard.writeText(payload).then(() => showToast('Copied to clipboard!'));
+        closeExportModal();
+        return;
+    }
+
+    const ext = fmt === 'hq_json' || fmt === 'json' ? 'json' : fmt === 'js' ? 'js' : fmt === 'csv' ? 'csv' : 'txt';
+    const mime = fmt === 'csv' ? 'text/csv' : fmt === 'js' ? 'text/javascript' : 'application/json';
+    const filename = `iconforge-${fmt}-${new Date().toISOString().slice(0,10)}.${ext}`;
+
+    const blob = new Blob([payload], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    closeExportModal();
+    showToast('Exported: ' + filename);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  IMPORT
+// ═══════════════════════════════════════════════════════════════
+async function handleZipImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Pre-flight size warning
+    const fileMB = file.size / 1024 / 1024;
+    if (fileMB > ZIP_WARN_MB) {
+        const proceed = await HQConfirm.ask(
+            `⚠️ Large ZIP (${fileMB.toFixed(1)} MB) — images over ${MAX_IMAGE_BYTES/1024}KB will be imported as name-only (no preview stored). Proceed?`,
+            { confirmLabel: 'Import anyway' }
+        );
+        if (!proceed) { e.target.value = ''; return; }
+    }
+
+    showToast('📦 Importing…');
+
+    const jszip = new JSZip();
+    let zip;
+    try {
+        zip = await jszip.loadAsync(file);
+    } catch(err) {
+        showToast('⚠️ Could not read ZIP file');
+        e.target.value = '';
+        return;
+    }
+
+    let count = 0, skippedData = 0;
+    const col = activeCollection();
+    const currentStorageUsed = getStorageUsedBytes();
+    let estimatedAddedBytes = 0;
+
+    for (const name in zip.files) {
+        const entry = zip.files[name];
+        if (entry.dir) continue;
+        if (!/\.(svg|png|jpg|jpeg|webp|gif)$/i.test(name)) continue;
+        if (name.includes('__MACOSX') || name.startsWith('.')) continue;
+
+        const ext = name.split('.').pop().toLowerCase();
+        const cleanName = name.split('/').pop().replace(/\.[^.]+$/, '');
+
+        // Check uncompressed size before decoding
+        const uncompressedSize = entry._data?.uncompressedSize || entry.uncompressedSize || 0;
+        const base64EstimatedSize = Math.ceil((uncompressedSize || 0) * 1.37); // base64 inflation
+
+        let data = null;
+        let dataless = false;
+
+        if (uncompressedSize > MAX_IMAGE_BYTES || (currentStorageUsed + estimatedAddedBytes + base64EstimatedSize) > LS_WARN_BYTES) {
+            // Too large — store name only, no image data
+            dataless = true;
+            skippedData++;
+        } else {
+            try {
+                const base64 = await entry.async('base64');
+                const mime = ext === 'svg' ? 'svg+xml' : ext === 'jpg' ? 'jpeg' : ext;
+                data = `data:image/${mime};base64,${base64}`;
+                estimatedAddedBytes += base64.length;
+            } catch(err) {
+                dataless = true;
+                skippedData++;
+            }
+        }
+
+        col.items.push({
+            id: uid(),
+            name: cleanName,
+            type: 'imported',
+            cat: 'ZIP',
+            data,
+            dataless,
+            tags: [],
+            added: new Date().toISOString()
+        });
+        count++;
+    }
+
+    if (!count) {
+        showToast('No supported images found in ZIP');
+        e.target.value = '';
+        return;
+    }
+
+    saveDB();
+    renderCollectionBar();
+    setMode('collection');
+
+    if (skippedData > 0) {
+        showToast(`📦 Imported ${count} — ${skippedData} stored name-only (too large)`, 4000);
+    } else {
+        showToast(`📦 Imported ${count} icon${count > 1 ? 's' : ''}`);
+    }
+    e.target.value = '';
+}
+
+function handleHQImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            let imported = 0;
+            let skipped = 0;
+
+            // ── Shape 1: HQ backup envelope containing audhd-hq-iconforge key
+            // Covers both: IconForge "Export to HQ" output AND a full HQ backup
+            // that already had iconforge data imported into it.
+            if (data['audhd-hq-iconforge']) {
+                const payload = data['audhd-hq-iconforge'];
+                // payload is already the iconforge_collection object
+                const result = ingestIconforgePayload(payload);
+                imported += result.imported;
+                skipped  += result.skipped;
+            }
+            // ── Shape 2: Bare iconforge_collection (old IconForge export or direct)
+            else if (data.type === 'iconforge_collection' && Array.isArray(data.collections)) {
+                const result = ingestIconforgePayload(data);
+                imported += result.imported;
+                skipped  += result.skipped;
+            }
+            // ── Shape 3: Legacy forge_v4 array format
+            else if (Array.isArray(data)) {
+                const col = activeCollection();
+                const existingIds = new Set(col.items.map(i => String(i.id)));
+                data.forEach(item => {
+                    const itemId = String(item.id || '');
+                    if (itemId && existingIds.has(itemId)) { skipped++; return; }
+                    col.items.push({
+                        id: itemId || uid(),
+                        name: item.name || '',
+                        type: item.type || 'emoji',
+                        cat: item.cat || '',
+                        data: item.data || null,
+                        tags: [],
+                        added: new Date().toISOString()
+                    });
+                    existingIds.add(itemId);
+                    imported++;
+                });
+            }
+            // ── Unrecognised
+            else {
+                showToast('⚠️ Unrecognised file — expected HQ backup or IconForge JSON', 4000);
+                return;
+            }
+
+            saveDB();
+            renderCollectionBar();
+            setMode('collection');
+            const msg = skipped > 0
+                ? `✅ Imported ${imported}, skipped ${skipped} duplicates`
+                : `✅ Imported ${imported} item${imported !== 1 ? 's' : ''}`;
+            showToast(msg);
+        } catch(err) {
+            showToast('⚠️ Import failed — invalid JSON');
+            console.error('HQ import error:', err);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+// Shared ingest logic for any iconforge_collection payload
+function ingestIconforgePayload(payload) {
+    let imported = 0, skipped = 0;
+    if (!payload || !Array.isArray(payload.collections)) return { imported, skipped };
+    payload.collections.forEach(importCol => {
+        let existing = db.collections.find(c => c.id === importCol.id || c.name === importCol.name);
+        if (!existing) {
+            existing = { id: importCol.id || uid(), name: importCol.name || 'Imported', items: [] };
+            db.collections.push(existing);
+        }
+        const existingIds = new Set(existing.items.map(i => String(i.id)));
+        (importCol.items || []).forEach(item => {
+            const itemId = String(item.id || '');
+            if (itemId && existingIds.has(itemId)) { skipped++; return; }
+
+            const role = item.role || 'cosmetic';
+            const restored = {
+                id:       itemId || uid(),
+                name:     item.name || '',
+                type:     item.type || 'emoji',
+                cat:      item.category || item.cat || '',
+                notes:    item.notes || '',
+                data:     item.data || null,
+                dataless: item.dataless || false,
+                tags:     item.tags || [],
+                added:    item.added || new Date().toISOString(),
+                role,
+            };
+            // Restore role-specific fields
+            if (role === 'flag') {
+                restored.flagLinks  = item.flagLinks  || [];
+                restored.behaviors  = item.behaviors  || [];
+            }
+            if (role === 'page-default') {
+                restored.pageTarget = item.pageTarget || '';
+            }
+            if (role === 'category-default') {
+                restored.categoryTarget    = item.categoryTarget    || '';
+                restored.subcategoryTarget = item.subcategoryTarget || '';
+            }
+
+            existing.items.push(restored);
+            existingIds.add(itemId);
+            imported++;
+        });
+    });
+    if (db.collections.length > 0) state.activeCollection = db.collections[0].id;
+    return { imported, skipped };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════════
+function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function filterAssets() { render(); }
+
+function showToast(msg, duration = 2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME SYSTEM — mirrors hq-core.js
+// ═══════════════════════════════════════════════════════════════
+const VALID_THEMES = ['morning', 'afternoon', 'night'];
+
+function hqAutoTheme() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'morning';
+    if (h >= 12 && h < 19) return 'afternoon';
+    return 'night';
+}
+
+function setTheme(theme, manual) {
+    if (!VALID_THEMES.includes(theme)) return;
+    document.documentElement.setAttribute('data-theme', theme);
+    // Sync theme pills
+    document.querySelectorAll('.t-pill[data-t]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.t === theme);
+    });
+    // Persist if manually chosen (same key as HQ)
+    if (manual !== false) {
+        try { if (window.HQStore) { window.HQStore.set('audhd-hq-theme', { theme, manual: true }); } else { localStorage.setItem('audhd-hq-theme', JSON.stringify({ theme, manual: true })); } } catch(e) {}
+    }
+}
+
+function initTheme() {
+    let theme = hqAutoTheme();
+    try {
+        const saved = window.HQStore ? window.HQStore.get('audhd-hq-theme', null) : JSON.parse(localStorage.getItem('audhd-hq-theme') || 'null');
+        if (saved && VALID_THEMES.includes(saved.theme)) {
+            if (saved.manual) theme = saved.theme;
+            else theme = hqAutoTheme();
+        } else if (typeof saved === 'string' && VALID_THEMES.includes(saved)) {
+            theme = saved; // legacy bare string
+        }
+    } catch(e) {}
+    setTheme(theme, false);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  HQ WRITE-BACK — push emoji/icon to audhd-hq-tags
+//  Writes directly to category emoji OR custom flag emoji.
+//  Safe: reads current DB, patches one field, writes back.
+// ═══════════════════════════════════════════════════════════════
+function openPushToHQ(item) {
+    if (!item) return;
+    const display = item.data
+        ? `<img src="${item.data}" style="max-height:48px;max-width:48px;object-fit:contain;">`
+        : item.type === 'icon'
+            ? `<i class="bi bi-${item.name}" style="font-size:2.2rem;color:var(--text)"></i>`
+            : `<span style="font-size:2.2rem">${item.name}</span>`;
+
+    try {
+        const tagData = window.HQStore ? HQStore.get('audhd-hq-tags', null) : localStorage.getItem('audhd-hq-tags');
+        const raw = typeof tagData === 'string' ? tagData : (tagData ? null : null);
+        const db = tagData ? (typeof tagData === 'string' ? JSON.parse(tagData) : tagData) : null;
+        if (!db) { showToast('⚠️ No HQ tags data found. Visit Customize first.'); return; }
+        const cats = db.categories || [];
+        const customFlags = (db.flags && db.flags.custom) || [];
+
+        const catOpts = cats.map(c =>
+            `<button class="pushto-chip" data-target="cat" data-id="${c.id}"
+                style="border-color:${c.color};color:${c.color};"
+                onclick="confirmPushToHQ('${c.id}','cat','${item.name}',this)">
+                ${c.emoji} ${c.name}
+            </button>`).join('');
+
+        const flagOpts = customFlags.length
+            ? customFlags.map(f =>
+                `<button class="pushto-chip" data-target="flag" data-id="${f.id}"
+                    style="border-color:${f.color};color:${f.color};"
+                    onclick="confirmPushToHQ('${f.id}','flag','${item.name}',this)">
+                    ${f.emoji} ${f.name}
+                </button>`).join('')
+            : '<span style="font-size:11px;color:var(--muted)">No custom flags yet — create one in Customize.</span>';
+
+        document.getElementById('pushToHQModal').innerHTML = `
+            <div class="modal-box" style="max-width:420px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <span style="font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--purple)">🏠 Push to HQ</span>
+                    <button onclick="closePushToHQ()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;" aria-label="Close" title="Close">✕</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;">
+                    ${display}
+                    <div>
+                        <div style="font-size:13px;font-weight:800;">${item.name}</div>
+                        <div style="font-size:10px;color:var(--muted);">Will replace the emoji on the selected target</div>
+                        ${item.type === 'icon' ? '<div style="font-size:10px;color:var(--orange);margin-top:4px;">⚠️ Bootstrap icon — will render as an icon in categories &amp; flags across HQ.</div>' : ''}
+                    </div>
+                </div>
+                <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">🏷 Apply to Category</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">${catOpts}</div>
+                <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">🚩 Apply to Custom Flag</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">${flagOpts}</div>
+            </div>`;
+        document.getElementById('pushToHQModal').style.display = 'flex';
+    } catch(e) {
+        showToast('⚠️ Could not read HQ tags: ' + e.message);
+    }
+}
+
+function confirmPushToHQ(targetId, targetType, emoji, btn) {
+    // Highlight selection
+    document.querySelectorAll('#pushToHQModal .pushto-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    try {
+        const tagData = window.HQStore ? HQStore.get('audhd-hq-tags', null) : localStorage.getItem('audhd-hq-tags');
+        const db = tagData ? (typeof tagData === 'string' ? JSON.parse(tagData) : tagData) : null;
+        if (!db) { showToast('⚠️ audhd-hq-tags not found'); return; }
+
+        if (targetType === 'cat') {
+            const cat = (db.categories || []).find(c => c.id === targetId);
+            if (!cat) { showToast('⚠️ Category not found'); return; }
+            const old = cat.emoji;
+            cat.emoji = emoji;
+            if (window.HQStore) { window.HQStore.set('audhd-hq-tags', db); }
+            else { localStorage.setItem('audhd-hq-tags', JSON.stringify(db)); }
+            showToast(`✅ ${old} → ${emoji} on "${cat.name}"`);
+        } else if (targetType === 'flag') {
+            const flags = (db.flags && db.flags.custom) || [];
+            const flag = flags.find(f => f.id === targetId);
+            if (!flag) { showToast('⚠️ Flag not found'); return; }
+            const old = flag.emoji;
+            flag.emoji = emoji;
+            if (window.HQStore) { window.HQStore.set('audhd-hq-tags', db); }
+            else { localStorage.setItem('audhd-hq-tags', JSON.stringify(db)); }
+            showToast(`✅ ${old} → ${emoji} on "${flag.name}"`);
+        }
+
+        setTimeout(closePushToHQ, 800);
+    } catch(e) {
+        showToast('⚠️ Write failed: ' + e.message);
+    }
+}
+
+
+function pushSelectionToHQ() {
+    if (state.selected.size === 0) return;
+    // Get first selected item from active collection
+    const col = activeCollection();
+    const firstKey = [...state.selected][0];
+    const item = col.items.find(i => String(i.id) === String(firstKey));
+    if (item) openPushToHQ({ name: item.name, type: item.type, data: item.data || null });
+}
+
+function closePushToHQ() {
+    document.getElementById('pushToHQModal').style.display = 'none';
+}
+
+// Keyboard: Enter on modals
+document.getElementById('newColName').addEventListener('keydown', e => { if(e.key === 'Enter') createCollection(); });
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL: PUSH TO HQ
+═══════════════════════════════════════════════ -->
+<div id="pushToHQModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closePushToHQ()">
+    <!-- content injected by openPushToHQ() -->
+</div>
+
+<!-- Phase 14: Soft Auth Gate — must run before page init -->
+<script type="module">
+  import { requireAuth } from './core/hq-auth.js';
+  await requireAuth(); // Firebase-verified auth gate
+</script>
+    <script src="core/hq-keys.js"></script>
+    <script src="core/hq-migrate.js"></script>
+    <script src="core/hq-store.js"></script>
+    <!-- Runtime infrastructure (strict load order) -->
+    <script src="core/runtime/runtime-state.js"></script>
+    <script src="core/runtime/runtime-events.js"></script>
+    <script src="core/runtime/runtime-bootstrap.js"></script>
+    <script src="core/runtime/runtime-services.js"></script>
+    <script src="core/runtime/runtime-observer.js"></script>
+    <script src="core/runtime/runtime-validator.js"></script>
+    <script src="core/runtime/runtime-schema-registry.js"></script>
+    <script src="core/runtime/runtime-import-pipeline.js"></script>
+    <script src="core/runtime/runtime-utils.js"></script>
+    <script src="core/runtime/runtime-recurrence.js"></script>
+    <script src="core/runtime/runtime-item-status.js"></script>
+    <script src="core/runtime/runtime-notif-dedup.js"></script>
+    <script src="core/runtime/runtime-cascade.js"></script>
+    <script src="core/runtime/runtime-environment.js"></script>    <script src="core/hq-core.js"></script>
+    <script src="core/hq-ready.js"></script>
+    <script src="core/hq-renderer.js"></script>
+    <script src="core/hq-modal.js"></script>
+    <script src="core/hq-components.js"></script>
+
+<script src="core/hq-deploy-gate.js"></script>
+</body>
+</html>
