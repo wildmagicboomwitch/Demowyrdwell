@@ -1,0 +1,256 @@
+/**
+ * hq-components.css — AuDHD HQ Component System Styles
+ *
+ * Phase B: Component System
+ *
+ * Canonical styles for: Toast, Tabs, Confirm dialog, Empty state, Badge, Chip.
+ * Uses only CSS variables already defined in hq-shell.css.
+ * All selectors are prefixed hq- to avoid collisions with page-local styles.
+ */
+
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+/* hq-core.js injects #hq-toast — these styles are the canonical version.    */
+/* Pages with their own toast elements (#toast-el, #toast, etc.) are         */
+/* unaffected until migrated.                                                 */
+
+.hq-toast {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  border-radius: 24px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 8px 32px var(--shadow, rgba(0,0,0,.4));
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.hq-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Type variants */
+.hq-toast--success { border-color: var(--green,  #2ecc71); color: var(--green,  #2ecc71); }
+.hq-toast--error   { border-color: var(--red,    #e74c3c); color: var(--red,    #e74c3c); }
+.hq-toast--warn    { border-color: var(--yellow, #f39c12); color: var(--yellow, #f39c12); }
+.hq-toast--info    { border-color: var(--accent, #645eb7); color: var(--accent, #645eb7); }
+
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+/* Canonical tab panel — hidden until .on / .active added by HQTabs.sw()     */
+
+.tab,
+.tab-panel {
+  display: none;
+}
+
+.tab.on,
+.tab.active,
+.tab-panel.on,
+.tab-panel.active {
+  display: block;
+}
+
+/* Canonical nav tab button */
+.ntab,
+.nav-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted, var(--text2));
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+
+.ntab.on,
+.ntab.active,
+.nav-tab.on,
+.nav-tab.active {
+  color: var(--accent, var(--purple));
+  border-bottom-color: var(--accent, var(--purple));
+}
+
+/* Tab nav bar */
+.hq-tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hq-tab-nav::-webkit-scrollbar { display: none; }
+
+
+/* ── Confirm dialog ───────────────────────────────────────────────────────── */
+/* Uses hq-modal-bg + hq-modal base from hq-modal.css                        */
+
+.hq-confirm-box {
+  max-width: 340px;
+}
+
+.hq-confirm-box .hq-modal-title {
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.hq-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  gap: 8px;
+}
+
+.hq-empty-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+  opacity: .7;
+}
+
+.hq-empty-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted, var(--text2));
+  line-height: 1.4;
+}
+
+.hq-empty-sub {
+  font-size: 12px;
+  color: var(--muted, var(--text2));
+  opacity: .75;
+  line-height: 1.5;
+}
+
+.hq-empty-sub a {
+  color: var(--accent, var(--purple));
+  text-decoration: none;
+}
+
+
+/* ── Badge ────────────────────────────────────────────────────────────────── */
+
+.hq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+
+/* ── Chip / filter pill ───────────────────────────────────────────────────── */
+
+.hq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted, var(--text2));
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap;
+}
+
+.hq-chip.on,
+.hq-chip:hover {
+  background: var(--accent, var(--purple));
+  color: #fff;
+  border-color: var(--accent, var(--purple));
+}
+
+
+/* ── Divider ──────────────────────────────────────────────────────────────── */
+
+.hq-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  color: var(--muted, var(--text2));
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.hq-divider::before,
+.hq-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.hq-divider:not(:has(span))::after { display: none; }
+
+
+/* ── Back navigation — M-10 standard ─────────────────────────────────────── */
+/* Usage: <a href="index.html" class="hq-back-btn">← HQ</a>                  */
+.hq-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 5px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hq-back-btn:hover {
+  background: var(--card2);
+  color: var(--text);
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .hq-toast {
+    transition: opacity .1s;
+  }
+  .hq-back-btn {
+    transition: none;
+  }
+}

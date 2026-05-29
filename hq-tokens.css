@@ -1,0 +1,528 @@
+/**
+ * hq-tokens.css — AuDHD HQ Semantic Token Layer v1
+ *
+ * ══════════════════════════════════════════════════════════════════
+ * ARCHITECTURE — 3 Layers
+ *
+ *   Layer 1 — Primitives (hq-shell.css)
+ *             Raw color values per theme: --purple, --green, --gold…
+ *             These remain unchanged. Do not use directly in components.
+ *
+ *   Layer 2 — Semantic Tokens (THIS FILE)
+ *             Meaning-based aliases that reference Layer 1 primitives.
+ *             Components and pages should use ONLY these tokens.
+ *             Changing a theme? Only Layer 1 needs to change.
+ *
+ *   Layer 3 — Component Tokens (bottom of this file)
+ *             Scoped tokens for specific components (buttons, inputs, etc.)
+ *             Reference Layer 2, never Layer 1 directly.
+ *
+ * USAGE
+ *   Add this file after hq-shell.css, before page CSS:
+ *   <link rel="stylesheet" href="core/hq-shell.css">
+ *   <link rel="stylesheet" href="core/hq-tokens.css">   ← here
+ *   <link rel="stylesheet" href="pages/taskboard.css">
+ *
+ * BACKWARD COMPAT
+ *   All existing --purple, --pink, --gold etc. vars still work.
+ *   This file adds NEW tokens on top — nothing is removed.
+ * ══════════════════════════════════════════════════════════════════
+ */
+
+
+/* ══════════════════════════════════════════════════════════════════
+   LAYER 2 — SEMANTIC TOKENS
+   These map intent → primitive. Theme changes happen in hq-shell.css,
+   not here. Components reference these, not the raw primitives.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── 1. SEMANTIC INTENT COLORS ─────────────────────────────────
+     Use these instead of --purple/--pink/etc in component code.
+     The meaning is stable even as themes change.
+  ─────────────────────────────────────────────────────────────── */
+  --color-primary:    var(--purple);       /* brand / interactive primary */
+  --color-primary-d:  var(--purple-d);     /* primary pressed / hover-dark */
+  --color-primary-l:  var(--purple-l);     /* primary tint / bg wash */
+  --color-secondary:  var(--teal);         /* secondary interactive */
+  --color-accent:     var(--pink);         /* accent / highlight / sparkle */
+
+  --color-success:    var(--green);        /* positive / complete / safe */
+  --color-success-l:  var(--green-l);
+  --color-warning:    var(--gold);         /* caution / pending / attention */
+  --color-warning-l:  var(--gold-l);
+  --color-danger:     var(--red);          /* error / destructive / urgent */
+  --color-info:       var(--teal);         /* informational / neutral-cool */
+  --color-energy:     var(--orange);       /* high-energy / motivational */
+  --color-creative:   var(--coral);        /* creative mode / idea state */
+
+
+  /* ── 2. SURFACE HIERARCHY ──────────────────────────────────────
+     Replaces the raw --bg / --surface / --card / --card2 patchwork.
+     Use these to express elevation intent clearly.
+  ─────────────────────────────────────────────────────────────── */
+  --surface-base:     var(--bg);           /* page background — lowest */
+  --surface-raised:   var(--surface);      /* panels, sidebars */
+  --surface-card:     var(--card);         /* cards, tiles, list items */
+  --surface-card-alt: var(--card2);        /* hover state, secondary cards */
+  --surface-overlay:  var(--overlay);      /* modal/drawer backdrop */
+  --surface-glass:    var(--shell-accent-glow);  /* glassmorphism wash */
+  --surface-glass-hover: var(--shell-accent-glow-hover);
+
+  /* Interaction states for surfaces */
+  --surface-hover:    var(--card2);
+  --surface-active:   var(--border2);
+  --surface-inset:    var(--bg);           /* depressed / inner / well */
+
+
+  /* ── 3. BORDER SYSTEM ──────────────────────────────────────────
+     Hierarchy: subtle → default → strong → focus
+  ─────────────────────────────────────────────────────────────── */
+  --border-subtle:    var(--border);       /* dividers, containers */
+  --border-default:   var(--border2);      /* cards, inputs at rest */
+  --border-strong:    var(--shell-panel-border); /* active containers */
+  --border-focus:     var(--color-primary); /* focused input/element */
+
+
+  /* ── 4. TEXT HIERARCHY ─────────────────────────────────────────
+     Semantic text roles. Never use raw hex in component CSS.
+  ─────────────────────────────────────────────────────────────── */
+  --text-primary:     var(--text);         /* body copy, headings */
+  --text-secondary:   var(--text2);        /* subheadings, labels */
+  --text-muted:       var(--muted);        /* placeholders, hints */
+  --text-disabled:    var(--muted);        /* disabled state text */
+  --text-inverse:     var(--bg);           /* text on colored backgrounds */
+  --text-on-primary:  var(--surface-base); /* text on --color-primary bg */
+  --text-on-dark:     var(--text);
+  --text-link:        var(--color-primary);
+  --text-link-hover:  var(--color-primary-l);
+
+
+  /* ── 5. SPACING SCALE ──────────────────────────────────────────
+     4px base grid. Use these instead of hardcoded px values.
+     Reference: --space-4 = 16px (1rem baseline)
+  ─────────────────────────────────────────────────────────────── */
+  --space-0:   0px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+
+
+  /* ── 6. RADIUS SCALE ───────────────────────────────────────────
+     Consistent rounding — eliminates hardcoded border-radius values.
+  ─────────────────────────────────────────────────────────────── */
+  --radius-xs:    4px;
+  --radius-sm:    6px;
+  --radius-md:    8px;
+  --radius-lg:    12px;
+  --radius-xl:    16px;
+  --radius-2xl:   20px;
+  --radius-3xl:   28px;
+  --radius-round: 9999px;   /* pills, badges, avatars */
+
+
+  /* ── 7. TYPOGRAPHY SCALE ───────────────────────────────────────
+     Fluid type scale to replace scattered font-size px values.
+  ─────────────────────────────────────────────────────────────── */
+  --font-display:  clamp(28px, 5vw, 40px);
+  --font-h1:       clamp(22px, 4vw, 30px);
+  --font-h2:       clamp(18px, 3vw, 24px);
+  --font-h3:       clamp(15px, 2.5vw, 20px);
+  --font-h4:       16px;
+
+  --font-body-lg:  16px;
+  --font-body:     14px;
+  --font-body-sm:  13px;
+  --font-caption:  12px;
+  --font-micro:    10px;
+  --font-label:    11px;
+
+  --weight-regular:   400;
+  --weight-medium:    600;
+  --weight-semibold:  700;
+  --weight-bold:      800;
+  --weight-black:     900;
+
+  --line-tight:    1.2;
+  --line-normal:   1.5;
+  --line-relaxed:  1.7;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.03em;
+  --tracking-wider:   0.06em;
+  --tracking-widest:  0.1em;
+
+
+  /* ── 8. ELEVATION / SHADOW SYSTEM ─────────────────────────────
+     Replace --shadow / --shadow-lg with a proper elevation stack.
+  ─────────────────────────────────────────────────────────────── */
+  --elevation-0:       none;
+  --elevation-1:       0 1px 4px var(--shadow);
+  --elevation-2:       0 2px 10px var(--shadow);
+  --elevation-3:       0 4px 20px var(--shadow);
+  --elevation-4:       0 8px 32px var(--shadow-lg);
+  --elevation-modal:   0 16px 60px var(--shadow-lg);
+  --elevation-overlay: 0 24px 80px var(--shadow-lg);
+  --elevation-glow:    0 0 24px rgba(var(--primary-rgb), 0.3);
+  --elevation-glow-lg: 0 0 48px rgba(var(--primary-rgb), 0.4);
+
+
+  /* ── 9. MOTION SYSTEM ──────────────────────────────────────────
+     Replaces the single --transition-dur with a full motion kit.
+     AuDHD note: prefer --motion-fast for interactive feedback to
+     reduce sensory delay. --motion-normal for ambient transitions.
+  ─────────────────────────────────────────────────────────────── */
+  --motion-instant:  80ms;
+  --motion-fast:     150ms;
+  --motion-normal:   var(--transition-dur, 0.3s);  /* respects existing var */
+  --motion-slow:     500ms;
+  --motion-crawl:    800ms;
+
+  --ease-standard:    cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-decelerate:  cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate:  cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce:      cubic-bezier(0.34, 1.2, 0.64, 1);
+  --ease-spring:      cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Shorthand transition presets */
+  --transition-quick:  var(--motion-fast) var(--ease-standard);
+  --transition-base:   var(--motion-normal) var(--ease-standard);
+  --transition-smooth: var(--motion-slow) var(--ease-decelerate);
+
+
+  /* ── 10. STATE TOKENS ──────────────────────────────────────────
+     Interactive states for consistent behavior across components.
+  ─────────────────────────────────────────────────────────────── */
+  --state-hover-bg:     var(--surface-card-alt);
+  --state-hover-border: var(--border-default);
+  --state-active-bg:    var(--border-subtle);
+  --state-focus-ring:   0 0 0 2px rgba(var(--primary-rgb), 0.5);
+  --state-focus-ring-offset: 0 0 0 4px rgba(var(--primary-rgb), 0.2);
+  --state-selected-bg:  var(--surface-glass-hover);
+  --state-selected-border: var(--color-primary);
+  --state-disabled-bg:  var(--surface-raised);
+  --state-disabled-text: var(--muted);
+
+  --opacity-disabled: 0.45;
+  --opacity-muted:    0.65;
+  --opacity-subtle:   0.35;
+
+
+  /* ── 11. SEMANTIC STATUS ───────────────────────────────────────
+     Feedback colors with text/bg/border variants for each state.
+     Use for alerts, toasts, badges, validation messages.
+  ─────────────────────────────────────────────────────────────── */
+  --status-success-text:   var(--color-success);
+  --status-success-bg:     rgba(var(--green-rgb), 0.12);
+  --status-success-border: rgba(var(--green-rgb), 0.35);
+
+  --status-warning-text:   var(--color-warning);
+  --status-warning-bg:     rgba(var(--gold-rgb), 0.12);
+  --status-warning-border: rgba(var(--gold-rgb), 0.35);
+
+  --status-danger-text:    var(--color-danger);
+  --status-danger-bg:      rgba(var(--red-rgb), 0.12);
+  --status-danger-border:  rgba(var(--red-rgb), 0.35);
+
+  --status-info-text:      var(--color-info);
+  --status-info-bg:        rgba(var(--teal-rgb), 0.12);
+  --status-info-border:    rgba(var(--teal-rgb), 0.35);
+
+  --status-primary-text:   var(--color-primary);
+  --status-primary-bg:     rgba(var(--primary-rgb), 0.12);
+  --status-primary-border: rgba(var(--primary-rgb), 0.35);
+
+
+  /* ── 12. GLASS / FX TOKENS ─────────────────────────────────────
+     For glassmorphism surfaces — already strong in this design system.
+  ─────────────────────────────────────────────────────────────── */
+  --glass-bg:         rgba(var(--primary-rgb), 0.08);
+  --glass-bg-hover:   rgba(var(--primary-rgb), 0.15);
+  --glass-border:     rgba(var(--primary-rgb), 0.2);
+  --glass-blur:       blur(12px);
+  --glass-blur-heavy: blur(24px);
+
+  --glow-primary:     0 0 20px rgba(var(--primary-rgb), 0.4);
+  --glow-primary-lg:  0 0 40px rgba(var(--primary-rgb), 0.5);
+  --glow-accent:      0 0 20px rgba(var(--pink-rgb), 0.4);
+  --glow-success:     0 0 20px rgba(var(--green-rgb), 0.4);
+  --glow-danger:      0 0 20px rgba(var(--red-rgb), 0.4);
+  --glow-gold:        0 0 20px rgba(var(--gold-rgb), 0.5);
+  --glow-teal:        0 0 20px rgba(var(--teal-rgb), 0.4);
+
+
+  /* ── 13. LAYOUT TOKENS ─────────────────────────────────────────
+     Shell layout values. Defined here so pages can reference them.
+  ─────────────────────────────────────────────────────────────── */
+  --layout-max-width:     960px;
+  --layout-content-max:   720px;
+  --layout-sidebar-width: 260px;
+  --layout-topbar-height: 54px;
+  --layout-bottomnav-height: 58px;
+  --layout-fab-size:      52px;
+  --layout-fab-size-sm:   40px;
+
+
+  /* ── 14. DATA VISUALIZATION ────────────────────────────────────
+     Chart and graph colors for dashboards (health, money, tasks).
+     Ordered for maximum visual distinction.
+  ─────────────────────────────────────────────────────────────── */
+  --chart-1:        var(--purple);
+  --chart-2:        var(--teal);
+  --chart-3:        var(--pink);
+  --chart-4:        var(--gold);
+  --chart-5:        var(--green);
+  --chart-6:        var(--coral);
+  --chart-7:        var(--orange);
+
+  --chart-positive: var(--color-success);
+  --chart-negative: var(--color-danger);
+  --chart-neutral:  var(--muted);
+  --chart-warning:  var(--color-warning);
+
+
+  /* ── 15. ACCESSIBILITY ─────────────────────────────────────────
+     Explicit contrast-safe pairings. Prevents invisible text.
+  ─────────────────────────────────────────────────────────────── */
+  --a11y-text-on-primary:  var(--surface-base);
+  --a11y-text-on-success:  var(--surface-base);
+  --a11y-text-on-danger:   var(--surface-base);
+  --a11y-text-on-warning:  var(--surface-base);
+  --a11y-focus-visible:    var(--state-focus-ring);
+
+  /* Reduced motion support — respect OS preference */
+  --motion-safe-normal: var(--motion-normal);
+  --motion-safe-fast:   var(--motion-fast);
+
+}
+
+/* Honor prefers-reduced-motion globally */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-safe-normal: 0ms;
+    --motion-safe-fast:   0ms;
+    --transition-base:    0ms;
+    --transition-quick:   0ms;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   LAYER 3 — COMPONENT TOKENS
+   Scoped tokens for specific UI components.
+   These reference Layer 2 semantics, not raw primitives.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── BUTTON ─────────────────────────────────────────────────── */
+  --btn-primary-bg:        var(--color-primary);
+  --btn-primary-bg-hover:  var(--color-primary-d);
+  --btn-primary-text:      var(--a11y-text-on-primary);
+  --btn-primary-border:    transparent;
+  --btn-primary-shadow:    var(--glow-primary);
+
+  --btn-secondary-bg:      var(--surface-glass);
+  --btn-secondary-bg-hover: var(--surface-glass-hover);
+  --btn-secondary-text:    var(--text-secondary);
+  --btn-secondary-border:  var(--border-strong);
+
+  --btn-ghost-bg:          transparent;
+  --btn-ghost-bg-hover:    var(--surface-card-alt);
+  --btn-ghost-text:        var(--text-secondary);
+  --btn-ghost-border:      var(--border-subtle);
+
+  --btn-danger-bg:         var(--color-danger);
+  --btn-danger-bg-hover:   var(--red);
+  --btn-danger-text:       var(--a11y-text-on-danger);
+
+  --btn-radius:            var(--radius-lg);
+  --btn-radius-sm:         var(--radius-md);
+  --btn-padding-y:         var(--space-3);
+  --btn-padding-x:         var(--space-5);
+  --btn-padding-y-sm:      var(--space-2);
+  --btn-padding-x-sm:      var(--space-4);
+  --btn-font-size:         var(--font-body-sm);
+  --btn-font-weight:       var(--weight-bold);
+  --btn-transition:        all var(--transition-quick);
+
+
+  /* ── INPUT / FORM ───────────────────────────────────────────── */
+  --input-bg:              var(--surface-card);
+  --input-bg-focus:        var(--surface-card-alt);
+  --input-border:          var(--border-default);
+  --input-border-focus:    var(--border-focus);
+  --input-border-error:    var(--color-danger);
+  --input-text:            var(--text-primary);
+  --input-placeholder:     var(--text-muted);
+  --input-radius:          var(--radius-md);
+  --input-padding-y:       var(--space-3);
+  --input-padding-x:       var(--space-4);
+  --input-font-size:       var(--font-body);
+  --input-focus-ring:      var(--state-focus-ring);
+  --input-transition:      border-color var(--transition-quick), box-shadow var(--transition-quick);
+
+
+  /* ── CARD ───────────────────────────────────────────────────── */
+  --card-radius:           var(--radius-xl);
+  --card-padding:          var(--space-5);
+  --card-padding-sm:       var(--space-4);
+  --card-shadow:           var(--elevation-2);
+  --card-shadow-hover:     var(--elevation-4);
+  --card-border:           var(--border-subtle);
+  --card-border-hover:     var(--border-default);
+  --card-transition:       all var(--transition-quick);
+
+
+  /* ── MODAL ──────────────────────────────────────────────────── */
+  --modal-bg:              var(--surface-raised);
+  --modal-border:          var(--border-strong);
+  --modal-shadow:          var(--elevation-modal);
+  --modal-radius:          var(--radius-2xl);
+  --modal-padding:         var(--space-6);
+  --modal-backdrop:        var(--surface-overlay);
+  --modal-backdrop-blur:   blur(4px);
+
+
+  /* ── BADGE / PILL ───────────────────────────────────────────── */
+  --badge-radius:          var(--radius-round);
+  --badge-padding-y:       2px;
+  --badge-padding-x:       var(--space-2);
+  --badge-font-size:       var(--font-micro);
+  --badge-font-weight:     var(--weight-bold);
+
+
+  /* ── TOAST / ALERT ──────────────────────────────────────────── */
+  --toast-radius:          var(--radius-lg);
+  --toast-padding:         var(--space-4);
+  --toast-shadow:          var(--elevation-modal);
+  --toast-border-width:    1.5px;
+
+
+  /* ── FAB (Floating Action Button) ───────────────────────────── */
+  --fab-radius:            var(--radius-round);
+  --fab-size:              var(--layout-fab-size);
+  --fab-shadow:            var(--elevation-4);
+  --fab-shadow-hover:      var(--elevation-modal);
+
+
+  /* ── TOPBAR ─────────────────────────────────────────────────── */
+  --topbar-bg:             var(--surface-raised);
+  --topbar-border:         var(--border-subtle);
+  --topbar-height:         var(--layout-topbar-height);
+  --topbar-shadow:         var(--elevation-2);
+
+
+  /* ── SIDENAV ────────────────────────────────────────────────── */
+  --sidenav-bg:            var(--shell-panel-bg);
+  --sidenav-border:        var(--shell-panel-border);
+  --sidenav-width:         var(--layout-sidebar-width);
+  --sidenav-item-radius:   var(--radius-md);
+  --sidenav-item-active-bg: var(--surface-glass-hover);
+
+
+  /* ── BOTTOM NAV ─────────────────────────────────────────────── */
+  --bottomnav-bg:          var(--surface-raised);
+  --bottomnav-border:      var(--border-subtle);
+  --bottomnav-height:      var(--layout-bottomnav-height);
+  --bottomnav-active:      var(--color-primary);
+  --bottomnav-inactive:    var(--text-muted);
+
+
+  /* ── PROGRESS / TASK BARS ───────────────────────────────────── */
+  --progress-track-bg:     var(--border-subtle);
+  --progress-fill-primary: var(--color-primary);
+  --progress-fill-success: var(--color-success);
+  --progress-fill-warning: var(--color-warning);
+  --progress-fill-danger:  var(--color-danger);
+  --progress-radius:       var(--radius-round);
+
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   Small helpers built on the token system.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Focus visible — accessible keyboard ring */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: var(--state-focus-ring), var(--state-focus-ring-offset);
+}
+
+/* Status badge variants */
+.badge-success { background: var(--status-success-bg); color: var(--status-success-text); border: 1px solid var(--status-success-border); }
+.badge-warning { background: var(--status-warning-bg); color: var(--status-warning-text); border: 1px solid var(--status-warning-border); }
+.badge-danger  { background: var(--status-danger-bg);  color: var(--status-danger-text);  border: 1px solid var(--status-danger-border); }
+.badge-info    { background: var(--status-info-bg);    color: var(--status-info-text);    border: 1px solid var(--status-info-border); }
+.badge-primary { background: var(--status-primary-bg); color: var(--status-primary-text); border: 1px solid var(--status-primary-border); }
+
+/* Text roles */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-success   { color: var(--color-success); }
+.text-warning   { color: var(--color-warning); }
+.text-danger    { color: var(--color-danger); }
+
+/* Glow utilities — for accent elements */
+.glow-primary { box-shadow: var(--glow-primary); }
+.glow-accent  { box-shadow: var(--glow-accent); }
+.glow-gold    { box-shadow: var(--glow-gold); }
+.glow-teal    { box-shadow: var(--glow-teal); }
+
+/* Surface utilities */
+.surface-card    { background: var(--surface-card); border: 1px solid var(--card-border); border-radius: var(--card-radius); }
+.surface-glass   { background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: var(--glass-blur); }
+
+/* Disabled state */
+.is-disabled {
+  opacity: var(--opacity-disabled);
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Spacing helpers (common cases) */
+.p-card    { padding: var(--card-padding); }
+.p-card-sm { padding: var(--card-padding-sm); }
+.gap-base  { gap: var(--space-4); }
+.gap-sm    { gap: var(--space-2); }
+.gap-lg    { gap: var(--space-6); }
+
+/* ── MOBILE GLOBAL PATCHES (audit v1) ─────────────────────────────── */
+/* Issues 1, 4, 13 */
+@media (max-width: 820px) {
+
+  /* Issue 1: Prevent iOS auto-zoom on input focus (font-size < 16px triggers it) */
+  input, textarea, select {
+    font-size: max(16px, 1em) !important;
+  }
+
+  /* Issue 4: Toast bottom safety — clear 58px bottom nav + notch */
+  .toast, .la-toast, .tv-toast, .fr-toast, .hq-toast {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Issue 13: Checkbox tap targets — minimum 22px on mobile */
+  .cb-row input[type=checkbox],
+  .walk-cb-row input[type=checkbox],
+  .med-taken-cb,
+  .pr-check-row input[type=checkbox],
+  .pm-sec-toggle input,
+  .audit-item input[type=checkbox],
+  .chk {
+    width: 22px;
+    height: 22px;
+  }
+}
